@@ -16,53 +16,46 @@ CORS(app)
 def init_db():
     db.create_all()
 
-    # limpa e recria (garante funcionamento no Render)
-    Lesson.query.delete()
+    if Lesson.query.count() == 0:
+        lessons = [
+            Lesson(title="O que é printf?",
+                   theory="printf é usado para mostrar texto na tela.",
+                   code='printf("Hello World");',
+                   answer="",
+                   type="theory",
+                   order=1),
 
-    lessons = [
-        Lesson(
-            title="O que é printf?",
-            theory="printf é usado para mostrar texto na tela.",
-            code='printf("Hello World");',
-            answer="",
-            type="theory",
-            order=1
-        ),
-        Lesson(
-            title="Complete o código",
-            theory="Complete o Hello World:",
-            code='printf("Hello, ____!");',
-            answer="world",
-            type="challenge",
-            order=2
-        ),
-        Lesson(
-            title="Variáveis",
-            theory="Variáveis guardam valores. Ex: int x = 10;",
-            code='int x = 10;',
-            answer="",
-            type="theory",
-            order=3
-        ),
-        Lesson(
-            title="Complete a variável",
-            theory="Complete:",
-            code='int x = ____;',
-            answer="10",
-            type="challenge",
-            order=4
-        ),
-    ]
+            Lesson(title="Complete o código",
+                   theory="Complete o Hello World:",
+                   code='printf("Hello, ____!");',
+                   answer="world",
+                   type="challenge",
+                   order=2),
 
-    db.session.add_all(lessons)
-    db.session.commit()
+            Lesson(title="Variáveis",
+                   theory="Variáveis guardam valores. Ex: int x = 10;",
+                   code='int x = 10;',
+                   answer="",
+                   type="theory",
+                   order=3),
 
-# roda SEMPRE no servidor
+            Lesson(title="Complete a variável",
+                   theory="Complete:",
+                   code='int x = ____;',
+                   answer="10",
+                   type="challenge",
+                   order=4),
+        ]
+
+        db.session.add_all(lessons)
+        db.session.commit()
+
+# ⚠️ MUITO IMPORTANTE (Render)
 with app.app_context():
     init_db()
 
 # ========================
-# PÁGINAS
+# ROTAS
 # ========================
 @app.route('/')
 def home():
@@ -72,17 +65,16 @@ def home():
 def lesson_page():
     return render_template("lesson.html")
 
-# ========================
-# API
-# ========================
 @app.route('/lessons')
 def get_lessons():
     lessons = Lesson.query.order_by(Lesson.order).all()
+
     return jsonify([{"id": l.id, "title": l.title} for l in lessons])
 
 @app.route('/lesson/<int:id>')
 def get_lesson(id):
     l = Lesson.query.get(id)
+
     return jsonify({
         "id": l.id,
         "title": l.title,
@@ -91,9 +83,6 @@ def get_lesson(id):
         "type": l.type
     })
 
-# ========================
-# VERIFICAR
-# ========================
 def normalize(text):
     return text.strip().lower().replace(" ", "")
 

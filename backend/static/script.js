@@ -57,7 +57,7 @@ async function verificar() {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            lesson_id: lessonId,
+            lesson_id: parseInt(lessonId),
             answer: resposta
         })
     });

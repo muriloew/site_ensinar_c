@@ -2,13 +2,15 @@
 <html>
 <head>
   <title>Lição</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  <link rel="stylesheet" href="/static/styles.css">
 </head>
 <body>
 
 <div class="container">
   <h1 id="title"></h1>
+
   <p id="theory"></p>
+
   <pre id="code"></pre>
 
   <div id="challenge-area" style="display:none;">
@@ -21,6 +23,6 @@
   <p id="feedback"></p>
 </div>
 
-<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script src="/static/script.js"></script>
 </body>
 </html>
