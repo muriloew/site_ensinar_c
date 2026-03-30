@@ -1,6 +1,3 @@
-// =====================
-// LISTAR LIÇÕES
-// =====================
 async function carregarLicoes() {
     const div = document.querySelector(".lesson-list");
     if (!div) return;
@@ -26,9 +23,6 @@ if (document.querySelector(".lesson-list")) {
     carregarLicoes();
 }
 
-// =====================
-// CARREGAR LIÇÃO
-// =====================
 const params = new URLSearchParams(window.location.search);
 const lessonId = params.get("id");
 
@@ -51,16 +45,10 @@ if (lessonId) {
         });
 }
 
-// =====================
-// PRÓXIMA
-// =====================
 function proxima() {
     window.location.href = "/lesson?id=" + (parseInt(lessonId) + 1);
 }
 
-// =====================
-// VERIFICAR
-// =====================
 async function verificar() {
     const resposta = document.getElementById("answer").value;
     const feedback = document.getElementById("feedback");

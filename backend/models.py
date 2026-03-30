@@ -10,5 +10,5 @@ class Lesson(db.Model):
     code = db.Column(db.Text)
     answer = db.Column(db.String(100))
 
-    type = db.Column(db.String(20))  # "theory" ou "challenge"
+    type = db.Column(db.String(20))
     order = db.Column(db.Integer)
