@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lição</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<div class="container">
+  <h1 id="title"></h1>
+
+  <p id="theory"></p>
+
+  <pre id="code"></pre>
+
+  <div id="challenge-area" style="display:none;">
+    <input id="answer" placeholder="Digite sua resposta">
+    <button onclick="verificar()">Verificar</button>
+  </div>
+
+  <button id="nextBtn" onclick="proxima()">Continuar</button>
+
+  <p id="feedback"></p>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
