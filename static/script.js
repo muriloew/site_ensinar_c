@@ -1,22 +1,21 @@
-// =====================
-// 📦 PROGRESSO
-// =====================
+function voltar() {
+    window.location.href = "/";
+}
+
+// progresso
 function getProgresso() {
     return JSON.parse(localStorage.getItem("progresso") || "[]");
 }
 
 function salvarProgresso(id) {
     let progresso = getProgresso();
-
     if (!progresso.includes(id)) {
         progresso.push(id);
         localStorage.setItem("progresso", JSON.stringify(progresso));
     }
 }
 
-// =====================
-// 📚 LISTAR LIÇÕES
-// =====================
+// listar lições
 async function carregarLicoes() {
     const div = document.querySelector(".lesson-list");
     if (!div) return;
@@ -31,7 +30,6 @@ async function carregarLicoes() {
     data.forEach(l => {
         const btn = document.createElement("button");
 
-        // ✅ marca concluído
         if (progresso.includes(l.id)) {
             btn.innerText = "✅ " + l.title;
             btn.style.background = "#999";
@@ -51,23 +49,19 @@ if (document.querySelector(".lesson-list")) {
     carregarLicoes();
 }
 
-// =====================
-// 📘 CARREGAR LIÇÃO
-// =====================
+// carregar lição
 const params = new URLSearchParams(window.location.search);
 const lessonId = parseInt(params.get("id"));
-
-let currentLesson = null;
 
 if (lessonId) {
     fetch("/lesson/" + lessonId)
         .then(res => res.json())
         .then(data => {
-            currentLesson = data;
-
             document.getElementById("title").innerText = data.title;
             document.getElementById("theory").innerText = data.theory;
             document.getElementById("code").innerText = data.code;
+
+            document.getElementById("codeInput").value = data.code;
 
             if (data.type === "challenge") {
                 document.getElementById("challenge-area").style.display = "block";
@@ -76,29 +70,15 @@ if (lessonId) {
         });
 }
 
-// =====================
-// ⬅ VOLTAR
-// =====================
-function voltar() {
-    window.location.href = "/";
-}
-
-// =====================
-// ▶️ PRÓXIMA LIÇÃO
-// =====================
+// próxima
 async function proxima() {
-
-    // 💾 salva progresso mesmo se for teoria
-    salvarProgresso(lessonId);
-
     const res = await fetch("/lessons");
     const lessons = await res.json();
 
     const next = lessonId + 1;
 
-    // 🚫 acabou as lições
     if (next > lessons.length) {
-        alert("🎉 Você terminou tudo!");
+        alert("🎉 Você terminou!");
         window.location.href = "/";
         return;
     }
@@ -106,9 +86,7 @@ async function proxima() {
     window.location.href = "/lesson?id=" + next;
 }
 
-// =====================
-// ✅ VERIFICAR
-// =====================
+// verificar
 async function verificar() {
     const resposta = document.getElementById("answer").value;
     const feedback = document.getElementById("feedback");
@@ -125,15 +103,30 @@ async function verificar() {
     const data = await res.json();
 
     if (data.correct) {
-        feedback.innerText = "✅ Boa! Continue";
+        feedback.innerText = "✅ Boa!";
         feedback.style.color = "green";
-
-        // 💾 salva progresso
         salvarProgresso(lessonId);
-
         document.getElementById("nextBtn").style.display = "block";
     } else {
         feedback.innerText = "❌ Tente novamente";
         feedback.style.color = "red";
     }
+}
+
+// compilador REAL
+async function executarCodigo() {
+    const code = document.getElementById("codeInput").value;
+    const output = document.getElementById("output");
+
+    output.innerText = "⏳ Executando...";
+
+    const res = await fetch("/run", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ code })
+    });
+
+    const data = await res.json();
+
+    output.innerText = data.output;
 }

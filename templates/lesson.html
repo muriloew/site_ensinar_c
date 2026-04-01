@@ -8,14 +8,20 @@
 
 <div class="container">
   <button onclick="voltar()">⬅ Voltar</button>
-  <h1 id="title"></h1>
 
+  <h1 id="title"></h1>
   <p id="theory"></p>
 
   <pre id="code"></pre>
 
   <div id="challenge-area" style="display:none;">
     <input id="answer" placeholder="Digite sua resposta">
+
+    <textarea id="codeInput"></textarea>
+    <button onclick="executarCodigo()">Executar código</button>
+
+    <pre id="output"></pre>
+
     <button onclick="verificar()">Verificar</button>
   </div>
 
