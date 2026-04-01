@@ -77,9 +77,20 @@ if (lessonId) {
 }
 
 // =====================
+// ⬅ VOLTAR
+// =====================
+function voltar() {
+    window.location.href = "/";
+}
+
+// =====================
 // ▶️ PRÓXIMA LIÇÃO
 // =====================
 async function proxima() {
+
+    // 💾 salva progresso mesmo se for teoria
+    salvarProgresso(lessonId);
+
     const res = await fetch("/lessons");
     const lessons = await res.json();
 
