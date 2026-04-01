@@ -1,3 +1,22 @@
+// =====================
+// 📦 PROGRESSO
+// =====================
+function getProgresso() {
+    return JSON.parse(localStorage.getItem("progresso") || "[]");
+}
+
+function salvarProgresso(id) {
+    let progresso = getProgresso();
+
+    if (!progresso.includes(id)) {
+        progresso.push(id);
+        localStorage.setItem("progresso", JSON.stringify(progresso));
+    }
+}
+
+// =====================
+// 📚 LISTAR LIÇÕES
+// =====================
 async function carregarLicoes() {
     const div = document.querySelector(".lesson-list");
     if (!div) return;
@@ -5,11 +24,20 @@ async function carregarLicoes() {
     const res = await fetch("/lessons");
     const data = await res.json();
 
+    const progresso = getProgresso();
+
     div.innerHTML = "";
 
     data.forEach(l => {
         const btn = document.createElement("button");
-        btn.innerText = l.title;
+
+        // ✅ marca concluído
+        if (progresso.includes(l.id)) {
+            btn.innerText = "✅ " + l.title;
+            btn.style.background = "#999";
+        } else {
+            btn.innerText = l.title;
+        }
 
         btn.onclick = () => {
             window.location.href = "/lesson?id=" + l.id;
@@ -23,8 +51,11 @@ if (document.querySelector(".lesson-list")) {
     carregarLicoes();
 }
 
+// =====================
+// 📘 CARREGAR LIÇÃO
+// =====================
 const params = new URLSearchParams(window.location.search);
-const lessonId = params.get("id");
+const lessonId = parseInt(params.get("id"));
 
 let currentLesson = null;
 
@@ -45,10 +76,28 @@ if (lessonId) {
         });
 }
 
-function proxima() {
-    window.location.href = "/lesson?id=" + (parseInt(lessonId) + 1);
+// =====================
+// ▶️ PRÓXIMA LIÇÃO
+// =====================
+async function proxima() {
+    const res = await fetch("/lessons");
+    const lessons = await res.json();
+
+    const next = lessonId + 1;
+
+    // 🚫 acabou as lições
+    if (next > lessons.length) {
+        alert("🎉 Você terminou tudo!");
+        window.location.href = "/";
+        return;
+    }
+
+    window.location.href = "/lesson?id=" + next;
 }
 
+// =====================
+// ✅ VERIFICAR
+// =====================
 async function verificar() {
     const resposta = document.getElementById("answer").value;
     const feedback = document.getElementById("feedback");
@@ -57,7 +106,7 @@ async function verificar() {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({
-            lesson_id: parseInt(lessonId),
+            lesson_id: lessonId,
             answer: resposta
         })
     });
@@ -67,6 +116,10 @@ async function verificar() {
     if (data.correct) {
         feedback.innerText = "✅ Boa! Continue";
         feedback.style.color = "green";
+
+        // 💾 salva progresso
+        salvarProgresso(lessonId);
+
         document.getElementById("nextBtn").style.display = "block";
     } else {
         feedback.innerText = "❌ Tente novamente";
