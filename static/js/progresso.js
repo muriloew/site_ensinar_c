@@ -1,5 +1,3 @@
-const TOTAL_LICOES = 9;
-
 function buscarLicoesConcluidas() {
     const dados = localStorage.getItem("licoesConcluidas");
 
@@ -51,10 +49,11 @@ function atualizarBarraProgresso() {
     }
 
     const concluidas = buscarLicoesConcluidas().length;
-    const porcentagem = Math.round((concluidas / TOTAL_LICOES) * 100);
+    const total = typeof TOTAL_LICOES !== "undefined" ? TOTAL_LICOES : 1;
+    const porcentagem = Math.round((concluidas / total) * 100);
 
     barra.style.width = `${porcentagem}%`;
-    texto.textContent = `${concluidas} de ${TOTAL_LICOES} lições concluídas (${porcentagem}%).`;
+    texto.textContent = `${concluidas} de ${total} lições concluídas (${porcentagem}%).`;
 }
 
 document.addEventListener("DOMContentLoaded", () => {

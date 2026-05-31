@@ -1,10 +1,10 @@
 # Site Ensinar C
 
-Plataforma web educativa desenvolvida para auxiliar estudantes iniciantes no aprendizado da linguagem C.
+Plataforma web educativa criada como parte prática de um Trabalho de Conclusão.
 
 ## Objetivo
 
-O projeto tem como objetivo organizar o ensino da linguagem C em módulos progressivos, com teoria curta, exemplos de código, desafios práticos e acompanhamento de progresso.
+O projeto tem como objetivo auxiliar estudantes iniciantes no aprendizado da linguagem de programação C, utilizando módulos progressivos, exemplos de código, desafios automáticos e acompanhamento de progresso.
 
 ## Tecnologias utilizadas
 
@@ -16,56 +16,77 @@ O projeto tem como objetivo organizar o ensino da linguagem C em módulos progre
 - GitHub
 - Render
 
-## Funcionalidades
+## Funcionalidades implementadas
 
 - Página inicial explicando a proposta do projeto
-- Módulos progressivos de aprendizagem
-- Lições com teoria, exemplos e explicação
-- Desafios automáticos com verificação de resposta
+- Página de módulos
+- Página individual para cada módulo
+- Lições com teoria curta
+- Exemplos de código em C
+- Explicação dos códigos
+- Desafios com verificação automática
 - Barra de progresso
-- Salvamento de progresso no navegador com localStorage
-- Área de escrita de código em C
+- Salvamento do progresso no navegador com localStorage
+- Área de escrita de código
+- Página sobre o projeto
+- Configuração para publicação no Render
 
-## Estrutura
+## Estrutura do projeto
 
 ```txt
 site_ensinar_c/
 ├── app.py
+├── backend/
+│   └── __init__.py
 ├── templates/
 │   ├── base.html
 │   ├── index.html
 │   ├── modulos.html
 │   ├── modulo.html
+│   ├── sobre.html
 │   └── erro.html
 ├── static/
 │   ├── css/
 │   │   └── style.css
-│   └── js/
-│       ├── progresso.js
-│       └── desafios.js
+│   ├── js/
+│   │   ├── progresso.js
+│   │   └── desafios.js
+│   └── img/
 ├── requirements.txt
 ├── Procfile
 ├── render.yaml
+├── .gitignore
 └── README.md
 ```
 
-## Como executar localmente
+## Como rodar localmente
+
+Instale as dependências:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Execute o projeto:
+
+```bash
 python app.py
 ```
 
-Depois acesse:
+Depois acesse no navegador:
 
 ```txt
 http://127.0.0.1:5000
 ```
 
-## Publicação
+## Como enviar para o GitHub
 
-O projeto pode ser publicado no Render utilizando o arquivo `render.yaml`.
+```bash
+git add .
+git commit -m "Atualiza parte pratica do site"
+git push
+```
 
-## Observação
+## Observação sobre o compilador integrado
 
-O compilador integrado real ainda pode ser implementado em uma versão futura. Na versão atual, existe uma área de escrita de código para apoiar os estudos.
+Nesta versão, foi criada uma área de escrita de código. O compilador real de C fica como melhoria futura, podendo ser implementado com uma API segura ou serviço externo de execução de código.

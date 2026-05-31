@@ -7,27 +7,30 @@
     <div class="hero-texto">
         <p class="tag">Projeto de TC</p>
         <h1>Aprenda linguagem C de forma progressiva e prática</h1>
+
         <p>
             Esta plataforma tem como objetivo auxiliar estudantes iniciantes no aprendizado da linguagem C
-            por meio de módulos progressivos, exemplos de código e desafios interativos.
+            por meio de módulos progressivos, exemplos de código, desafios automáticos e acompanhamento de progresso.
         </p>
 
         <div class="botoes">
             <a class="botao primario" href="/modulos">Começar curso</a>
-            <a class="botao secundario" href="#recursos">Ver recursos</a>
+            <a class="botao secundario" href="/sobre">Sobre o projeto</a>
         </div>
     </div>
 
     <div class="card destaque">
-        <h2>Estrutura do curso</h2>
-        <p><strong>{{ modulos|length }}</strong> módulos iniciais organizados</p>
+        <h2>Resumo da plataforma</h2>
+        <p><strong>{{ modulos|length }}</strong> módulos iniciais implementados</p>
         <p><strong>{{ total_licoes }}</strong> lições práticas</p>
         <p>Progresso salvo no navegador</p>
+        <p>Desafios com verificação automática</p>
     </div>
 </section>
 
 <section id="progresso" class="secao">
     <h2>Seu progresso</h2>
+
     <div class="progresso-caixa">
         <div class="barra">
             <div id="barraProgresso" class="barra-preenchida"></div>
@@ -36,28 +39,38 @@
     </div>
 </section>
 
-<section id="recursos" class="secao">
-    <h2>Recursos implementados</h2>
+<section class="secao">
+    <h2>Recursos da parte prática</h2>
 
     <div class="grid">
         <article class="card">
             <h3>Conteúdo progressivo</h3>
-            <p>Os módulos começam pelos conceitos básicos e avançam aos poucos para conteúdos mais complexos.</p>
+            <p>Os módulos começam pelos conceitos básicos e avançam gradualmente para conteúdos mais complexos.</p>
         </article>
 
         <article class="card">
-            <h3>Exemplos de código</h3>
-            <p>Cada lição possui código em C para o aluno observar a aplicação do conteúdo.</p>
+            <h3>Exemplos em C</h3>
+            <p>Cada lição apresenta um exemplo de código para facilitar a ligação entre teoria e prática.</p>
         </article>
 
         <article class="card">
             <h3>Desafios automáticos</h3>
-            <p>As atividades verificam respostas e dão retorno imediato ao usuário.</p>
+            <p>As atividades verificam as respostas e dão retorno imediato ao usuário.</p>
+        </article>
+
+        <article class="card">
+            <h3>Barra de progresso</h3>
+            <p>O aluno consegue acompanhar quantas lições já foram concluídas.</p>
         </article>
 
         <article class="card">
             <h3>Área de código</h3>
-            <p>O aluno pode escrever e testar visualmente ideias de código durante o estudo.</p>
+            <p>O usuário pode escrever e adaptar códigos durante o estudo, preparando a integração futura de um compilador.</p>
+        </article>
+
+        <article class="card">
+            <h3>Hospedagem online</h3>
+            <p>O projeto foi preparado para publicação no Render e versionamento pelo GitHub.</p>
         </article>
     </div>
 </section>
@@ -68,7 +81,8 @@
     <div class="grid">
         {% for modulo in modulos %}
         <article class="card modulo-card">
-            <h3>{{ modulo.id }}. {{ modulo.titulo }}</h3>
+            <span class="numero-modulo">Módulo {{ modulo.id }}</span>
+            <h3>{{ modulo.titulo }}</h3>
             <p>{{ modulo.descricao }}</p>
             <a class="botao pequeno" href="/modulo/{{ modulo.id }}">Acessar módulo</a>
         </article>

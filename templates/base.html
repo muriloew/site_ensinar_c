@@ -10,10 +10,11 @@
     <header class="topo">
         <nav class="menu">
             <a href="/" class="logo">Ensinar C</a>
+
             <div class="links">
                 <a href="/">Início</a>
                 <a href="/modulos">Módulos</a>
-                <a href="#progresso">Progresso</a>
+                <a href="/sobre">Sobre</a>
             </div>
         </nav>
     </header>
@@ -24,8 +25,12 @@
 
     <footer class="rodape">
         <p>Plataforma web educativa para ensino da linguagem C.</p>
+        <p>Projeto desenvolvido como parte prática do Trabalho de Conclusão.</p>
     </footer>
 
+    <script>
+        const TOTAL_LICOES = {{ total_licoes }};
+    </script>
     <script src="{{ url_for('static', filename='js/progresso.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>

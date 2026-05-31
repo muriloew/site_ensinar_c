@@ -13,7 +13,11 @@
     {% for licao in modulo.licoes %}
     <article class="card licao" data-licao-id="{{ licao.id }}">
         <div class="licao-cabecalho">
-            <h2>{{ licao.titulo }}</h2>
+            <div>
+                <span class="numero-modulo">Lição {{ loop.index }}</span>
+                <h2>{{ licao.titulo }}</h2>
+            </div>
+
             <button class="botao pequeno concluir" onclick="marcarConcluida('{{ licao.id }}')">
                 Marcar como concluída
             </button>
@@ -25,7 +29,7 @@
         <h3>Exemplo de código</h3>
         <pre><code>{{ licao.codigo }}</code></pre>
 
-        <h3>Explicação</h3>
+        <h3>Explicação do código</h3>
         <p>{{ licao.explicacao }}</p>
 
         <h3>Desafio prático</h3>
@@ -45,8 +49,9 @@
 
         <h3>Área de código</h3>
         <p class="texto-menor">
-            Escreva ou altere o código abaixo. Esta área serve como preparação para o compilador integrado.
+            Escreva ou altere o código abaixo. Esta área representa a preparação para um compilador integrado futuro.
         </p>
+
         <textarea class="editor-codigo" spellcheck="false">{{ licao.codigo }}</textarea>
     </article>
     {% endfor %}
