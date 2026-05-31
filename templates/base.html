@@ -2,50 +2,33 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Ensinar C{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <header class="topo">
-        <nav class="menu">
-            <a href="/" class="logo">
-                <span class="logo-icone">C</span>
-                <span>Ensinar C</span>
-            </a>
+{% if usuario %}
+<aside class="sidebar">
+    <a href="/dashboard" class="brand">
+        <span class="brand-icon">C</span>
+        <strong>Ensinar C</strong>
+    </a>
 
-            <button class="menu-mobile" onclick="abrirMenu()">☰</button>
+    <nav>
+        <a href="/dashboard">🏠 Painel</a>
+        <a href="/modulos">📚 Módulos</a>
+        <a href="/desafio-diario">🏆 Desafio diário</a>
+        <a href="/certificado">🎓 Certificado</a>
+        <a href="/sair" class="sair">↩ Sair</a>
+    </nav>
+</aside>
+{% endif %}
 
-            <div id="linksMenu" class="links">
-                <a href="/">Início</a>
-                <a href="/modulos">Módulos</a>
-                <a href="/sobre">Sobre</a>
-                <a class="link-destaque" href="/modulos">Começar</a>
-            </div>
-        </nav>
-    </header>
+<main class="{% if usuario %}app-main{% else %}public-main{% endif %}">
+    {% block content %}{% endblock %}
+</main>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="rodape">
-        <div>
-            <strong>Ensinar C</strong>
-            <p>Plataforma web educativa para ensino da linguagem C.</p>
-        </div>
-        <p>Projeto desenvolvido como parte prática do Trabalho de Conclusão.</p>
-    </footer>
-
-    <script>
-        const TOTAL_LICOES = {{ total_licoes }};
-
-        function abrirMenu() {
-            const menu = document.getElementById("linksMenu");
-            menu.classList.toggle("ativo");
-        }
-    </script>
-    <script src="{{ url_for('static', filename='js/progresso.js') }}"></script>
-    {% block scripts %}{% endblock %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

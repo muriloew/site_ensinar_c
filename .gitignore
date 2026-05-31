@@ -1,7 +1,7 @@
 __pycache__/
 *.pyc
+instance/*.db
 .env
 venv/
 .venv/
 *.exe
-.DS_Store

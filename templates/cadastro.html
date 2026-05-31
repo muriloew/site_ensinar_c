@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Cadastro - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+    <form class="auth-card" method="POST">
+        <a class="brand auth-brand" href="/">
+            <span class="brand-icon">C</span>
+            <strong>Ensinar C</strong>
+        </a>
+
+        <h1>Criar conta</h1>
+        <p>Cadastre-se para salvar progresso, XP e conquistas.</p>
+
+        {% if erro %}<div class="alert">{{ erro }}</div>{% endif %}
+
+        <label>Nome</label>
+        <input type="text" name="nome" required>
+
+        <label>E-mail</label>
+        <input type="email" name="email" required>
+
+        <label>Senha</label>
+        <input type="password" name="senha" required>
+
+        <button class="btn btn-primary" type="submit">Começar agora</button>
+
+        <p class="auth-link">Já tem conta? <a href="/login">Entrar</a></p>
+    </form>
+</section>
+{% endblock %}

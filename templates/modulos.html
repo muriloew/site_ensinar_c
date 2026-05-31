@@ -1,28 +1,30 @@
 {% extends "base.html" %}
-
 {% block title %}Módulos - Ensinar C{% endblock %}
 
 {% block content %}
-<section class="secao topo-pagina">
-    <h1>Módulos do curso</h1>
-
-    <p>
-        Os conteúdos foram organizados em módulos progressivos. Cada módulo apresenta teoria curta,
-        exemplos de código, desafios práticos e uma área para escrita de código.
-    </p>
-</section>
-
-<section class="secao">
-    <div class="grid">
-        {% for modulo in modulos %}
-        <article class="card modulo-card">
-            <span class="numero-modulo">Módulo {{ modulo.id }}</span>
-            <h2>{{ modulo.titulo }}</h2>
-            <p>{{ modulo.descricao }}</p>
-            <p>{{ modulo.licoes|length }} lição(ões)</p>
-            <a class="botao pequeno" href="/modulo/{{ modulo.id }}">Estudar</a>
-        </article>
-        {% endfor %}
+<div class="topbar">
+    <div>
+        <h1>Módulos</h1>
+        <p>Siga uma trilha estruturada e avance no aprendizado da linguagem C.</p>
     </div>
-</section>
+</div>
+
+<div class="module-grid wide">
+    {% for modulo in modulos %}
+    <article class="module-card {% if not modulo.liberado %}locked{% endif %}">
+        <div class="module-icon">{{ modulo.icone }}</div>
+        <span>Módulo {{ modulo.id }}</span>
+        <h3>{{ modulo.titulo }}</h3>
+        <p>{{ modulo.descricao }}</p>
+        <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
+        <small>{{ modulo.progresso }}%</small>
+
+        {% if modulo.liberado %}
+            <a class="btn btn-primary" href="/estudar/{{ modulo.id }}">Estudar</a>
+        {% else %}
+            <button class="btn btn-disabled">🔒 Bloqueado</button>
+        {% endif %}
+    </article>
+    {% endfor %}
+</div>
 {% endblock %}

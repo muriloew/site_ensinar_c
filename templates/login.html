@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Entrar - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+    <form class="auth-card" method="POST">
+        <a class="brand auth-brand" href="/">
+            <span class="brand-icon">C</span>
+            <strong>Ensinar C</strong>
+        </a>
+
+        <h1>Entrar</h1>
+        <p>Acesse sua conta para continuar estudando.</p>
+
+        {% if erro %}<div class="alert">{{ erro }}</div>{% endif %}
+
+        <label>E-mail</label>
+        <input type="email" name="email" required>
+
+        <label>Senha</label>
+        <input type="password" name="senha" required>
+
+        <button class="btn btn-primary" type="submit">Entrar</button>
+
+        <p class="auth-link">Não tem conta? <a href="/cadastro">Criar cadastro</a></p>
+    </form>
+</section>
+{% endblock %}

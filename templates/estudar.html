@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ modulo.titulo }} - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="study-layout">
+    <aside class="lesson-list">
+        <a href="/modulos" class="back">← Voltar</a>
+        <h3>Lições</h3>
+
+        {% for item in modulo.licoes %}
+        <a class="{% if item.id == licao.id %}active{% endif %}" href="/estudar/{{ modulo.id }}?licao={{ item.id }}">
+            <span>{{ loop.index }}. {{ item.titulo }}</span>
+            {% if item.id in concluidas_ids %}<b>✓</b>{% endif %}
+        </a>
+        {% endfor %}
+    </aside>
+
+    <section class="lesson-content">
+        <div class="lesson-top">
+            <h1>{{ licao.titulo }}</h1>
+            <span>Módulo {{ modulo.id }} - {{ modulo.titulo }}</span>
+        </div>
+
+        <div class="card">
+            <h2>Conteúdo</h2>
+            <p>{{ licao.conteudo }}</p>
+
+            <h2>Exemplo</h2>
+            <div class="code-window">
+                <div class="dots"><span></span><span></span><span></span></div>
+                <pre><code>{{ licao.codigo }}</code></pre>
+            </div>
+
+            <h2>Área de código</h2>
+            <textarea class="code-editor">{{ licao.codigo }}</textarea>
+            <div class="editor-actions">
+                <button class="btn btn-primary" onclick="simularExecucao()">▶ Executar</button>
+                <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
+            </div>
+            <pre id="saidaCodigo" class="output">Saída simulada aparecerá aqui.</pre>
+        </div>
+    </section>
+
+    <aside class="challenge-panel">
+        <div class="card">
+            <h2>Desafio</h2>
+            <p>{{ licao.pergunta }}</p>
+
+            <div class="quiz">
+                {% for alt in licao.alternativas %}
+                <button onclick="verificarResposta({{ licao.id }}, '{{ alt }}', this)">{{ alt }}</button>
+                {% endfor %}
+            </div>
+
+            <p id="resultadoQuiz"></p>
+            <button id="btnConcluir" class="btn btn-primary hidden" onclick="concluirLicao({{ licao.id }})">Concluir lição +50 XP</button>
+        </div>
+    </aside>
+</div>
+{% endblock %}

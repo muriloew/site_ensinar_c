@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Painel - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>Painel</h1>
+        <p>Bem-vindo de volta, {{ usuario.nome }}! Continue seu aprendizado.</p>
+    </div>
+
+    <div class="user-pill">
+        <div class="avatar">{{ usuario.nome[0] }}</div>
+        <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Nível {{ usuario.nivel }}</span>
+        </div>
+        <b>{{ usuario.xp }} XP</b>
+    </div>
+</div>
+
+<section class="dashboard-grid">
+    <div class="card progress-card">
+        <h3>Seu progresso geral</h3>
+        <div class="percent">{{ porcentagem }}%</div>
+        <p>do curso completo</p>
+        <div class="bar"><span style="width: {{ porcentagem }}%"></span></div>
+        <small>{{ concluidas }} / {{ total_licoes }} lições concluídas</small>
+    </div>
+
+    <div class="card streak-card">
+        <h3>Sequência atual 🔥</h3>
+        <div class="big-number">{{ usuario.sequencia }}</div>
+        <p>dias seguidos</p>
+        <div class="week">● ● ● ● ● ● ●</div>
+    </div>
+</section>
+
+<section class="mini-stats">
+    <div class="card"><span>⭐</span><strong>{{ usuario.xp }}</strong><p>XP total</p></div>
+    <div class="card"><span>📘</span><strong>{{ concluidas }}</strong><p>Lições concluídas</p></div>
+    <div class="card"><span>🏅</span><strong>{{ conquistas|length }}</strong><p>Conquistas</p></div>
+    <div class="card"><span>🎯</span><strong>Nível {{ usuario.nivel }}</strong><p>Perfil atual</p></div>
+</section>
+
+<section class="content-grid">
+    <div>
+        <div class="section-head">
+            <h2>Módulos de aprendizado</h2>
+            <a href="/modulos">Ver todos →</a>
+        </div>
+
+        <div class="module-grid">
+            {% for modulo in modulos %}
+            <article class="module-card {% if not modulo.liberado %}locked{% endif %}">
+                <div class="module-icon">{{ modulo.icone }}</div>
+                <span>Módulo {{ modulo.id }}</span>
+                <h3>{{ modulo.titulo }}</h3>
+                <p>{{ modulo.licoes|length }} lição(ões)</p>
+                <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
+                <small>{{ modulo.progresso }}%</small>
+
+                {% if modulo.liberado %}
+                    <a class="btn btn-primary" href="/estudar/{{ modulo.id }}">Continuar</a>
+                {% else %}
+                    <button class="btn btn-disabled">🔒 Bloqueado</button>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+
+    <aside class="right-panel">
+        <div class="card">
+            <h3>Conquistas</h3>
+            <div class="badges">
+                {% for c in conquistas %}
+                    <div><span>{{ c.icone }}</span><small>{{ c.nome }}</small></div>
+                {% else %}
+                    <p>Conclua lições para ganhar conquistas.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Ranking</h3>
+            <ol class="ranking">
+                {% for item in ranking %}
+                <li><span>{{ item.nome }}</span><b>{{ item.xp }} XP</b></li>
+                {% endfor %}
+            </ol>
+        </div>
+
+        <div class="card trophy-card">
+            <h3>Continue assim!</h3>
+            <p>Você está no caminho para se tornar um programador incrível.</p>
+            <div class="trophy">🏆</div>
+        </div>
+    </aside>
+</section>
+{% endblock %}

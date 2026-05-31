@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Certificado - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="certificate">
+    <div class="cert-card">
+        <span>🎓</span>
+        <h1>Certificado de Conclusão</h1>
+        {% if concluidas >= total_licoes %}
+            <p>Certificamos que <strong>{{ usuario.nome }}</strong> concluiu a trilha inicial da plataforma Ensinar C.</p>
+            <p>Total de lições concluídas: {{ concluidas }}</p>
+        {% else %}
+            <p>Conclua todas as lições para liberar o certificado.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
