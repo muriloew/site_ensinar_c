@@ -545,6 +545,7 @@ def certificado():
     return render_template("certificado.html", concluidas=concluidas)
 
 
+iniciar_banco()
+
 if __name__ == "__main__":
-    iniciar_banco()
     app.run(debug=True)
