@@ -5,22 +5,33 @@
 <div class="topbar">
     <div>
         <h1>Desafio diário</h1>
-        <p>Complete o desafio de hoje para ganhar XP e manter sua sequência.</p>
+        <p>Complete um desafio de código para ganhar XP e praticar todos os dias.</p>
     </div>
 </div>
 
-<div class="card daily-card">
-    <span class="daily-icon">🏆</span>
-    <h2>{{ licao.titulo }}</h2>
-    <p>{{ licao.pergunta }}</p>
+<div class="daily-layout">
+    <section class="card">
+        <span class="daily-icon">🎯</span>
+        <h2>{{ desafio.titulo }}</h2>
+        <p>{{ desafio.descricao }}</p>
 
-    <div class="quiz">
-        {% for alt in licao.alternativas %}
-        <button onclick="verificarResposta({{ licao.id }}, '{{ alt }}', this)">{{ alt }}</button>
-        {% endfor %}
-    </div>
+        <div class="hint">
+            <strong>Dica:</strong> {{ desafio.dica }}
+        </div>
 
-    <p id="resultadoQuiz"></p>
-    <button id="btnConcluir" class="btn btn-primary hidden" onclick="concluirLicao({{ licao.id }})">Concluir desafio +50 XP</button>
+        {% if concluido %}
+            <div class="success-box">Desafio diário já concluído hoje.</div>
+        {% endif %}
+
+        <textarea id="editorCodigo" class="code-editor large">{{ codigo }}</textarea>
+
+        <div class="editor-actions">
+            <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Compilar e executar</button>
+            <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
+            <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
+        </div>
+
+        <pre id="saidaCodigo" class="output">{{ saida }}</pre>
+    </section>
 </div>
 {% endblock %}

@@ -31,19 +31,23 @@
                 <pre><code>{{ licao.codigo }}</code></pre>
             </div>
 
-            <h2>Área de código</h2>
-            <textarea class="code-editor">{{ licao.codigo }}</textarea>
+            <h2>Exercício de código</h2>
+            <p class="exercise-box">{{ licao.exercicio_codigo }}</p>
+
+            <textarea id="editorCodigo" class="code-editor">{{ codigo_salvo }}</textarea>
+
             <div class="editor-actions">
-                <button class="btn btn-primary" onclick="simularExecucao()">▶ Executar</button>
+                <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Compilar e executar</button>
                 <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             </div>
-            <pre id="saidaCodigo" class="output">Saída simulada aparecerá aqui.</pre>
+
+            <pre id="saidaCodigo" class="output">{{ saida_salva }}</pre>
         </div>
     </section>
 
     <aside class="challenge-panel">
         <div class="card">
-            <h2>Desafio</h2>
+            <h2>Desafio teórico</h2>
             <p>{{ licao.pergunta }}</p>
 
             <div class="quiz">
@@ -53,7 +57,12 @@
             </div>
 
             <p id="resultadoQuiz"></p>
-            <button id="btnConcluir" class="btn btn-primary hidden" onclick="concluirLicao({{ licao.id }})">Concluir lição +50 XP</button>
+
+            <button id="btnConcluir" class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">
+                Concluir lição
+            </button>
+
+            <p class="small-muted">Para concluir, acerte o desafio teórico e execute um código no exercício.</p>
         </div>
     </aside>
 </div>

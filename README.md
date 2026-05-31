@@ -1,28 +1,24 @@
-# Ensinar C - Versão 2
+# Ensinar C - versão corrigida
 
-Versão completa da plataforma de ensino de linguagem C com visual profissional e sistema de gamificação.
+Plataforma web educativa para ensino da linguagem C.
 
 ## Recursos
 
-- Login e cadastro
-- Dashboard do aluno
-- XP e nível
-- Ranking
-- Conquistas
-- Sequência de estudo
+- Cadastro com e-mail único
+- Login com conta salva
+- Progresso salvo em SQLite
+- XP, nível, ranking e conquistas
 - Módulos bloqueados e desbloqueados
-- Área de estudo com lições
-- Editor visual de código
-- Desafios automáticos
-- Desafio diário
-- Certificado ao concluir todas as lições
-- Banco SQLite
-- Tema escuro profissional
+- Desafio diário com código
+- Exercício de código no final de cada lição
+- Editor de código nas lições
+- Rota para compilar e executar código C usando GCC quando disponível
+- Sem certificado, pois o projeto não possui licença para certificação oficial
 
-## Como rodar
+## Como rodar localmente
 
 ```bash
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
 python app.py
 ```
 
@@ -32,14 +28,20 @@ Acesse:
 http://127.0.0.1:5000
 ```
 
-## Enviar para o GitHub
+## Render
 
-```bash
-git add .
-git commit -m "Implementa versao 2 completa com dashboard e gamificacao"
-git push
+Build Command:
+
+```txt
+pip install -r requirements.txt
 ```
 
-## Observação
+Start Command:
 
-A área de código possui execução simulada. Um compilador real pode ser integrado futuramente com uma API segura de execução de código.
+```txt
+gunicorn app:app
+```
+
+## Observação importante
+
+O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o site mostrará uma mensagem explicando que o compilador não está disponível. Para produção, o ideal é usar uma API externa segura de compilação ou configurar um ambiente isolado.

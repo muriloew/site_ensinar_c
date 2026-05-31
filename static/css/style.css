@@ -168,6 +168,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .hero-code { min-height: 330px; }
+
 .play {
     position: absolute;
     right: 22px;
@@ -293,8 +294,6 @@ a { color: inherit; text-decoration: none; }
     background: linear-gradient(90deg, var(--green), var(--blue));
 }
 
-.week { color: var(--green); letter-spacing: 7px; }
-
 .mini-stats {
     grid-template-columns: repeat(4, 1fr);
     margin-bottom: 24px;
@@ -375,7 +374,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 .ranking b { color: var(--green); }
-.trophy { font-size: 70px; text-align: center; }
 
 .study-layout {
     display: grid;
@@ -418,23 +416,30 @@ a { color: inherit; text-decoration: none; }
 
 .code-editor {
     width: 100%;
-    height: 180px;
+    height: 230px;
     background: #07111f;
     color: #dbeafe;
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 16px;
     font-family: Consolas, monospace;
+    font-size: 15px;
 }
 
-.editor-actions { display: flex; gap: 10px; margin: 12px 0; }
+.code-editor.large {
+    height: 340px;
+}
+
+.editor-actions { display: flex; gap: 10px; margin: 12px 0; flex-wrap: wrap; }
 
 .output {
     background: #07111f;
     border: 1px solid var(--border);
     padding: 14px;
     border-radius: 14px;
-    color: var(--muted);
+    color: #dbeafe;
+    min-height: 110px;
+    white-space: pre-wrap;
 }
 
 .quiz {
@@ -454,8 +459,6 @@ a { color: inherit; text-decoration: none; }
 
 .quiz button.correct { border-color: var(--green); background: rgba(34,197,94,.18); }
 .quiz button.wrong { border-color: var(--red); background: rgba(239,68,68,.18); }
-
-.hidden { display: none; }
 
 .auth-page {
     min-height: 100vh;
@@ -487,29 +490,31 @@ a { color: inherit; text-decoration: none; }
 
 .auth-card .btn { width: 100%; text-align: center; }
 .auth-link a { color: var(--blue); }
-.alert { background: rgba(239,68,68,.18); border: 1px solid var(--red); padding: 12px; border-radius: 10px; }
 
-.daily-card {
-    max-width: 700px;
+.alert,
+.success-box,
+.hint,
+.exercise-box {
+    padding: 12px;
+    border-radius: 10px;
+    margin: 12px 0;
 }
+
+.alert { background: rgba(239,68,68,.18); border: 1px solid var(--red); }
+.success-box { background: rgba(34,197,94,.16); border: 1px solid var(--green); }
+.hint { background: rgba(245,158,11,.12); border: 1px solid rgba(245,158,11,.4); color: #fde68a; }
+.exercise-box { background: rgba(29,140,255,.12); border: 1px solid rgba(29,140,255,.4); color: #bfdbfe; }
+
+.small-muted {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.daily-layout {
+    max-width: 980px;
+}
+
 .daily-icon { font-size: 60px; }
-
-.certificate {
-    min-height: calc(100vh - 60px);
-    display: grid;
-    place-items: center;
-}
-
-.cert-card {
-    max-width: 760px;
-    text-align: center;
-    background: linear-gradient(135deg, rgba(29,140,255,.22), rgba(139,92,246,.22));
-    border: 1px solid var(--border);
-    border-radius: 26px;
-    padding: 60px;
-}
-
-.cert-card span { font-size: 80px; }
 
 @media (max-width: 1100px) {
     .hero,

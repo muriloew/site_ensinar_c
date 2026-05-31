@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: site-ensinar-c-v2
+    name: site-ensinar-c
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app

@@ -1,6 +1,5 @@
 async function verificarResposta(licaoId, resposta, botao) {
     const resultado = document.getElementById("resultadoQuiz");
-    const concluir = document.getElementById("btnConcluir");
 
     document.querySelectorAll(".quiz button").forEach(btn => {
         btn.classList.remove("correct", "wrong");
@@ -18,11 +17,29 @@ async function verificarResposta(licaoId, resposta, botao) {
 
     if (dados.correta) {
         botao.classList.add("correct");
-        concluir.classList.remove("hidden");
     } else {
         botao.classList.add("wrong");
-        concluir.classList.add("hidden");
     }
+}
+
+async function executarCodigo(licaoId, tipo) {
+    const editor = document.getElementById("editorCodigo");
+    const saida = document.getElementById("saidaCodigo");
+
+    saida.textContent = "Compilando e executando...";
+
+    const retorno = await fetch("/executar-codigo", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            licao_id: licaoId,
+            tipo: tipo,
+            codigo: editor.value
+        })
+    });
+
+    const dados = await retorno.json();
+    saida.textContent = dados.saida;
 }
 
 async function concluirLicao(licaoId) {
@@ -30,15 +47,24 @@ async function concluirLicao(licaoId) {
     const dados = await retorno.json();
 
     alert(dados.mensagem || "Lição concluída!");
-    window.location.reload();
+
+    if (dados.ok) {
+        window.location.reload();
+    }
 }
 
-function simularExecucao() {
-    const saida = document.getElementById("saidaCodigo");
-    saida.textContent = "Execução simulada:\nPrograma executado com sucesso.\nObservação: o compilador real pode ser implementado futuramente.";
+async function concluirDesafioDiario() {
+    const retorno = await fetch("/concluir-desafio-diario", {method: "POST"});
+    const dados = await retorno.json();
+
+    alert(dados.mensagem);
+
+    if (dados.ok) {
+        window.location.reload();
+    }
 }
 
 function limparEditor() {
-    const editor = document.querySelector(".code-editor");
+    const editor = document.getElementById("editorCodigo");
     editor.value = "";
 }

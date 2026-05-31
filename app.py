@@ -1,40 +1,43 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify
 import sqlite3
 import os
+import subprocess
+import tempfile
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 
 app = Flask(__name__)
-app.secret_key = "troque-esta-chave-em-producao"
+app.secret_key = os.environ.get("SECRET_KEY", "chave-dev-ensinar-c")
 
-DB_PATH = "instance/ensinar_c.db"
+DB_PATH = os.environ.get("DB_PATH", "instance/ensinar_c.db")
 
 
 MODULOS = [
     {
         "id": 1,
         "titulo": "Introdução ao C",
-        "descricao": "Conheça a linguagem C, sua história, características e estrutura básica.",
+        "descricao": "Conheça a linguagem C, sua importância e a estrutura básica de um programa.",
         "icone": "💻",
-        "xp": 100,
         "licoes": [
             {
                 "id": 1,
                 "titulo": "O que é a linguagem C?",
-                "conteudo": "A linguagem C é uma linguagem compilada, conhecida por sua eficiência e controle de memória. Ela é usada em sistemas embarcados, sistemas operacionais e aplicações de alto desempenho.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    printf("Olá, mundo!");\n    return 0;\n}',
+                "conteudo": "A linguagem C é uma linguagem compilada, conhecida por sua eficiência, desempenho e controle de memória.",
+                "codigo": '#include <stdio.h>\n\nint main() {\n    printf("Olá, mundo!\\n");\n    return 0;\n}',
                 "pergunta": "Qual função inicia a execução de um programa em C?",
                 "alternativas": ["printf", "scanf", "main", "include"],
-                "resposta": "main"
+                "resposta": "main",
+                "exercicio_codigo": "Faça um programa em C que mostre seu nome na tela usando printf."
             },
             {
                 "id": 2,
                 "titulo": "Estrutura básica",
                 "conteudo": "Um programa em C normalmente possui bibliotecas, a função main, comandos dentro de chaves e um retorno ao final.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    printf("Meu primeiro programa em C");\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    printf("Meu primeiro programa em C\\n");\n    return 0;\n}',
                 "pergunta": "Qual biblioteca permite usar printf e scanf?",
                 "alternativas": ["stdio.h", "math.h", "string.h", "time.h"],
-                "resposta": "stdio.h"
+                "resposta": "stdio.h",
+                "exercicio_codigo": "Crie um programa que mostre duas mensagens diferentes na tela."
             }
         ]
     },
@@ -43,25 +46,26 @@ MODULOS = [
         "titulo": "printf e scanf",
         "descricao": "Aprenda a exibir dados na tela e receber entradas do usuário.",
         "icone": "📘",
-        "xp": 120,
         "licoes": [
             {
                 "id": 3,
                 "titulo": "Usando printf",
                 "conteudo": "A função printf é utilizada para mostrar mensagens, valores de variáveis e resultados na tela.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n    printf("Idade: %d", idade);\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n    printf("Idade: %d\\n", idade);\n    return 0;\n}',
                 "pergunta": "Qual especificador mostra números inteiros?",
                 "alternativas": ["%f", "%c", "%d", "%s"],
-                "resposta": "%d"
+                "resposta": "%d",
+                "exercicio_codigo": "Faça um programa que declare uma idade e mostre essa idade usando printf."
             },
             {
                 "id": 4,
                 "titulo": "Usando scanf",
                 "conteudo": "A função scanf permite ler dados digitados pelo usuário e armazená-los em variáveis.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade;\n    scanf("%d", &idade);\n    printf("Idade: %d", idade);\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade;\n    printf("Digite sua idade: ");\n    scanf("%d", &idade);\n    printf("Idade digitada: %d\\n", idade);\n    return 0;\n}',
                 "pergunta": "Por que usamos & no scanf?",
                 "alternativas": ["Para somar", "Para indicar endereço da variável", "Para imprimir", "Para encerrar"],
-                "resposta": "Para indicar endereço da variável"
+                "resposta": "Para indicar endereço da variável",
+                "exercicio_codigo": "Faça um programa que leia um número inteiro e mostre esse número na tela."
             }
         ]
     },
@@ -70,25 +74,26 @@ MODULOS = [
         "titulo": "Variáveis",
         "descricao": "Entenda os principais tipos de dados e como armazenar informações.",
         "icone": "🔢",
-        "xp": 140,
         "licoes": [
             {
                 "id": 5,
                 "titulo": "Tipo int",
                 "conteudo": "O tipo int armazena números inteiros, como 1, 10, -5 e 200.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    int numero = 10;\n    printf("%d", numero);\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    int numero = 10;\n    printf("%d\\n", numero);\n    return 0;\n}',
                 "pergunta": "Qual tipo armazena números inteiros?",
                 "alternativas": ["float", "char", "int", "double"],
-                "resposta": "int"
+                "resposta": "int",
+                "exercicio_codigo": "Crie duas variáveis inteiras e mostre a soma delas."
             },
             {
                 "id": 6,
                 "titulo": "float, double e char",
                 "conteudo": "float e double armazenam números com casas decimais. char armazena um caractere.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    float nota = 8.5;\n    char conceito = \'A\';\n    printf("%.1f %c", nota, conceito);\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    float nota = 8.5;\n    char conceito = \'A\';\n    printf("Nota: %.1f - Conceito: %c\\n", nota, conceito);\n    return 0;\n}',
                 "pergunta": "Qual tipo armazena um caractere?",
                 "alternativas": ["int", "float", "char", "double"],
-                "resposta": "char"
+                "resposta": "char",
+                "exercicio_codigo": "Crie uma variável float para uma nota e uma variável char para um conceito. Mostre as duas na tela."
             }
         ]
     },
@@ -97,16 +102,16 @@ MODULOS = [
         "titulo": "Operadores",
         "descricao": "Use operadores aritméticos, relacionais e lógicos.",
         "icone": "➗",
-        "xp": 160,
         "licoes": [
             {
                 "id": 7,
                 "titulo": "Operadores matemáticos",
                 "conteudo": "Os operadores matemáticos permitem realizar soma, subtração, multiplicação, divisão e resto.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    int a = 10;\n    int b = 3;\n    printf("%d", a + b);\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    int a = 10;\n    int b = 3;\n    printf("Soma: %d\\n", a + b);\n    printf("Multiplicacao: %d\\n", a * b);\n    return 0;\n}',
                 "pergunta": "Qual operador realiza multiplicação?",
                 "alternativas": ["+", "-", "*", "/"],
-                "resposta": "*"
+                "resposta": "*",
+                "exercicio_codigo": "Faça um programa que declare dois números e mostre soma, subtração e multiplicação."
             }
         ]
     },
@@ -115,16 +120,16 @@ MODULOS = [
         "titulo": "Estruturas de Decisão",
         "descricao": "Utilize if, else, else if e switch.",
         "icone": "🔀",
-        "xp": 180,
         "licoes": [
             {
                 "id": 8,
                 "titulo": "if e else",
                 "conteudo": "O if executa um bloco se a condição for verdadeira. O else executa outro bloco se for falsa.",
-                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n    if (idade >= 18) {\n        printf("Maior de idade");\n    } else {\n        printf("Menor de idade");\n    }\n    return 0;\n}',
+                "codigo": '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n\n    if (idade >= 18) {\n        printf("Maior de idade\\n");\n    } else {\n        printf("Menor de idade\\n");\n    }\n\n    return 0;\n}',
                 "pergunta": "Qual comando testa uma condição?",
                 "alternativas": ["for", "if", "scanf", "return"],
-                "resposta": "if"
+                "resposta": "if",
+                "exercicio_codigo": "Faça um programa que verifique se um número é positivo ou negativo."
             }
         ]
     },
@@ -133,7 +138,6 @@ MODULOS = [
         "titulo": "Estruturas de Repetição",
         "descricao": "Aprenda while, do while, for, break e continue.",
         "icone": "🔁",
-        "xp": 200,
         "licoes": [
             {
                 "id": 9,
@@ -142,28 +146,33 @@ MODULOS = [
                 "codigo": '#include <stdio.h>\n\nint main() {\n    for (int i = 1; i <= 5; i++) {\n        printf("%d\\n", i);\n    }\n    return 0;\n}',
                 "pergunta": "Qual estrutura é indicada para repetição com contador?",
                 "alternativas": ["if", "else", "for", "switch"],
-                "resposta": "for"
+                "resposta": "for",
+                "exercicio_codigo": "Faça um programa que use for para mostrar os números de 1 até 10."
             }
         ]
     }
 ]
 
-CONQUISTAS = [
-    ("Primeiros Passos", "Concluiu a primeira lição", "🚀"),
-    ("Código Correto", "Acertou um desafio", "✅"),
-    ("Foco Total", "Concluiu três lições", "🔥"),
-    ("Explorador C", "Acessou todos os módulos", "🏆"),
-]
+
+DESAFIO_DIARIO = {
+    "titulo": "Desafio diário: média simples",
+    "descricao": "Crie um programa que declare duas notas, calcule a média e mostre o resultado na tela.",
+    "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    float nota1 = 8.0;\n    float nota2 = 7.0;\n\n    // calcule a média aqui\n\n    return 0;\n}',
+    "dica": "Use uma variável chamada media e faça: media = (nota1 + nota2) / 2;"
+}
 
 
 def conectar():
+    pasta = os.path.dirname(DB_PATH)
+    if pasta:
+        os.makedirs(pasta, exist_ok=True)
+
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def iniciar_banco():
-    os.makedirs("instance", exist_ok=True)
     conn = conectar()
     cur = conn.cursor()
 
@@ -171,7 +180,7 @@ def iniciar_banco():
         CREATE TABLE IF NOT EXISTS usuarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             nome TEXT NOT NULL,
-            email TEXT UNIQUE NOT NULL,
+            email TEXT NOT NULL UNIQUE,
             senha TEXT NOT NULL,
             xp INTEGER DEFAULT 0,
             nivel INTEGER DEFAULT 1,
@@ -186,7 +195,12 @@ def iniciar_banco():
             usuario_id INTEGER NOT NULL,
             licao_id INTEGER NOT NULL,
             modulo_id INTEGER NOT NULL,
+            quiz_correto INTEGER DEFAULT 0,
+            codigo_enviado INTEGER DEFAULT 0,
             concluida INTEGER DEFAULT 0,
+            codigo_usuario TEXT,
+            saida_codigo TEXT,
+            atualizado_em TEXT,
             UNIQUE(usuario_id, licao_id)
         )
     """)
@@ -198,6 +212,18 @@ def iniciar_banco():
             nome TEXT NOT NULL,
             icone TEXT NOT NULL,
             UNIQUE(usuario_id, nome)
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS desafios_diarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            codigo_usuario TEXT,
+            saida_codigo TEXT,
+            concluido INTEGER DEFAULT 0,
+            UNIQUE(usuario_id, data)
         )
     """)
 
@@ -229,26 +255,33 @@ def contar_concluidas(usuario_id):
     return total
 
 
+def encontrar_licao(licao_id):
+    for modulo in MODULOS:
+        for licao in modulo["licoes"]:
+            if licao["id"] == licao_id:
+                return modulo, licao
+    return None, None
+
+
 def modulo_liberado(usuario_id, modulo_id):
     if modulo_id == 1:
         return True
 
-    conn = conectar()
     modulo_anterior = next((m for m in MODULOS if m["id"] == modulo_id - 1), None)
-    ids_licoes = [l["id"] for l in modulo_anterior["licoes"]]
-
-    if not ids_licoes:
-        conn.close()
+    if not modulo_anterior:
         return False
 
+    ids_licoes = [l["id"] for l in modulo_anterior["licoes"]]
     placeholders = ",".join("?" for _ in ids_licoes)
+
+    conn = conectar()
     params = [usuario_id] + ids_licoes
     concluidas = conn.execute(
         f"SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND licao_id IN ({placeholders}) AND concluida = 1",
         params
     ).fetchone()["total"]
-
     conn.close()
+
     return concluidas == len(ids_licoes)
 
 
@@ -257,9 +290,10 @@ def progresso_modulo(usuario_id, modulo):
     if not ids:
         return 0
 
-    conn = conectar()
     placeholders = ",".join("?" for _ in ids)
     params = [usuario_id] + ids
+
+    conn = conectar()
     concluidas = conn.execute(
         f"SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND licao_id IN ({placeholders}) AND concluida = 1",
         params
@@ -267,14 +301,6 @@ def progresso_modulo(usuario_id, modulo):
     conn.close()
 
     return int((concluidas / len(ids)) * 100)
-
-
-def encontrar_licao(licao_id):
-    for modulo in MODULOS:
-        for licao in modulo["licoes"]:
-            if licao["id"] == licao_id:
-                return modulo, licao
-    return None, None
 
 
 def atualizar_nivel(usuario_id):
@@ -305,16 +331,79 @@ def conceder_conquistas(usuario_id):
     if concluidas >= total_licoes():
         conn.execute(
             "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario_id, "Explorador C", "🏆")
+            (usuario_id, "Trilha Inicial", "🏆")
         )
 
     conn.commit()
     conn.close()
 
 
+def executar_codigo_c(codigo):
+    """
+    Compila e executa código C usando gcc quando disponível no servidor.
+    Uso educacional. Há timeout para evitar travamento.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        arquivo_c = os.path.join(temp_dir, "programa.c")
+        arquivo_saida = os.path.join(temp_dir, "programa")
+
+        with open(arquivo_c, "w", encoding="utf-8") as f:
+            f.write(codigo)
+
+        try:
+            compilacao = subprocess.run(
+                ["gcc", arquivo_c, "-o", arquivo_saida],
+                capture_output=True,
+                text=True,
+                timeout=8
+            )
+
+            if compilacao.returncode != 0:
+                return {
+                    "ok": False,
+                    "saida": "Erro de compilação:\n" + compilacao.stderr
+                }
+
+            execucao = subprocess.run(
+                [arquivo_saida],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                input=""
+            )
+
+            saida = execucao.stdout
+            if execucao.stderr:
+                saida += "\nErros:\n" + execucao.stderr
+
+            if not saida.strip():
+                saida = "Programa executado sem saída na tela."
+
+            return {"ok": True, "saida": saida}
+
+        except FileNotFoundError:
+            return {
+                "ok": False,
+                "saida": "O compilador GCC não está disponível no servidor. Localmente, instale MinGW/GCC. No Render, será necessário configurar ambiente com GCC ou usar uma API externa de compilação."
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "ok": False,
+                "saida": "Tempo de execução excedido. Verifique se o código não possui loop infinito."
+            }
+        except Exception as erro:
+            return {
+                "ok": False,
+                "saida": f"Erro ao executar o código: {erro}"
+            }
+
+
 @app.context_processor
 def contexto():
-    return {"usuario": usuario_logado(), "total_licoes": total_licoes()}
+    return {
+        "usuario": usuario_logado(),
+        "total_licoes": total_licoes()
+    }
 
 
 @app.route("/")
@@ -327,23 +416,30 @@ def index():
 @app.route("/cadastro", methods=["GET", "POST"])
 def cadastro():
     if request.method == "POST":
-        nome = request.form["nome"]
-        email = request.form["email"]
-        senha = generate_password_hash(request.form["senha"])
+        nome = request.form["nome"].strip()
+        email = request.form["email"].strip().lower()
+        senha = request.form["senha"]
 
         conn = conectar()
-        try:
-            cur = conn.execute(
-                "INSERT INTO usuarios (nome, email, senha, ultimo_acesso) VALUES (?, ?, ?, ?)",
-                (nome, email, senha, str(date.today()))
-            )
-            conn.commit()
-            session["usuario_id"] = cur.lastrowid
-            return redirect(url_for("dashboard"))
-        except sqlite3.IntegrityError:
-            return render_template("cadastro.html", erro="Este e-mail já está cadastrado.")
-        finally:
+        usuario_existente = conn.execute("SELECT id FROM usuarios WHERE email = ?", (email,)).fetchone()
+
+        if usuario_existente:
             conn.close()
+            return render_template("cadastro.html", erro="Este e-mail já está cadastrado. Entre na conta em vez de criar outra.")
+
+        senha_hash = generate_password_hash(senha)
+
+        cur = conn.execute(
+            "INSERT INTO usuarios (nome, email, senha, ultimo_acesso) VALUES (?, ?, ?, ?)",
+            (nome, email, senha_hash, str(date.today()))
+        )
+        conn.commit()
+
+        session.clear()
+        session["usuario_id"] = cur.lastrowid
+
+        conn.close()
+        return redirect(url_for("dashboard"))
 
     return render_template("cadastro.html")
 
@@ -351,13 +447,14 @@ def cadastro():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form["email"].strip().lower()
         senha = request.form["senha"]
 
         conn = conectar()
         usuario = conn.execute("SELECT * FROM usuarios WHERE email = ?", (email,)).fetchone()
 
         if usuario and check_password_hash(usuario["senha"], senha):
+            session.clear()
             session["usuario_id"] = usuario["id"]
             conn.execute("UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?", (str(date.today()), usuario["id"]))
             conn.commit()
@@ -451,19 +548,30 @@ def estudar(modulo_id):
         licao = modulo["licoes"][0]
 
     conn = conectar()
-    concluidas = conn.execute(
-        "SELECT licao_id FROM progresso WHERE usuario_id = ? AND modulo_id = ? AND concluida = 1",
+    registros = conn.execute(
+        "SELECT * FROM progresso WHERE usuario_id = ? AND modulo_id = ?",
         (usuario["id"], modulo_id)
     ).fetchall()
+
+    registro_licao = conn.execute(
+        "SELECT * FROM progresso WHERE usuario_id = ? AND licao_id = ?",
+        (usuario["id"], licao["id"])
+    ).fetchone()
+
     conn.close()
 
-    concluidas_ids = [c["licao_id"] for c in concluidas]
+    concluidas_ids = [r["licao_id"] for r in registros if r["concluida"] == 1]
+
+    codigo_salvo = registro_licao["codigo_usuario"] if registro_licao and registro_licao["codigo_usuario"] else licao["codigo"]
+    saida_salva = registro_licao["saida_codigo"] if registro_licao and registro_licao["saida_codigo"] else "A saída do compilador aparecerá aqui."
 
     return render_template(
         "estudar.html",
         modulo=modulo,
         licao=licao,
-        concluidas_ids=concluidas_ids
+        concluidas_ids=concluidas_ids,
+        codigo_salvo=codigo_salvo,
+        saida_salva=saida_salva
     )
 
 
@@ -472,47 +580,20 @@ def desafio_diario():
     usuario = usuario_logado()
     if not usuario:
         return redirect(url_for("login"))
-    modulo, licao = encontrar_licao(3)
-    return render_template("desafio_diario.html", modulo=modulo, licao=licao)
 
-
-@app.route("/concluir/<int:licao_id>", methods=["POST"])
-def concluir(licao_id):
-    usuario = usuario_logado()
-    if not usuario:
-        return jsonify({"erro": "Usuário não logado"}), 401
-
-    modulo, licao = encontrar_licao(licao_id)
-    if not licao:
-        return jsonify({"erro": "Lição não encontrada"}), 404
-
+    hoje = str(date.today())
     conn = conectar()
-    ja_concluida = conn.execute(
-        "SELECT * FROM progresso WHERE usuario_id = ? AND licao_id = ? AND concluida = 1",
-        (usuario["id"], licao_id)
+    registro = conn.execute(
+        "SELECT * FROM desafios_diarios WHERE usuario_id = ? AND data = ?",
+        (usuario["id"], hoje)
     ).fetchone()
-
-    if not ja_concluida:
-        conn.execute(
-            "INSERT OR REPLACE INTO progresso (usuario_id, licao_id, modulo_id, concluida) VALUES (?, ?, ?, 1)",
-            (usuario["id"], licao_id, modulo["id"])
-        )
-        conn.execute(
-            "UPDATE usuarios SET xp = xp + 50 WHERE id = ?",
-            (usuario["id"],)
-        )
-        conn.execute(
-            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario["id"], "Código Correto", "✅")
-        )
-
-    conn.commit()
     conn.close()
 
-    atualizar_nivel(usuario["id"])
-    conceder_conquistas(usuario["id"])
+    codigo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else DESAFIO_DIARIO["codigo_inicial"]
+    saida = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do desafio aparecerá aqui."
+    concluido = registro["concluido"] if registro else 0
 
-    return jsonify({"ok": True, "mensagem": "Lição concluída! +50 XP"})
+    return render_template("desafio_diario.html", desafio=DESAFIO_DIARIO, codigo=codigo, saida=saida, concluido=concluido)
 
 
 @app.route("/verificar", methods=["POST"])
@@ -526,25 +607,158 @@ def verificar():
         return jsonify({"correta": False, "mensagem": "Lição não encontrada."})
 
     correta = resposta == licao["resposta"]
+
+    if correta and usuario_logado():
+        conn = conectar()
+        conn.execute(
+            """
+            INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, atualizado_em)
+            VALUES (?, ?, ?, 1, ?)
+            ON CONFLICT(usuario_id, licao_id)
+            DO UPDATE SET quiz_correto = 1, atualizado_em = excluded.atualizado_em
+            """,
+            (usuario_logado()["id"], licao_id, modulo["id"], str(date.today()))
+        )
+        conn.commit()
+        conn.close()
+
     return jsonify({
         "correta": correta,
-        "mensagem": "Resposta correta! Agora você pode concluir a lição." if correta else "Resposta incorreta. Revise o conteúdo e tente novamente."
+        "mensagem": "Resposta correta! Agora faça o exercício de código para concluir." if correta else "Resposta incorreta. Revise o conteúdo e tente novamente."
     })
 
 
-@app.route("/certificado")
-def certificado():
+@app.route("/executar-codigo", methods=["POST"])
+def executar_codigo():
     usuario = usuario_logado()
     if not usuario:
-        return redirect(url_for("login"))
+        return jsonify({"ok": False, "saida": "Usuário não logado."}), 401
 
-    concluidas = contar_concluidas(usuario["id"])
-    if concluidas < total_licoes():
-        return redirect(url_for("dashboard"))
+    dados = request.get_json()
+    codigo = dados.get("codigo", "")
+    licao_id = dados.get("licao_id")
+    tipo = dados.get("tipo", "licao")
 
-    return render_template("certificado.html", concluidas=concluidas)
+    resultado = executar_codigo_c(codigo)
+
+    if tipo == "licao" and licao_id:
+        modulo, licao = encontrar_licao(int(licao_id))
+        if modulo:
+            conn = conectar()
+            conn.execute(
+                """
+                INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, codigo_enviado, atualizado_em)
+                VALUES (?, ?, ?, ?, ?, 1, ?)
+                ON CONFLICT(usuario_id, licao_id)
+                DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                              saida_codigo = excluded.saida_codigo,
+                              codigo_enviado = 1,
+                              atualizado_em = excluded.atualizado_em
+                """,
+                (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], str(date.today()))
+            )
+            conn.commit()
+            conn.close()
+
+    if tipo == "diario":
+        hoje = str(date.today())
+        conn = conectar()
+        conn.execute(
+            """
+            INSERT INTO desafios_diarios (usuario_id, data, codigo_usuario, saida_codigo, concluido)
+            VALUES (?, ?, ?, ?, 0)
+            ON CONFLICT(usuario_id, data)
+            DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                          saida_codigo = excluded.saida_codigo
+            """,
+            (usuario["id"], hoje, codigo, resultado["saida"])
+        )
+        conn.commit()
+        conn.close()
+
+    return jsonify(resultado)
 
 
+@app.route("/concluir/<int:licao_id>", methods=["POST"])
+def concluir(licao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"erro": "Usuário não logado"}), 401
+
+    modulo, licao = encontrar_licao(licao_id)
+    if not licao:
+        return jsonify({"erro": "Lição não encontrada"}), 404
+
+    conn = conectar()
+    registro = conn.execute(
+        "SELECT * FROM progresso WHERE usuario_id = ? AND licao_id = ?",
+        (usuario["id"], licao_id)
+    ).fetchone()
+
+    if not registro or registro["quiz_correto"] != 1:
+        conn.close()
+        return jsonify({"ok": False, "mensagem": "Responda corretamente o desafio teórico antes de concluir."})
+
+    if not registro["codigo_usuario"]:
+        conn.close()
+        return jsonify({"ok": False, "mensagem": "Faça e execute o exercício de código antes de concluir."})
+
+    ja_concluida = registro["concluida"] == 1
+
+    conn.execute(
+        "UPDATE progresso SET concluida = 1, codigo_enviado = 1, atualizado_em = ? WHERE usuario_id = ? AND licao_id = ?",
+        (str(date.today()), usuario["id"], licao_id)
+    )
+
+    if not ja_concluida:
+        conn.execute("UPDATE usuarios SET xp = xp + 50 WHERE id = ?", (usuario["id"],))
+
+    conn.commit()
+    conn.close()
+
+    atualizar_nivel(usuario["id"])
+    conceder_conquistas(usuario["id"])
+
+    return jsonify({"ok": True, "mensagem": "Lição concluída! +50 XP"})
+
+
+@app.route("/concluir-desafio-diario", methods=["POST"])
+def concluir_desafio_diario():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
+
+    hoje = str(date.today())
+    conn = conectar()
+    registro = conn.execute(
+        "SELECT * FROM desafios_diarios WHERE usuario_id = ? AND data = ?",
+        (usuario["id"], hoje)
+    ).fetchone()
+
+    if not registro or not registro["codigo_usuario"]:
+        conn.close()
+        return jsonify({"ok": False, "mensagem": "Execute um código antes de concluir o desafio diário."})
+
+    if registro["concluido"] != 1:
+        conn.execute(
+            "UPDATE desafios_diarios SET concluido = 1 WHERE usuario_id = ? AND data = ?",
+            (usuario["id"], hoje)
+        )
+        conn.execute("UPDATE usuarios SET xp = xp + 30 WHERE id = ?", (usuario["id"],))
+        conn.execute(
+            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
+            (usuario["id"], "Desafio Diário", "🎯")
+        )
+
+    conn.commit()
+    conn.close()
+
+    atualizar_nivel(usuario["id"])
+
+    return jsonify({"ok": True, "mensagem": "Desafio diário concluído! +30 XP"})
+
+
+# Importante para Render/Gunicorn: cria o banco ao importar o app.
 iniciar_banco()
 
 if __name__ == "__main__":
