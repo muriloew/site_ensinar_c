@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Módulos - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="secao topo-pagina">
+    <h1>Módulos do curso</h1>
+    <p>
+        Os conteúdos foram organizados em módulos progressivos, seguindo a metodologia definida no TC:
+        teoria curta, exemplos, desafios práticos e mini projetos.
+    </p>
+</section>
+
+<section class="secao">
+    <div class="grid">
+        {% for modulo in modulos %}
+        <article class="card modulo-card">
+            <span class="numero-modulo">Módulo {{ modulo.id }}</span>
+            <h2>{{ modulo.titulo }}</h2>
+            <p>{{ modulo.descricao }}</p>
+            <p>{{ modulo.licoes|length }} lição(ões)</p>
+            <a class="botao pequeno" href="/modulo/{{ modulo.id }}">Estudar</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

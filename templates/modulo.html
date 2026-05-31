@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}{{ modulo.titulo }} - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="secao topo-pagina">
+    <a class="voltar" href="/modulos">← Voltar para módulos</a>
+    <h1>Módulo {{ modulo.id }} — {{ modulo.titulo }}</h1>
+    <p>{{ modulo.descricao }}</p>
+</section>
+
+<section class="secao licoes">
+    {% for licao in modulo.licoes %}
+    <article class="card licao" data-licao-id="{{ licao.id }}">
+        <div class="licao-cabecalho">
+            <h2>{{ licao.titulo }}</h2>
+            <button class="botao pequeno concluir" onclick="marcarConcluida('{{ licao.id }}')">
+                Marcar como concluída
+            </button>
+        </div>
+
+        <h3>Teoria curta</h3>
+        <p>{{ licao.teoria }}</p>
+
+        <h3>Exemplo de código</h3>
+        <pre><code>{{ licao.codigo }}</code></pre>
+
+        <h3>Explicação</h3>
+        <p>{{ licao.explicacao }}</p>
+
+        <h3>Desafio prático</h3>
+        <p>{{ licao.desafio.pergunta }}</p>
+
+        <div class="alternativas">
+            {% for alternativa in licao.desafio.alternativas %}
+            <button
+                class="alternativa"
+                onclick="verificarResposta(this, '{{ alternativa }}', '{{ licao.desafio.resposta }}')">
+                {{ alternativa }}
+            </button>
+            {% endfor %}
+        </div>
+
+        <p class="resultado"></p>
+
+        <h3>Área de código</h3>
+        <p class="texto-menor">
+            Escreva ou altere o código abaixo. Esta área serve como preparação para o compilador integrado.
+        </p>
+        <textarea class="editor-codigo" spellcheck="false">{{ licao.codigo }}</textarea>
+    </article>
+    {% endfor %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/desafios.js') }}"></script>
+{% endblock %}

@@ -3,6 +3,4 @@ services:
     name: site-ensinar-c
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn backend.app:app
-    aptPackages:
-      - gcc
+    startCommand: gunicorn app:app

@@ -1,16 +1,78 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Learn C</title>
-  <link rel="stylesheet" href="/static/styles.css">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container">
-  <h1>🚀 Jornada em C</h1>
-  <div class="lesson-list"></div>
-</div>
+{% block title %}Início - Ensinar C{% endblock %}
 
-<script src="/static/script.js"></script>
-</body>
-</html>
+{% block content %}
+<section class="hero">
+    <div class="hero-texto">
+        <p class="tag">Projeto de TC</p>
+        <h1>Aprenda linguagem C de forma progressiva e prática</h1>
+        <p>
+            Esta plataforma tem como objetivo auxiliar estudantes iniciantes no aprendizado da linguagem C
+            por meio de módulos progressivos, exemplos de código e desafios interativos.
+        </p>
+
+        <div class="botoes">
+            <a class="botao primario" href="/modulos">Começar curso</a>
+            <a class="botao secundario" href="#recursos">Ver recursos</a>
+        </div>
+    </div>
+
+    <div class="card destaque">
+        <h2>Estrutura do curso</h2>
+        <p><strong>{{ modulos|length }}</strong> módulos iniciais organizados</p>
+        <p><strong>{{ total_licoes }}</strong> lições práticas</p>
+        <p>Progresso salvo no navegador</p>
+    </div>
+</section>
+
+<section id="progresso" class="secao">
+    <h2>Seu progresso</h2>
+    <div class="progresso-caixa">
+        <div class="barra">
+            <div id="barraProgresso" class="barra-preenchida"></div>
+        </div>
+        <p id="textoProgresso">Carregando progresso...</p>
+    </div>
+</section>
+
+<section id="recursos" class="secao">
+    <h2>Recursos implementados</h2>
+
+    <div class="grid">
+        <article class="card">
+            <h3>Conteúdo progressivo</h3>
+            <p>Os módulos começam pelos conceitos básicos e avançam aos poucos para conteúdos mais complexos.</p>
+        </article>
+
+        <article class="card">
+            <h3>Exemplos de código</h3>
+            <p>Cada lição possui código em C para o aluno observar a aplicação do conteúdo.</p>
+        </article>
+
+        <article class="card">
+            <h3>Desafios automáticos</h3>
+            <p>As atividades verificam respostas e dão retorno imediato ao usuário.</p>
+        </article>
+
+        <article class="card">
+            <h3>Área de código</h3>
+            <p>O aluno pode escrever e testar visualmente ideias de código durante o estudo.</p>
+        </article>
+    </div>
+</section>
+
+<section class="secao">
+    <h2>Módulos disponíveis</h2>
+
+    <div class="grid">
+        {% for modulo in modulos %}
+        <article class="card modulo-card">
+            <h3>{{ modulo.id }}. {{ modulo.titulo }}</h3>
+            <p>{{ modulo.descricao }}</p>
+            <a class="botao pequeno" href="/modulo/{{ modulo.id }}">Acessar módulo</a>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
