@@ -25,6 +25,11 @@ async function verificarResposta(licaoId, resposta, botao) {
 
         const dados = await retorno.json();
 
+        if (!retorno.ok) {
+            resultado.textContent = dados.mensagem || "Erro no servidor ao verificar resposta.";
+            return;
+        }
+
         resultado.textContent = dados.mensagem;
 
         if (dados.correta) {
@@ -54,10 +59,17 @@ async function executarCodigo(licaoId, tipo) {
             })
         });
 
-        const dados = await retorno.json();
-        saida.textContent = dados.saida;
+        let dados;
+        try {
+            dados = await retorno.json();
+        } catch {
+            saida.textContent = "Erro no servidor: resposta inválida. Veja os logs do Render.";
+            return;
+        }
+
+        saida.textContent = dados.saida || dados.mensagem || "Execução finalizada sem mensagem.";
     } catch (erro) {
-        saida.textContent = "Erro ao executar. Verifique se o servidor está online.";
+        saida.textContent = "Erro de conexão ao executar. Verifique se o site está online e tente novamente.";
     }
 }
 

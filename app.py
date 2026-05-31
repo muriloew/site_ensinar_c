@@ -181,6 +181,16 @@ def conectar():
     return conn
 
 
+def coluna_existe(conn, tabela, coluna):
+    colunas = conn.execute(f"PRAGMA table_info({tabela})").fetchall()
+    return any(c["name"] == coluna for c in colunas)
+
+
+def adicionar_coluna(conn, tabela, coluna, definicao):
+    if not coluna_existe(conn, tabela, coluna):
+        conn.execute(f"ALTER TABLE {tabela} ADD COLUMN {coluna} {definicao}")
+
+
 def iniciar_banco():
     conn = conectar()
     cur = conn.cursor()
@@ -236,9 +246,27 @@ def iniciar_banco():
         )
     """)
 
+    # Migração para bancos antigos já criados antes das novas funções.
+    adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "progresso", "codigo_enviado", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "progresso", "codigo_usuario", "TEXT")
+    adicionar_coluna(conn, "progresso", "saida_codigo", "TEXT")
+    adicionar_coluna(conn, "progresso", "atualizado_em", "TEXT")
+
+    adicionar_coluna(conn, "usuarios", "xp", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "usuarios", "nivel", "INTEGER DEFAULT 1")
+    adicionar_coluna(conn, "usuarios", "sequencia", "INTEGER DEFAULT 1")
+    adicionar_coluna(conn, "usuarios", "ultimo_acesso", "TEXT")
+
+    # Quem já concluiu lição em versão antiga recebe permissão de rever e continuar.
+    conn.execute("""
+        UPDATE progresso
+        SET quiz_correto = 1
+        WHERE concluida = 1 AND (quiz_correto IS NULL OR quiz_correto = 0)
+    """)
+
     conn.commit()
     conn.close()
-
 
 def usuario_logado():
     if "usuario_id" not in session:
@@ -414,7 +442,7 @@ def executar_codigo_c(codigo):
         except FileNotFoundError:
             return {
                 "ok": False,
-                "saida": "O compilador GCC não está disponível no servidor. Localmente, instale MinGW/GCC. No Render, será necessário configurar ambiente com GCC ou usar uma API externa de compilação."
+                "saida": "O código foi salvo, mas o GCC não está disponível no servidor para compilar.\n\nPara funcionar no Render, é necessário usar um ambiente com GCC instalado ou integrar uma API externa de compilação.\n\nDica: para testes locais no Windows, instale MinGW ou MSYS2 e confirme com: gcc --version"
             }
         except subprocess.TimeoutExpired:
             return {
@@ -592,8 +620,9 @@ def estudar(modulo_id):
 
     concluidas_ids = [r["licao_id"] for r in registros if r["concluida"] == 1]
 
-    codigo_salvo = registro_licao["codigo_usuario"] if registro_licao and registro_licao["codigo_usuario"] else licao["codigo"]
-    saida_salva = registro_licao["saida_codigo"] if registro_licao and registro_licao["saida_codigo"] else "A saída do compilador aparecerá aqui."
+    codigo_padrao = licao.get("codigo_minimo", licao["codigo"])
+    codigo_salvo = registro_licao["codigo_usuario"] if registro_licao and "codigo_usuario" in registro_licao.keys() and registro_licao["codigo_usuario"] else codigo_padrao
+    saida_salva = registro_licao["saida_codigo"] if registro_licao and "saida_codigo" in registro_licao.keys() and registro_licao["saida_codigo"] else "A saída do compilador aparecerá aqui."
 
     return render_template(
         "estudar.html",
@@ -673,18 +702,24 @@ def verificar():
     correta = resposta == licao["resposta"]
 
     if correta and usuario_logado():
-        conn = conectar()
-        conn.execute(
-            """
-            INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, atualizado_em)
-            VALUES (?, ?, ?, 1, ?)
-            ON CONFLICT(usuario_id, licao_id)
-            DO UPDATE SET quiz_correto = 1, atualizado_em = excluded.atualizado_em
-            """,
-            (usuario_logado()["id"], licao_id, modulo["id"], str(date.today()))
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn = conectar()
+            conn.execute(
+                """
+                INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, atualizado_em)
+                VALUES (?, ?, ?, 1, ?)
+                ON CONFLICT(usuario_id, licao_id)
+                DO UPDATE SET quiz_correto = 1, atualizado_em = excluded.atualizado_em
+                """,
+                (usuario_logado()["id"], licao_id, modulo["id"], str(date.today()))
+            )
+            conn.commit()
+            conn.close()
+        except Exception as erro:
+            return jsonify({
+                "correta": False,
+                "mensagem": f"Erro ao salvar resposta: {erro}"
+            }), 500
 
     return jsonify({
         "correta": correta,
@@ -708,21 +743,27 @@ def executar_codigo():
     if tipo == "licao" and licao_id:
         modulo, licao = encontrar_licao(int(licao_id))
         if modulo:
-            conn = conectar()
-            conn.execute(
-                """
-                INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, codigo_enviado, atualizado_em)
-                VALUES (?, ?, ?, ?, ?, 1, ?)
-                ON CONFLICT(usuario_id, licao_id)
-                DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
-                              saida_codigo = excluded.saida_codigo,
-                              codigo_enviado = 1,
-                              atualizado_em = excluded.atualizado_em
-                """,
-                (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], str(date.today()))
-            )
-            conn.commit()
-            conn.close()
+            try:
+                conn = conectar()
+                conn.execute(
+                    """
+                    INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, codigo_enviado, atualizado_em)
+                    VALUES (?, ?, ?, ?, ?, 1, ?)
+                    ON CONFLICT(usuario_id, licao_id)
+                    DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                                  saida_codigo = excluded.saida_codigo,
+                                  codigo_enviado = 1,
+                                  atualizado_em = excluded.atualizado_em
+                    """,
+                    (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], str(date.today()))
+                )
+                conn.commit()
+                conn.close()
+            except Exception as erro:
+                return jsonify({
+                    "ok": False,
+                    "saida": f"Erro ao salvar código no banco: {erro}"
+                }), 500
 
     if tipo == "diario":
         hoje = str(date.today())

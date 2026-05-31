@@ -54,3 +54,12 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - O desafio teórico usa JavaScript com `data-resposta`, evitando erro ao clicar em alternativas.
 - Lições já concluídas continuam acessíveis.
 - O código salvo pelo usuário permanece ao voltar no exercício.
+
+
+## Correções da versão 5
+
+- Adicionada migração automática do banco SQLite para corrigir usuários/progresso antigos.
+- Corrigido erro 500 ao abrir módulo já concluído em versões antigas.
+- Corrigido salvamento do desafio teórico.
+- Melhorado retorno de erro do compilador.
+- Se o servidor não tiver GCC, o código é salvo e a tela explica o motivo da não execução.
