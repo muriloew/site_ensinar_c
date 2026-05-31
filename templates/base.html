@@ -9,12 +9,18 @@
 <body>
     <header class="topo">
         <nav class="menu">
-            <a href="/" class="logo">Ensinar C</a>
+            <a href="/" class="logo">
+                <span class="logo-icone">C</span>
+                <span>Ensinar C</span>
+            </a>
 
-            <div class="links">
+            <button class="menu-mobile" onclick="abrirMenu()">☰</button>
+
+            <div id="linksMenu" class="links">
                 <a href="/">Início</a>
                 <a href="/modulos">Módulos</a>
                 <a href="/sobre">Sobre</a>
+                <a class="link-destaque" href="/modulos">Começar</a>
             </div>
         </nav>
     </header>
@@ -24,12 +30,20 @@
     </main>
 
     <footer class="rodape">
-        <p>Plataforma web educativa para ensino da linguagem C.</p>
+        <div>
+            <strong>Ensinar C</strong>
+            <p>Plataforma web educativa para ensino da linguagem C.</p>
+        </div>
         <p>Projeto desenvolvido como parte prática do Trabalho de Conclusão.</p>
     </footer>
 
     <script>
         const TOTAL_LICOES = {{ total_licoes }};
+
+        function abrirMenu() {
+            const menu = document.getElementById("linksMenu");
+            menu.classList.toggle("ativo");
+        }
     </script>
     <script src="{{ url_for('static', filename='js/progresso.js') }}"></script>
     {% block scripts %}{% endblock %}

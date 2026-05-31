@@ -3,33 +3,64 @@
 {% block title %}Início - Ensinar C{% endblock %}
 
 {% block content %}
-<section class="hero">
-    <div class="hero-texto">
-        <p class="tag">Projeto de TC</p>
-        <h1>Aprenda linguagem C de forma progressiva e prática</h1>
+<section class="entrada">
+    <div class="entrada-conteudo">
+        <div class="entrada-texto">
+            <p class="tag">Plataforma educacional</p>
 
-        <p>
-            Esta plataforma tem como objetivo auxiliar estudantes iniciantes no aprendizado da linguagem C
-            por meio de módulos progressivos, exemplos de código, desafios automáticos e acompanhamento de progresso.
-        </p>
+            <h1>Aprenda programação em C de forma simples, prática e organizada.</h1>
 
-        <div class="botoes">
-            <a class="botao primario" href="/modulos">Começar curso</a>
-            <a class="botao secundario" href="/sobre">Sobre o projeto</a>
+            <p class="subtitulo">
+                Um ambiente de estudos com módulos progressivos, exemplos de código,
+                exercícios automáticos e acompanhamento de progresso.
+            </p>
+
+            <div class="botoes">
+                <a class="botao primario grande" href="/modulos">Começar agora</a>
+                <a class="botao secundario grande" href="#recursos">Conhecer recursos</a>
+            </div>
+
+            <div class="indicadores">
+                <div>
+                    <strong>{{ modulos|length }}</strong>
+                    <span>Módulos</span>
+                </div>
+
+                <div>
+                    <strong>{{ total_licoes }}</strong>
+                    <span>Lições</span>
+                </div>
+
+                <div>
+                    <strong>100%</strong>
+                    <span>Online</span>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <div class="card destaque">
-        <h2>Resumo da plataforma</h2>
-        <p><strong>{{ modulos|length }}</strong> módulos iniciais implementados</p>
-        <p><strong>{{ total_licoes }}</strong> lições práticas</p>
-        <p>Progresso salvo no navegador</p>
-        <p>Desafios com verificação automática</p>
+        <div class="painel-codigo">
+            <div class="painel-topo">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <pre><code>#include &lt;stdio.h&gt;
+
+int main() {
+    printf("Bem-vindo ao Ensinar C!");
+    return 0;
+}</code></pre>
+        </div>
     </div>
 </section>
 
 <section id="progresso" class="secao">
-    <h2>Seu progresso</h2>
+    <div class="titulo-secao">
+        <p class="tag">Acompanhamento</p>
+        <h2>Seu progresso no curso</h2>
+        <p>Marque as lições concluídas e acompanhe sua evolução durante o aprendizado.</p>
+    </div>
 
     <div class="progresso-caixa">
         <div class="barra">
@@ -39,44 +70,58 @@
     </div>
 </section>
 
-<section class="secao">
-    <h2>Recursos da parte prática</h2>
+<section id="recursos" class="secao">
+    <div class="titulo-secao">
+        <p class="tag">Recursos</p>
+        <h2>O que a plataforma oferece</h2>
+        <p>Funcionalidades criadas para transformar o conteúdo do TC em uma aplicação prática.</p>
+    </div>
 
     <div class="grid">
-        <article class="card">
+        <article class="card recurso">
+            <div class="icone">📚</div>
             <h3>Conteúdo progressivo</h3>
-            <p>Os módulos começam pelos conceitos básicos e avançam gradualmente para conteúdos mais complexos.</p>
+            <p>Os módulos começam pelo básico e avançam gradualmente para conteúdos mais complexos.</p>
         </article>
 
-        <article class="card">
+        <article class="card recurso">
+            <div class="icone">💻</div>
             <h3>Exemplos em C</h3>
-            <p>Cada lição apresenta um exemplo de código para facilitar a ligação entre teoria e prática.</p>
+            <p>Cada lição possui exemplos de código para ligar a teoria com a prática.</p>
         </article>
 
-        <article class="card">
+        <article class="card recurso">
+            <div class="icone">✅</div>
             <h3>Desafios automáticos</h3>
-            <p>As atividades verificam as respostas e dão retorno imediato ao usuário.</p>
+            <p>As respostas são verificadas automaticamente, dando retorno imediato ao estudante.</p>
         </article>
 
-        <article class="card">
+        <article class="card recurso">
+            <div class="icone">📈</div>
             <h3>Barra de progresso</h3>
-            <p>O aluno consegue acompanhar quantas lições já foram concluídas.</p>
+            <p>O usuário acompanha quantas lições já concluiu durante o curso.</p>
         </article>
 
-        <article class="card">
+        <article class="card recurso">
+            <div class="icone">⌨️</div>
             <h3>Área de código</h3>
-            <p>O usuário pode escrever e adaptar códigos durante o estudo, preparando a integração futura de um compilador.</p>
+            <p>O aluno pode escrever e adaptar códigos durante o estudo.</p>
         </article>
 
-        <article class="card">
-            <h3>Hospedagem online</h3>
-            <p>O projeto foi preparado para publicação no Render e versionamento pelo GitHub.</p>
+        <article class="card recurso">
+            <div class="icone">🌐</div>
+            <h3>Acesso online</h3>
+            <p>O site foi preparado para publicação no Render e versionamento pelo GitHub.</p>
         </article>
     </div>
 </section>
 
 <section class="secao">
-    <h2>Módulos disponíveis</h2>
+    <div class="titulo-secao">
+        <p class="tag">Trilha de estudos</p>
+        <h2>Módulos disponíveis</h2>
+        <p>Comece pelos fundamentos e avance conforme seu aprendizado.</p>
+    </div>
 
     <div class="grid">
         {% for modulo in modulos %}
@@ -88,5 +133,15 @@
         </article>
         {% endfor %}
     </div>
+</section>
+
+<section class="chamada-final">
+    <div>
+        <p class="tag">Comece agora</p>
+        <h2>Pronto para iniciar seus estudos em C?</h2>
+        <p>Acesse os módulos e avance pelas lições de forma organizada.</p>
+    </div>
+
+    <a class="botao primario grande" href="/modulos">Ir para os módulos</a>
 </section>
 {% endblock %}
