@@ -45,3 +45,12 @@ gunicorn app:app
 ## Observação importante
 
 O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o site mostrará uma mensagem explicando que o compilador não está disponível. Para produção, o ideal é usar uma API externa segura de compilação ou configurar um ambiente isolado.
+
+
+## Alterações da versão 4
+
+- Teoria e exercício de código foram separados em páginas diferentes.
+- O exercício de código agora abre com código mínimo, para o usuário completar.
+- O desafio teórico usa JavaScript com `data-resposta`, evitando erro ao clicar em alternativas.
+- Lições já concluídas continuam acessíveis.
+- O código salvo pelo usuário permanece ao voltar no exercício.

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Exercício - {{ licao.titulo }}{% endblock %}
+
+{% block content %}
+<div class="exercise-layout">
+    <section class="card">
+        <a href="/estudar/{{ modulo.id }}?licao={{ licao.id }}" class="back">← Voltar para teoria</a>
+
+        <div class="lesson-top">
+            <div>
+                <h1>Exercício de código</h1>
+                <p>{{ modulo.titulo }} — {{ licao.titulo }}</p>
+            </div>
+            <a class="btn btn-ghost" href="/modulos">Módulos</a>
+        </div>
+
+        <div class="exercise-box">
+            <strong>Objetivo:</strong>
+            <p>{{ licao.exercicio_codigo }}</p>
+        </div>
+
+        <p class="small-muted">
+            O código inicial está propositalmente incompleto. Complete com o que você aprendeu na lição.
+        </p>
+
+        <textarea id="editorCodigo" class="code-editor large">{{ codigo_salvo }}</textarea>
+
+        <div class="editor-actions">
+            <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Compilar e executar</button>
+            <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
+            <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
+        </div>
+
+        <pre id="saidaCodigo" class="output">{{ saida_salva }}</pre>
+
+        <div class="hint">
+            Para concluir: primeiro acerte o desafio teórico na página da teoria e depois execute seu código aqui.
+        </div>
+    </section>
+</div>
+{% endblock %}

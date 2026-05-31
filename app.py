@@ -27,7 +27,8 @@ MODULOS = [
                 "pergunta": "Qual função inicia a execução de um programa em C?",
                 "alternativas": ["printf", "scanf", "main", "include"],
                 "resposta": "main",
-                "exercicio_codigo": "Faça um programa em C que mostre seu nome na tela usando printf."
+                "exercicio_codigo": "Faça um programa em C que mostre seu nome na tela usando printf.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    // escreva seu código aqui\n\n    return 0;\n}"
             },
             {
                 "id": 2,
@@ -37,7 +38,8 @@ MODULOS = [
                 "pergunta": "Qual biblioteca permite usar printf e scanf?",
                 "alternativas": ["stdio.h", "math.h", "string.h", "time.h"],
                 "resposta": "stdio.h",
-                "exercicio_codigo": "Crie um programa que mostre duas mensagens diferentes na tela."
+                "exercicio_codigo": "Crie um programa que mostre duas mensagens diferentes na tela.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    // mostre duas mensagens\n\n    return 0;\n}"
             }
         ]
     },
@@ -55,7 +57,8 @@ MODULOS = [
                 "pergunta": "Qual especificador mostra números inteiros?",
                 "alternativas": ["%f", "%c", "%d", "%s"],
                 "resposta": "%d",
-                "exercicio_codigo": "Faça um programa que declare uma idade e mostre essa idade usando printf."
+                "exercicio_codigo": "Faça um programa que declare uma idade e mostre essa idade usando printf.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    int idade;\n\n    return 0;\n}"
             },
             {
                 "id": 4,
@@ -65,7 +68,8 @@ MODULOS = [
                 "pergunta": "Por que usamos & no scanf?",
                 "alternativas": ["Para somar", "Para indicar endereço da variável", "Para imprimir", "Para encerrar"],
                 "resposta": "Para indicar endereço da variável",
-                "exercicio_codigo": "Faça um programa que leia um número inteiro e mostre esse número na tela."
+                "exercicio_codigo": "Faça um programa que leia um número inteiro e mostre esse número na tela.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    int numero;\n\n    return 0;\n}"
             }
         ]
     },
@@ -83,7 +87,8 @@ MODULOS = [
                 "pergunta": "Qual tipo armazena números inteiros?",
                 "alternativas": ["float", "char", "int", "double"],
                 "resposta": "int",
-                "exercicio_codigo": "Crie duas variáveis inteiras e mostre a soma delas."
+                "exercicio_codigo": "Crie duas variáveis inteiras e mostre a soma delas.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    int a;\n    int b;\n\n    return 0;\n}"
             },
             {
                 "id": 6,
@@ -93,7 +98,8 @@ MODULOS = [
                 "pergunta": "Qual tipo armazena um caractere?",
                 "alternativas": ["int", "float", "char", "double"],
                 "resposta": "char",
-                "exercicio_codigo": "Crie uma variável float para uma nota e uma variável char para um conceito. Mostre as duas na tela."
+                "exercicio_codigo": "Crie uma variável float para uma nota e uma variável char para um conceito. Mostre as duas na tela.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    float nota;\n    char conceito;\n\n    return 0;\n}"
             }
         ]
     },
@@ -111,7 +117,8 @@ MODULOS = [
                 "pergunta": "Qual operador realiza multiplicação?",
                 "alternativas": ["+", "-", "*", "/"],
                 "resposta": "*",
-                "exercicio_codigo": "Faça um programa que declare dois números e mostre soma, subtração e multiplicação."
+                "exercicio_codigo": "Faça um programa que declare dois números e mostre soma, subtração e multiplicação.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    int a;\n    int b;\n\n    return 0;\n}"
             }
         ]
     },
@@ -129,7 +136,8 @@ MODULOS = [
                 "pergunta": "Qual comando testa uma condição?",
                 "alternativas": ["for", "if", "scanf", "return"],
                 "resposta": "if",
-                "exercicio_codigo": "Faça um programa que verifique se um número é positivo ou negativo."
+                "exercicio_codigo": "Faça um programa que verifique se um número é positivo ou negativo.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    int numero;\n\n    return 0;\n}"
             }
         ]
     },
@@ -147,7 +155,8 @@ MODULOS = [
                 "pergunta": "Qual estrutura é indicada para repetição com contador?",
                 "alternativas": ["if", "else", "for", "switch"],
                 "resposta": "for",
-                "exercicio_codigo": "Faça um programa que use for para mostrar os números de 1 até 10."
+                "exercicio_codigo": "Faça um programa que use for para mostrar os números de 1 até 10.",
+                "codigo_minimo": "#include <stdio.h>\n\nint main() {\n    // use for aqui\n\n    return 0;\n}"
             }
         ]
     }
@@ -283,6 +292,27 @@ def modulo_liberado(usuario_id, modulo_id):
     conn.close()
 
     return concluidas == len(ids_licoes)
+
+
+def modulo_acessivel(usuario_id, modulo_id):
+    """
+    Permite acessar:
+    - módulos liberados;
+    - módulos que o usuário já começou;
+    - módulos com lições já concluídas.
+    Assim o usuário consegue voltar em lições já feitas.
+    """
+    if modulo_liberado(usuario_id, modulo_id):
+        return True
+
+    conn = conectar()
+    registro = conn.execute(
+        "SELECT id FROM progresso WHERE usuario_id = ? AND modulo_id = ? LIMIT 1",
+        (usuario_id, modulo_id)
+    ).fetchone()
+    conn.close()
+
+    return registro is not None
 
 
 def progresso_modulo(usuario_id, modulo):
@@ -534,7 +564,7 @@ def estudar(modulo_id):
     if not usuario:
         return redirect(url_for("login"))
 
-    if not modulo_liberado(usuario["id"], modulo_id):
+    if not modulo_acessivel(usuario["id"], modulo_id):
         return redirect(url_for("modulos"))
 
     modulo = next((m for m in MODULOS if m["id"] == modulo_id), None)
@@ -570,6 +600,40 @@ def estudar(modulo_id):
         modulo=modulo,
         licao=licao,
         concluidas_ids=concluidas_ids,
+        codigo_salvo=codigo_salvo,
+        saida_salva=saida_salva
+    )
+
+
+
+@app.route("/exercicio/<int:licao_id>")
+def exercicio(licao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    modulo, licao = encontrar_licao(licao_id)
+    if not licao:
+        return redirect(url_for("modulos"))
+
+    if not modulo_acessivel(usuario["id"], modulo["id"]):
+        return redirect(url_for("modulos"))
+
+    conn = conectar()
+    registro = conn.execute(
+        "SELECT * FROM progresso WHERE usuario_id = ? AND licao_id = ?",
+        (usuario["id"], licao_id)
+    ).fetchone()
+    conn.close()
+
+    codigo_padrao = licao.get("codigo_minimo", "#include <stdio.h>\n\nint main() {\n    return 0;\n}")
+    codigo_salvo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else codigo_padrao
+    saida_salva = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do compilador aparecerá aqui."
+
+    return render_template(
+        "exercicio.html",
+        modulo=modulo,
+        licao=licao,
         codigo_salvo=codigo_salvo,
         saida_salva=saida_salva
     )

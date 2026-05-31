@@ -1,3 +1,14 @@
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".quiz button[data-resposta]").forEach((botao) => {
+        botao.addEventListener("click", () => {
+            const quiz = botao.closest(".quiz");
+            const licaoId = Number(quiz.dataset.licaoId);
+            const resposta = botao.dataset.resposta;
+            verificarResposta(licaoId, resposta, botao);
+        });
+    });
+});
+
 async function verificarResposta(licaoId, resposta, botao) {
     const resultado = document.getElementById("resultadoQuiz");
 
@@ -5,20 +16,24 @@ async function verificarResposta(licaoId, resposta, botao) {
         btn.classList.remove("correct", "wrong");
     });
 
-    const retorno = await fetch("/verificar", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({licao_id: licaoId, resposta: resposta})
-    });
+    try {
+        const retorno = await fetch("/verificar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({licao_id: licaoId, resposta: resposta})
+        });
 
-    const dados = await retorno.json();
+        const dados = await retorno.json();
 
-    resultado.textContent = dados.mensagem;
+        resultado.textContent = dados.mensagem;
 
-    if (dados.correta) {
-        botao.classList.add("correct");
-    } else {
-        botao.classList.add("wrong");
+        if (dados.correta) {
+            botao.classList.add("correct");
+        } else {
+            botao.classList.add("wrong");
+        }
+    } catch (erro) {
+        resultado.textContent = "Erro ao verificar resposta. Recarregue a página e tente novamente.";
     }
 }
 
@@ -28,18 +43,22 @@ async function executarCodigo(licaoId, tipo) {
 
     saida.textContent = "Compilando e executando...";
 
-    const retorno = await fetch("/executar-codigo", {
-        method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({
-            licao_id: licaoId,
-            tipo: tipo,
-            codigo: editor.value
-        })
-    });
+    try {
+        const retorno = await fetch("/executar-codigo", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                licao_id: licaoId,
+                tipo: tipo,
+                codigo: editor.value
+            })
+        });
 
-    const dados = await retorno.json();
-    saida.textContent = dados.saida;
+        const dados = await retorno.json();
+        saida.textContent = dados.saida;
+    } catch (erro) {
+        saida.textContent = "Erro ao executar. Verifique se o servidor está online.";
+    }
 }
 
 async function concluirLicao(licaoId) {
@@ -49,7 +68,7 @@ async function concluirLicao(licaoId) {
     alert(dados.mensagem || "Lição concluída!");
 
     if (dados.ok) {
-        window.location.reload();
+        window.location.href = "/dashboard";
     }
 }
 
