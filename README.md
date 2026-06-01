@@ -83,3 +83,13 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
   - Terminal de entrada;
   - Terminal de saída.
 - A entrada do terminal é enviada para programas com scanf.
+
+
+## Versão 8
+
+- Build log, entrada do terminal e saída foram movidos para uma janela integrada separada.
+- A janela funciona como console do ambiente, com abas:
+  - Entrada;
+  - Build log;
+  - Saída.
+- Os botões Compilar e Executar abrem automaticamente a aba correta.

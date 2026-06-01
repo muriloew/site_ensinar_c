@@ -30,25 +30,55 @@
         <div class="editor-actions toolbar-codeblocks">
             <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
             <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Executar</button>
+            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Abrir console</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
         </div>
 
-        <div class="console-grid">
-            <div class="terminal-box">
-                <h3>Entrada do terminal</h3>
-                <p class="small-muted">Use este campo para valores que seriam digitados no scanf.</p>
-                <textarea id="entradaTerminal" class="terminal-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
-            </div>
-
-            <div class="terminal-box">
-                <h3>Build log</h3>
-                <pre id="buildLog" class="output console-output">Aguardando compilação.</pre>
-            </div>
+        <div class="mini-console-status" onclick="abrirConsole()">
+            <strong>Console integrado</strong>
+            <span>Entrada, build log e saída ficam em uma janela separada.</span>
         </div>
 
-        <h3>Terminal de saída</h3>
-        <pre id="saidaCodigo" class="output console-output">{{ saida }}</pre>
+        <div id="janelaConsole" class="console-modal">
+            <div class="console-window">
+                <div class="console-titlebar">
+                    <div>
+                        <strong>Console - Desafio diário</strong>
+                        <span>Entrada | Build log | Saída</span>
+                    </div>
+                    <button onclick="fecharConsole()">×</button>
+                </div>
+
+                <div class="console-tabs">
+                    <button class="active" onclick="trocarAbaConsole('entrada', this)">Entrada</button>
+                    <button onclick="trocarAbaConsole('build', this)">Build log</button>
+                    <button onclick="trocarAbaConsole('saida', this)">Saída</button>
+                </div>
+
+                <div id="abaEntrada" class="console-panel active">
+                    <h3>Entrada do terminal</h3>
+                    <p class="small-muted">Use este campo para valores que seriam digitados no scanf.</p>
+                    <textarea id="entradaTerminal" class="terminal-input modal-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
+                </div>
+
+                <div id="abaBuild" class="console-panel">
+                    <h3>Build log</h3>
+                    <pre id="buildLog" class="output console-output modal-output">Aguardando compilação.</pre>
+                </div>
+
+                <div id="abaSaida" class="console-panel">
+                    <h3>Terminal de saída</h3>
+                    <pre id="saidaCodigo" class="output console-output modal-output">{{ saida }}</pre>
+                </div>
+
+                <div class="console-footer">
+                    <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
+                    <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Executar</button>
+                    <button class="btn btn-ghost" onclick="fecharConsole()">Fechar</button>
+                </div>
+            </div>
+        </div>
     </section>
 </div>
 {% endblock %}

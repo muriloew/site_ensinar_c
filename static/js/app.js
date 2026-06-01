@@ -1,3 +1,48 @@
+
+function abrirConsole() {
+    const modal = document.getElementById("janelaConsole");
+    if (modal) {
+        modal.classList.add("ativo");
+    }
+}
+
+function fecharConsole() {
+    const modal = document.getElementById("janelaConsole");
+    if (modal) {
+        modal.classList.remove("ativo");
+    }
+}
+
+function trocarAbaConsole(aba, botao) {
+    document.querySelectorAll(".console-tabs button").forEach(btn => {
+        btn.classList.remove("active");
+    });
+
+    document.querySelectorAll(".console-panel").forEach(panel => {
+        panel.classList.remove("active");
+    });
+
+    botao.classList.add("active");
+
+    const painel = document.getElementById("aba" + aba.charAt(0).toUpperCase() + aba.slice(1));
+    if (painel) {
+        painel.classList.add("active");
+    }
+}
+
+function abrirAbaConsole(aba) {
+    abrirConsole();
+
+    const botoes = document.querySelectorAll(".console-tabs button");
+    botoes.forEach(btn => {
+        const texto = btn.textContent.toLowerCase();
+        if (texto.includes(aba)) {
+            btn.click();
+        }
+    });
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".quiz button[data-resposta]").forEach((botao) => {
         botao.addEventListener("click", () => {
@@ -51,6 +96,7 @@ async function compilarCodigo() {
         return;
     }
 
+    abrirAbaConsole("build");
     buildLog.textContent = "Compilando...";
 
     try {
@@ -83,6 +129,7 @@ async function executarCodigo(licaoId, tipo) {
     const saida = document.getElementById("saidaCodigo");
     const buildLog = document.getElementById("buildLog");
 
+    abrirAbaConsole("saida");
     saida.textContent = "Executando programa...";
     if (buildLog) {
         buildLog.textContent = "Compilando antes de executar...";

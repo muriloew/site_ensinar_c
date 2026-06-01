@@ -28,25 +28,55 @@
         <div class="editor-actions toolbar-codeblocks">
             <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
             <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Executar</button>
+            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Abrir console</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
         </div>
 
-        <div class="console-grid">
-            <div class="terminal-box">
-                <h3>Entrada do terminal</h3>
-                <p class="small-muted">Digite aqui os valores que seriam colocados quando o programa pedir scanf. Use um valor por linha ou separado por espaço.</p>
-                <textarea id="entradaTerminal" class="terminal-input" placeholder="Exemplo:&#10;18&#10;7.5">{{ entrada_salva }}</textarea>
-            </div>
-
-            <div class="terminal-box">
-                <h3>Build log</h3>
-                <pre id="buildLog" class="output console-output">Aguardando compilação.</pre>
-            </div>
+        <div class="mini-console-status" onclick="abrirConsole()">
+            <strong>Console integrado</strong>
+            <span>Entrada, build log e saída ficam em uma janela separada.</span>
         </div>
 
-        <h3>Terminal de saída</h3>
-        <pre id="saidaCodigo" class="output console-output">{{ saida_salva }}</pre>
+        <div id="janelaConsole" class="console-modal">
+            <div class="console-window">
+                <div class="console-titlebar">
+                    <div>
+                        <strong>Console - Ensinar C</strong>
+                        <span>Entrada | Build log | Saída</span>
+                    </div>
+                    <button onclick="fecharConsole()">×</button>
+                </div>
+
+                <div class="console-tabs">
+                    <button class="active" onclick="trocarAbaConsole('entrada', this)">Entrada</button>
+                    <button onclick="trocarAbaConsole('build', this)">Build log</button>
+                    <button onclick="trocarAbaConsole('saida', this)">Saída</button>
+                </div>
+
+                <div id="abaEntrada" class="console-panel active">
+                    <h3>Entrada do terminal</h3>
+                    <p class="small-muted">Digite aqui os valores que seriam colocados quando o programa pedir scanf. Use um valor por linha ou separado por espaço.</p>
+                    <textarea id="entradaTerminal" class="terminal-input modal-input" placeholder="Exemplo:&#10;18&#10;7.5">{{ entrada_salva }}</textarea>
+                </div>
+
+                <div id="abaBuild" class="console-panel">
+                    <h3>Build log</h3>
+                    <pre id="buildLog" class="output console-output modal-output">Aguardando compilação.</pre>
+                </div>
+
+                <div id="abaSaida" class="console-panel">
+                    <h3>Terminal de saída</h3>
+                    <pre id="saidaCodigo" class="output console-output modal-output">{{ saida_salva }}</pre>
+                </div>
+
+                <div class="console-footer">
+                    <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
+                    <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Executar</button>
+                    <button class="btn btn-ghost" onclick="fecharConsole()">Fechar</button>
+                </div>
+            </div>
+        </div>
 
         <div class="hint">
             Para concluir: primeiro acerte o desafio teórico na página da teoria e depois execute seu código aqui.
