@@ -93,3 +93,13 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
   - Build log;
   - Saída.
 - Os botões Compilar e Executar abrem automaticamente a aba correta.
+
+
+## Versão 9
+
+- A resposta do desafio teórico é salva ao responder, mesmo sem concluir a lição.
+- O console agora fica em uma única janela integrada.
+- Removida a separação em abas.
+- O botão Compilar agora compila e executa.
+- A janela tem apenas Compilar e Sair.
+- A saída mostra entrada do usuário, saída do programa e build log juntos.

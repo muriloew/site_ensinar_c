@@ -32,8 +32,10 @@ function trocarAbaConsole(aba, botao) {
 
 function abrirAbaConsole(aba) {
     abrirConsole();
-
     const botoes = document.querySelectorAll(".console-tabs button");
+    if (!botoes.length) {
+        return;
+    }
     botoes.forEach(btn => {
         const texto = btn.textContent.toLowerCase();
         if (texto.includes(aba)) {
@@ -85,6 +87,13 @@ async function verificarResposta(licaoId, resposta, botao) {
     } catch (erro) {
         resultado.textContent = "Erro ao verificar resposta. Recarregue a página e tente novamente.";
     }
+}
+
+
+
+async function compilarExecutar(licaoId, tipo) {
+    abrirConsole();
+    await executarCodigo(licaoId, tipo);
 }
 
 

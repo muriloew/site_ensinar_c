@@ -774,3 +774,31 @@ a { color: inherit; text-decoration: none; }
         flex-direction: column;
     }
 }
+
+
+.console-single {
+    padding: 18px;
+    overflow: auto;
+    flex: 1;
+}
+
+.console-single label {
+    display: block;
+    margin: 14px 0 8px;
+    color: #dbeafe;
+    font-weight: 800;
+}
+
+.modal-input-small {
+    min-height: 95px;
+}
+
+.build-small {
+    min-height: 110px;
+    max-height: 160px;
+}
+
+.console-single .modal-output {
+    min-height: 210px;
+    max-height: 270px;
+}

@@ -28,8 +28,7 @@
         <textarea id="editorCodigo" class="code-editor large">{{ codigo }}</textarea>
 
         <div class="editor-actions toolbar-codeblocks">
-            <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
-            <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Executar</button>
+            <button class="btn btn-primary" onclick="compilarExecutar(null, 'diario')">⚙️ Compilar</button>
             <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Abrir console</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
@@ -45,37 +44,28 @@
                 <div class="console-titlebar">
                     <div>
                         <strong>Console - Desafio diário</strong>
-                        <span>Entrada | Build log | Saída</span>
+                        <span>Terminal integrado</span>
                     </div>
                     <button onclick="fecharConsole()">×</button>
                 </div>
 
-                <div class="console-tabs">
-                    <button class="active" onclick="trocarAbaConsole('entrada', this)">Entrada</button>
-                    <button onclick="trocarAbaConsole('build', this)">Build log</button>
-                    <button onclick="trocarAbaConsole('saida', this)">Saída</button>
-                </div>
+                <div class="console-single">
+                    <h3>Terminal</h3>
+                    <p class="small-muted">Digite a entrada que o programa usaria no scanf. Ao compilar, a entrada e a saída aparecem juntas como em um console.</p>
 
-                <div id="abaEntrada" class="console-panel active">
-                    <h3>Entrada do terminal</h3>
-                    <p class="small-muted">Use este campo para valores que seriam digitados no scanf.</p>
-                    <textarea id="entradaTerminal" class="terminal-input modal-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
-                </div>
+                    <label>Entrada do usuário:</label>
+                    <textarea id="entradaTerminal" class="terminal-input modal-input-small" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
 
-                <div id="abaBuild" class="console-panel">
-                    <h3>Build log</h3>
-                    <pre id="buildLog" class="output console-output modal-output">Aguardando compilação.</pre>
-                </div>
-
-                <div id="abaSaida" class="console-panel">
-                    <h3>Terminal de saída</h3>
+                    <label>Saída do programa:</label>
                     <pre id="saidaCodigo" class="output console-output modal-output">{{ saida }}</pre>
+
+                    <label>Build log:</label>
+                    <pre id="buildLog" class="output console-output build-small">Aguardando compilação.</pre>
                 </div>
 
                 <div class="console-footer">
-                    <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
-                    <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Executar</button>
-                    <button class="btn btn-ghost" onclick="fecharConsole()">Fechar</button>
+                    <button class="btn btn-primary" onclick="compilarExecutar(null, 'diario')">⚙️ Compilar</button>
+                    <button class="btn btn-ghost" onclick="fecharConsole()">Sair</button>
                 </div>
             </div>
         </div>

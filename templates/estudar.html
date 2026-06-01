@@ -46,11 +46,11 @@
 
             <div class="quiz" data-licao-id="{{ licao.id }}">
                 {% for alt in licao.alternativas %}
-                <button type="button" data-resposta="{{ alt }}">{{ alt }}</button>
+                <button type="button" data-resposta="{{ alt }}" class="{% if resposta_teorica == alt and quiz_correto %}correct{% elif resposta_teorica == alt and not quiz_correto %}wrong{% endif %}">{{ alt }}</button>
                 {% endfor %}
             </div>
 
-            <p id="resultadoQuiz"></p>
+            <p id="resultadoQuiz">{% if resposta_teorica %}{% if quiz_correto %}Resposta salva e correta.{% else %}Resposta salva, mas incorreta.{% endif %}{% endif %}</p>
 
             <a class="btn btn-primary full" href="/exercicio/{{ licao.id }}">Fazer exercício de código</a>
 
