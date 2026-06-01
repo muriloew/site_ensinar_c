@@ -30,37 +30,16 @@
             <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="compilarExercicio({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-primary" onclick="abrirTerminalInterativo({{ licao.id }})">⚙️ Compilar</button>
                 <button class="btn btn-ghost" onclick="limparExercicio()">Limpar</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
         </div>
 
         <div class="hint">
-            Ao clicar em <strong>Compilar</strong>, se o código tiver erro será mostrado o Build Log. Se estiver correto, abrirá o terminal para você digitar entradas como no Code::Blocks.
+            Ao clicar em <strong>Compilar</strong>, será aberta uma janela de terminal. Digite ali os valores de entrada, como no Code::Blocks, e compile pela própria janela.
         </div>
     </section>
-</div>
-
-<div id="entradaModal" class="console-modal">
-    <div class="console-window input-window">
-        <div class="codeblocks-titlebar">
-            <span>Entrada do programa</span>
-            <button onclick="fecharEntradaModal()">×</button>
-        </div>
-
-        <div class="input-window-body">
-            <h2>Seu código usa entrada?</h2>
-            <p>Digite abaixo os valores que seriam informados no terminal quando aparecer um scanf. Se não precisar de entrada, deixe em branco.</p>
-
-            <textarea id="entradaExercicio" class="terminal-input modal-input-small" placeholder="Exemplo:&#10;19">{{ entrada_salva }}</textarea>
-
-            <div class="console-footer">
-                <button class="btn btn-primary" onclick="executarExercicioComEntrada()">Executar</button>
-                <button class="btn btn-ghost" onclick="fecharEntradaModal()">Cancelar</button>
-            </div>
-        </div>
-    </div>
 </div>
 
 <div id="buildModal" class="console-modal">
@@ -87,11 +66,18 @@
             <button onclick="fecharTerminalExercicio()">×</button>
         </div>
 
-        <div class="codeblocks-body">
-            <pre id="saidaExercicio" class="codeblocks-console">{{ saida_salva }}</pre>
+        <div class="codeblocks-body terminal-interativo-body">
+            <pre id="saidaExercicio" class="codeblocks-console terminal-preview">{{ saida_salva }}</pre>
+
+            <div id="entradaTerminalArea" class="terminal-entry-area">
+                <span class="terminal-entry-label">Entrada do usuário:</span>
+                <textarea id="entradaExercicio" class="terminal-live-input" placeholder="Digite aqui o que você colocaria no terminal. Exemplo: 19">{{ entrada_salva }}</textarea>
+                <small>Depois de digitar, clique em Compilar nesta janela.</small>
+            </div>
         </div>
 
         <div class="console-footer">
+            <button class="btn btn-primary" onclick="executarExercicioComEntrada()">⚙️ Compilar</button>
             <button class="btn btn-ghost" onclick="fecharTerminalExercicio()">Sair</button>
         </div>
     </div>

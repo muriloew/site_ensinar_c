@@ -139,3 +139,11 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
   - abre uma janela para entrada do scanf;
   - se houver erro, abre Build Log;
   - se compilar, abre terminal estilo Code::Blocks.
+
+
+## Versão 14
+
+- Removido popup separado de entrada.
+- Ao clicar Compilar, abre diretamente a janela estilo Code::Blocks.
+- A entrada é digitada dentro da própria janela do terminal.
+- O botão Compilar dentro do terminal executa o programa com a entrada digitada.

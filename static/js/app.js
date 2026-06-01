@@ -394,3 +394,85 @@ function limparExercicio() {
     if (saida) saida.textContent = "Aguardando compilação.";
     if (build) build.textContent = "Aguardando build.";
 }
+
+
+// Versão 14: terminal interativo na mesma janela, sem popup separado.
+let exercicioAtualIdV14 = null;
+
+function abrirTerminalInterativo(licaoId) {
+    exercicioAtualIdV14 = licaoId;
+    const terminal = document.getElementById("terminalModalExercicio");
+    const saida = document.getElementById("saidaExercicio");
+
+    if (saida && !saida.textContent.trim()) {
+        saida.textContent = "Digite a entrada abaixo, se o programa usar scanf, e clique em Compilar.";
+    }
+
+    if (terminal) {
+        terminal.classList.add("ativo");
+    }
+}
+
+function fecharTerminalExercicio() {
+    const modal = document.getElementById("terminalModalExercicio");
+    if (modal) modal.classList.remove("ativo");
+}
+
+function abrirBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.add("ativo");
+}
+
+function fecharBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.remove("ativo");
+}
+
+async function executarExercicioComEntrada() {
+    const codigo = document.getElementById("codigoExercicio");
+    const entrada = document.getElementById("entradaExercicio");
+    const saida = document.getElementById("saidaExercicio");
+    const build = document.getElementById("buildExercicio");
+
+    if (!codigo || !saida || !build) return;
+
+    build.textContent = "Compilando...";
+    saida.textContent = "Executando...";
+
+    try {
+        const retorno = await fetch("/api/exercicio/compilar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                licao_id: exercicioAtualIdV14 || exercicioAtualId,
+                codigo: codigo.value,
+                entrada: entrada ? entrada.value : ""
+            })
+        });
+
+        const dados = await retorno.json();
+        build.textContent = dados.build || "Build finalizado.";
+
+        if (dados.ok) {
+            saida.textContent = dados.saida || "Programa executado sem saída.";
+        } else {
+            saida.textContent = dados.saida || "";
+            abrirBuildModal();
+        }
+    } catch (erro) {
+        build.textContent = "Erro de conexão com o compilador.";
+        abrirBuildModal();
+    }
+}
+
+function limparExercicio() {
+    const codigo = document.getElementById("codigoExercicio");
+    const entrada = document.getElementById("entradaExercicio");
+    const saida = document.getElementById("saidaExercicio");
+    const build = document.getElementById("buildExercicio");
+
+    if (codigo) codigo.value = "";
+    if (entrada) entrada.value = "";
+    if (saida) saida.textContent = "Digite a entrada abaixo, se precisar, e clique em Compilar.";
+    if (build) build.textContent = "Aguardando build.";
+}
