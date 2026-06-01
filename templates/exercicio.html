@@ -30,7 +30,7 @@
             <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="prepararTerminalCodeblocks({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-primary" onclick="abrirTerminalSimulado({{ licao.id }})">⚙️ Compilar</button>
                 <button class="btn btn-ghost" onclick="limparExercicio()">Limpar</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
@@ -68,13 +68,13 @@
 
         <div class="codeblocks-body terminal-real-body">
             <div id="terminalTela" class="codeblocks-console terminal-real">
-                <span id="terminalPrompt">Aguardando compilação.</span><span id="entradaDigitadaPreview"></span>
+                <span id="terminalPrompt">Aguardando compilação.</span>
                 <textarea id="entradaExercicio" class="terminal-real-input" spellcheck="false"></textarea>
             </div>
         </div>
 
         <div class="console-footer">
-            <button id="btnEnviarEntrada" class="btn btn-primary" onclick="enviarEntradaTerminal()">Enviar</button>
+            <button id="btnEnviarEntrada" class="btn btn-primary" onclick="enviarEntradaSimulada()">Enviar</button>
             <button class="btn btn-ghost" onclick="fecharTerminalExercicio()">Sair</button>
         </div>
     </div>

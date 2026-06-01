@@ -761,3 +761,165 @@ async function enviarEntradaTerminal() {
         abrirBuildModal();
     }
 }
+
+
+// Versão 17: simulação visual estilo Code::Blocks.
+// Mostra o prompt, usuário digita no terminal e depois o programa executa com essa entrada.
+let licaoSimuladaAtual = null;
+let codigoSimuladoAtual = "";
+
+function detectarPromptNoClienteV17(codigo) {
+    const regex = /printf\s*\(\s*"([^"]*)"\s*\)\s*;\s*scanf/s;
+    const achou = codigo.match(regex);
+
+    if (achou && achou[1]) {
+        return achou[1].replaceAll("\\n", "\n").replaceAll("\\t", "\t");
+    }
+
+    if (codigo.includes("scanf")) {
+        return "Entrada:";
+    }
+
+    return "";
+}
+
+function abrirTerminalSimulado(licaoId) {
+    const codigo = document.getElementById("codigoExercicio");
+    const tela = document.getElementById("terminalTela");
+    const entrada = document.getElementById("entradaExercicio");
+    const btn = document.getElementById("btnEnviarEntrada");
+
+    licaoSimuladaAtual = licaoId;
+    codigoSimuladoAtual = codigo ? codigo.value : "";
+
+    const prompt = detectarPromptNoClienteV17(codigoSimuladoAtual);
+
+    if (tela) {
+        tela.innerHTML = "";
+
+        const span = document.createElement("span");
+        span.id = "terminalPrompt";
+        span.textContent = prompt || "Executando programa...";
+
+        tela.appendChild(span);
+
+        if (prompt) {
+            const input = document.createElement("textarea");
+            input.id = "entradaExercicio";
+            input.className = "terminal-real-input";
+            input.spellcheck = false;
+            tela.appendChild(input);
+
+            setTimeout(() => input.focus(), 100);
+
+            input.addEventListener("keydown", (event) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                    event.preventDefault();
+                    enviarEntradaSimulada();
+                }
+            });
+
+            if (btn) btn.style.display = "inline-block";
+        } else {
+            if (btn) btn.style.display = "none";
+            setTimeout(() => enviarEntradaSimulada(), 200);
+        }
+    }
+
+    const modal = document.getElementById("terminalModalExercicio");
+    if (modal) modal.classList.add("ativo");
+}
+
+function fecharTerminalExercicio() {
+    const modal = document.getElementById("terminalModalExercicio");
+    if (modal) modal.classList.remove("ativo");
+}
+
+function abrirBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.add("ativo");
+}
+
+function fecharBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.remove("ativo");
+}
+
+function registrarTentativaCodigoV17(falhou) {
+    const path = window.location.pathname;
+    const chave = "tentativas_codigo_" + path;
+    let total = Number(localStorage.getItem(chave) || "0");
+
+    if (falhou) {
+        total += 1;
+        localStorage.setItem(chave, String(total));
+    }
+
+    const dica = document.getElementById("dicaTentativas");
+    if (dica && total >= 3) {
+        dica.classList.remove("hidden-hint");
+    }
+}
+
+async function enviarEntradaSimulada() {
+    const entrada = document.getElementById("entradaExercicio");
+    const tela = document.getElementById("terminalTela");
+    const build = document.getElementById("buildExercicio");
+    const btn = document.getElementById("btnEnviarEntrada");
+
+    const valor = entrada ? entrada.value.trim() : "";
+
+    if (entrada) {
+        const digitado = document.createElement("span");
+        digitado.textContent = valor;
+        entrada.replaceWith(digitado);
+    }
+
+    if (btn) btn.style.display = "none";
+    if (build) build.textContent = "Compilando...";
+
+    try {
+        const retorno = await fetch("/api/exercicio/compilar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                licao_id: licaoSimuladaAtual,
+                codigo: codigoSimuladoAtual,
+                entrada: valor
+            })
+        });
+
+        const dados = await retorno.json();
+        if (build) build.textContent = dados.build || "Build finalizado.";
+
+        if (!dados.ok) {
+            registrarTentativaCodigoV17(true);
+            abrirBuildModal();
+            return;
+        }
+
+        registrarTentativaCodigoV17(false);
+
+        if (tela) {
+            tela.innerHTML = "";
+            const pre = document.createElement("pre");
+            pre.className = "terminal-final-output";
+            pre.textContent = dados.saida || "Programa executado sem saída.";
+            tela.appendChild(pre);
+        }
+    } catch (erro) {
+        registrarTentativaCodigoV17(true);
+        if (build) build.textContent = "Erro de conexão ao executar.";
+        abrirBuildModal();
+    }
+}
+
+function limparExercicio() {
+    const codigo = document.getElementById("codigoExercicio");
+    const build = document.getElementById("buildExercicio");
+    const tela = document.getElementById("terminalTela");
+
+    if (codigo) codigo.value = "";
+    if (build) build.textContent = "Aguardando build.";
+    if (tela) tela.textContent = "Aguardando compilação.";
+}

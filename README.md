@@ -165,3 +165,12 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - O prompt do scanf é detectado no navegador.
 - Removidas dicas amarelas fixas.
 - Dica aparece apenas após algumas tentativas de compilação com erro.
+
+
+## Versão 17
+
+- Terminal simulado no estilo Code::Blocks:
+  - mostra o prompt primeiro;
+  - usuário digita dentro da janela;
+  - Enter ou Enviar executa o programa;
+  - saída final é formatada como Code::Blocks.
