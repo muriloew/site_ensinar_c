@@ -128,3 +128,14 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - Removido compilador rápido da página de exercício.
 - Agora existe apenas o compilador completo separado.
 - Página de exercício só direciona para o compilador completo.
+
+
+## Versão 13
+
+- O compilador aparece apenas no exercício de código de cada módulo.
+- Removido link do compilador no menu lateral.
+- O usuário escreve código em uma tela parecida com editor.
+- Ao clicar Compilar:
+  - abre uma janela para entrada do scanf;
+  - se houver erro, abre Build Log;
+  - se compilar, abre terminal estilo Code::Blocks.

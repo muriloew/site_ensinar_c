@@ -873,6 +873,44 @@ def exercicio(licao_id):
     )
 
 
+
+@app.route("/api/exercicio/compilar", methods=["POST"])
+def api_exercicio_compilar():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+
+    dados = request.get_json()
+    licao_id = int(dados.get("licao_id"))
+    codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
+
+    modulo, licao = encontrar_licao(licao_id)
+    if not licao:
+        return jsonify({"ok": False, "build": "Lição não encontrada.", "saida": ""}), 404
+
+    resultado = executar_compilador_online(codigo, entrada)
+
+    conn = conectar()
+    conn.execute(
+        """
+        INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, entrada_codigo, codigo_enviado, atualizado_em)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+        ON CONFLICT(usuario_id, licao_id)
+        DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                      saida_codigo = excluded.saida_codigo,
+                      entrada_codigo = excluded.entrada_codigo,
+                      codigo_enviado = 1,
+                      atualizado_em = excluded.atualizado_em
+        """,
+        (usuario["id"], licao_id, modulo["id"], codigo, resultado.get("saida", ""), entrada, str(date.today()))
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify(resultado)
+
+
 @app.route("/desafio-diario")
 def desafio_diario():
     usuario = usuario_logado()

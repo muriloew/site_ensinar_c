@@ -967,3 +967,68 @@ a { color: inherit; text-decoration: none; }
         grid-template-columns: 1fr;
     }
 }
+
+
+.exercise-compiler-page {
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.exercise-compiler-card {
+    min-height: calc(100vh - 70px);
+}
+
+.compiler-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 18px;
+    align-items: flex-start;
+    margin-bottom: 18px;
+}
+
+.codeblocks-editor-shell {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #0a1322;
+}
+
+.fake-menu-bar {
+    display: flex;
+    gap: 18px;
+    padding: 10px 14px;
+    background: #101827;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.codeblocks-main-editor {
+    min-height: 520px;
+    border-radius: 0;
+    border: none;
+    background: #07111f;
+}
+
+.codeblocks-bottom-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #101827;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+}
+
+.input-window {
+    max-width: 620px;
+    height: auto;
+    background: #101827;
+}
+
+.input-window-body {
+    padding: 22px;
+}
+
+.input-window-body h2 {
+    margin-top: 0;
+}

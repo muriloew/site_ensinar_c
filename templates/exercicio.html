@@ -2,15 +2,15 @@
 {% block title %}Exercício - {{ licao.titulo }}{% endblock %}
 
 {% block content %}
-<div class="exercise-layout">
-    <section class="card">
-        <a href="/estudar/{{ modulo.id }}?licao={{ licao.id }}" class="back">← Voltar para teoria</a>
-
-        <div class="lesson-top">
+<div class="exercise-compiler-page">
+    <section class="card exercise-compiler-card">
+        <div class="compiler-header">
             <div>
+                <a href="/estudar/{{ modulo.id }}?licao={{ licao.id }}" class="back">← Voltar para teoria</a>
                 <h1>Exercício de código</h1>
                 <p>{{ modulo.titulo }} — {{ licao.titulo }}</p>
             </div>
+
             <a class="btn btn-ghost" href="/modulos">Módulos</a>
         </div>
 
@@ -19,18 +19,81 @@
             <p>{{ licao.exercicio_codigo }}</p>
         </div>
 
-        <p class="small-muted">
-            Para programar, use o compilador completo. Ele abre em uma página própria com editor, entrada, saída e histórico.
-        </p>
+        <div class="codeblocks-editor-shell">
+            <div class="fake-menu-bar">
+                <span>Arquivo</span>
+                <span>Editar</span>
+                <span>Executar</span>
+                <span>Ajuda</span>
+            </div>
 
-        <div class="editor-actions">
-            <a class="btn btn-primary" href="/compilador?licao_id={{ licao.id }}">Abrir compilador completo</a>
-            <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
+            <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
+
+            <div class="codeblocks-bottom-bar">
+                <button class="btn btn-primary" onclick="compilarExercicio({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-ghost" onclick="limparExercicio()">Limpar</button>
+                <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
+            </div>
         </div>
 
         <div class="hint">
-            Para concluir: primeiro acerte o desafio teórico na página da teoria e depois use o compilador completo para fazer o exercício.
+            Ao clicar em <strong>Compilar</strong>, se o código tiver erro será mostrado o Build Log. Se estiver correto, abrirá o terminal para você digitar entradas como no Code::Blocks.
         </div>
     </section>
+</div>
+
+<div id="entradaModal" class="console-modal">
+    <div class="console-window input-window">
+        <div class="codeblocks-titlebar">
+            <span>Entrada do programa</span>
+            <button onclick="fecharEntradaModal()">×</button>
+        </div>
+
+        <div class="input-window-body">
+            <h2>Seu código usa entrada?</h2>
+            <p>Digite abaixo os valores que seriam informados no terminal quando aparecer um scanf. Se não precisar de entrada, deixe em branco.</p>
+
+            <textarea id="entradaExercicio" class="terminal-input modal-input-small" placeholder="Exemplo:&#10;19">{{ entrada_salva }}</textarea>
+
+            <div class="console-footer">
+                <button class="btn btn-primary" onclick="executarExercicioComEntrada()">Executar</button>
+                <button class="btn btn-ghost" onclick="fecharEntradaModal()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="buildModal" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>Build log</span>
+            <button onclick="fecharBuildModal()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="buildExercicio" class="codeblocks-console">Aguardando compilação.</pre>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharBuildModal()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<div id="terminalModalExercicio" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>"programa.exe"</span>
+            <button onclick="fecharTerminalExercicio()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="saidaExercicio" class="codeblocks-console">{{ saida_salva }}</pre>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharTerminalExercicio()">Sair</button>
+        </div>
+    </div>
 </div>
 {% endblock %}
