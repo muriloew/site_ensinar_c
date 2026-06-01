@@ -44,9 +44,14 @@ async function verificarResposta(licaoId, resposta, botao) {
 
 async function executarCodigo(licaoId, tipo) {
     const editor = document.getElementById("editorCodigo");
+    const entradaTerminal = document.getElementById("entradaTerminal");
     const saida = document.getElementById("saidaCodigo");
+    const passos = document.getElementById("passosCodigo");
 
     saida.textContent = "Compilando e executando...";
+    if (passos) {
+        passos.textContent = "Analisando o código passo a passo...";
+    }
 
     try {
         const retorno = await fetch("/executar-codigo", {
@@ -55,7 +60,8 @@ async function executarCodigo(licaoId, tipo) {
             body: JSON.stringify({
                 licao_id: licaoId,
                 tipo: tipo,
-                codigo: editor.value
+                codigo: editor.value,
+                entrada: entradaTerminal ? entradaTerminal.value : ""
             })
         });
 
@@ -68,6 +74,9 @@ async function executarCodigo(licaoId, tipo) {
         }
 
         saida.textContent = dados.saida || dados.mensagem || "Execução finalizada sem mensagem.";
+        if (passos) {
+            passos.textContent = dados.passos || "Não foi possível montar o passo a passo.";
+        }
     } catch (erro) {
         saida.textContent = "Erro de conexão ao executar. Verifique se o site está online e tente novamente.";
     }

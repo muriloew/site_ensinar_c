@@ -27,13 +27,23 @@
 
         <textarea id="editorCodigo" class="code-editor large">{{ codigo }}</textarea>
 
+        <div class="terminal-box">
+            <h3>Entrada do terminal</h3>
+            <p class="small-muted">Use este campo para valores que seriam digitados no scanf.</p>
+            <textarea id="entradaTerminal" class="terminal-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
+        </div>
+
         <div class="editor-actions">
             <button class="btn btn-primary" onclick="executarCodigo(null, 'diario')">▶ Compilar e executar</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
         </div>
 
+        <h3>Saída do programa</h3>
         <pre id="saidaCodigo" class="output">{{ saida }}</pre>
+
+        <h3>Passo a passo do código</h3>
+        <pre id="passosCodigo" class="output steps">{{ passos }}</pre>
     </section>
 </div>
 {% endblock %}

@@ -63,3 +63,11 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - Corrigido salvamento do desafio teórico.
 - Melhorado retorno de erro do compilador.
 - Se o servidor não tiver GCC, o código é salvo e a tela explica o motivo da não execução.
+
+
+## Versão 6
+
+- Adicionada entrada do terminal para programas com scanf.
+- A entrada digitada é enviada para o programa durante a execução.
+- Adicionado painel de passo a passo do código, explicando linha por linha.
+- Entrada do terminal e código do usuário ficam salvos.

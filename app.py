@@ -219,6 +219,7 @@ def iniciar_banco():
             concluida INTEGER DEFAULT 0,
             codigo_usuario TEXT,
             saida_codigo TEXT,
+            entrada_codigo TEXT,
             atualizado_em TEXT,
             UNIQUE(usuario_id, licao_id)
         )
@@ -241,6 +242,7 @@ def iniciar_banco():
             data TEXT NOT NULL,
             codigo_usuario TEXT,
             saida_codigo TEXT,
+            entrada_codigo TEXT,
             concluido INTEGER DEFAULT 0,
             UNIQUE(usuario_id, data)
         )
@@ -251,12 +253,14 @@ def iniciar_banco():
     adicionar_coluna(conn, "progresso", "codigo_enviado", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "codigo_usuario", "TEXT")
     adicionar_coluna(conn, "progresso", "saida_codigo", "TEXT")
+    adicionar_coluna(conn, "progresso", "entrada_codigo", "TEXT")
     adicionar_coluna(conn, "progresso", "atualizado_em", "TEXT")
 
     adicionar_coluna(conn, "usuarios", "xp", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "usuarios", "nivel", "INTEGER DEFAULT 1")
     adicionar_coluna(conn, "usuarios", "sequencia", "INTEGER DEFAULT 1")
     adicionar_coluna(conn, "usuarios", "ultimo_acesso", "TEXT")
+    adicionar_coluna(conn, "desafios_diarios", "entrada_codigo", "TEXT")
 
     # Quem já concluiu lição em versão antiga recebe permissão de rever e continuar.
     conn.execute("""
@@ -396,10 +400,57 @@ def conceder_conquistas(usuario_id):
     conn.close()
 
 
-def executar_codigo_c(codigo):
+def analisar_codigo_passo_a_passo(codigo):
+    linhas = codigo.splitlines()
+    passos = []
+
+    for numero, linha in enumerate(linhas, start=1):
+        texto = linha.strip()
+
+        if not texto:
+            continue
+
+        explicacao = "Linha do programa."
+
+        if texto.startswith("#include"):
+            explicacao = "Inclui uma biblioteca necessária para usar funções prontas."
+        elif "int main" in texto:
+            explicacao = "Inicia a função principal, onde o programa começa a executar."
+        elif texto == "{" or texto == "}":
+            explicacao = "Abre ou fecha um bloco de comandos."
+        elif texto.startswith("//"):
+            explicacao = "Comentário usado para orientar o programador. Não é executado."
+        elif "printf" in texto:
+            explicacao = "Mostra uma mensagem ou valor na tela."
+        elif "scanf" in texto:
+            explicacao = "Lê um valor digitado pelo usuário no terminal."
+        elif "if" in texto:
+            explicacao = "Testa uma condição para decidir qual bloco executar."
+        elif "else" in texto:
+            explicacao = "Executa um bloco alternativo quando a condição do if é falsa."
+        elif "for" in texto:
+            explicacao = "Cria uma repetição controlada por contador."
+        elif "while" in texto:
+            explicacao = "Repete comandos enquanto a condição for verdadeira."
+        elif "return" in texto:
+            explicacao = "Finaliza a função main e encerra o programa."
+        elif "=" in texto and "==" not in texto:
+            explicacao = "Atribui ou calcula um valor em uma variável."
+        elif any(tipo in texto for tipo in ["int ", "float ", "double ", "char "]):
+            explicacao = "Declara uma variável para guardar dados na memória."
+
+        passos.append(f"Linha {numero}: {texto}\n→ {explicacao}")
+
+    if not passos:
+        return "Nenhuma linha de código foi identificada."
+
+    return "\n\n".join(passos)
+
+
+def executar_codigo_c(codigo, entrada=""):
     """
     Compila e executa código C usando gcc quando disponível no servidor.
-    Uso educacional. Há timeout para evitar travamento.
+    A entrada simula o que o usuário digitaria no terminal, útil para scanf.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         arquivo_c = os.path.join(temp_dir, "programa.c")
@@ -407,6 +458,8 @@ def executar_codigo_c(codigo):
 
         with open(arquivo_c, "w", encoding="utf-8") as f:
             f.write(codigo)
+
+        passos = analisar_codigo_passo_a_passo(codigo)
 
         try:
             compilacao = subprocess.run(
@@ -419,7 +472,8 @@ def executar_codigo_c(codigo):
             if compilacao.returncode != 0:
                 return {
                     "ok": False,
-                    "saida": "Erro de compilação:\n" + compilacao.stderr
+                    "saida": "Erro de compilação:\n" + compilacao.stderr,
+                    "passos": passos
                 }
 
             execucao = subprocess.run(
@@ -427,7 +481,7 @@ def executar_codigo_c(codigo):
                 capture_output=True,
                 text=True,
                 timeout=5,
-                input=""
+                input=entrada
             )
 
             saida = execucao.stdout
@@ -437,22 +491,25 @@ def executar_codigo_c(codigo):
             if not saida.strip():
                 saida = "Programa executado sem saída na tela."
 
-            return {"ok": True, "saida": saida}
+            return {"ok": True, "saida": saida, "passos": passos}
 
         except FileNotFoundError:
             return {
                 "ok": False,
-                "saida": "O código foi salvo, mas o GCC não está disponível no servidor para compilar.\n\nPara funcionar no Render, é necessário usar um ambiente com GCC instalado ou integrar uma API externa de compilação.\n\nDica: para testes locais no Windows, instale MinGW ou MSYS2 e confirme com: gcc --version"
+                "saida": "O código foi salvo, mas o GCC não está disponível no servidor para compilar.\n\nPara testar scanf, digite os valores no campo Entrada do terminal. Quando houver GCC, esses valores serão enviados ao programa.\n\nPara funcionar no Render, é necessário usar um ambiente com GCC instalado ou integrar uma API externa de compilação.\n\nDica local no Windows: instale MinGW ou MSYS2 e confirme com: gcc --version",
+                "passos": passos
             }
         except subprocess.TimeoutExpired:
             return {
                 "ok": False,
-                "saida": "Tempo de execução excedido. Verifique se o código não possui loop infinito."
+                "saida": "Tempo de execução excedido. Verifique se o código não possui loop infinito ou se faltou entrada para scanf.",
+                "passos": passos
             }
         except Exception as erro:
             return {
                 "ok": False,
-                "saida": f"Erro ao executar o código: {erro}"
+                "saida": f"Erro ao executar o código: {erro}",
+                "passos": passos
             }
 
 
@@ -657,14 +714,18 @@ def exercicio(licao_id):
 
     codigo_padrao = licao.get("codigo_minimo", "#include <stdio.h>\n\nint main() {\n    return 0;\n}")
     codigo_salvo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else codigo_padrao
-    saida_salva = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do compilador aparecerá aqui."
+    saida_salva = registro["saida_codigo"] if registro and "saida_codigo" in registro.keys() and registro["saida_codigo"] else "A saída do compilador aparecerá aqui."
+    entrada_salva = registro["entrada_codigo"] if registro and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
+    passos_salvos = analisar_codigo_passo_a_passo(codigo_salvo)
 
     return render_template(
         "exercicio.html",
         modulo=modulo,
         licao=licao,
         codigo_salvo=codigo_salvo,
-        saida_salva=saida_salva
+        saida_salva=saida_salva,
+        entrada_salva=entrada_salva,
+        passos_salvos=passos_salvos
     )
 
 
@@ -684,9 +745,11 @@ def desafio_diario():
 
     codigo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else DESAFIO_DIARIO["codigo_inicial"]
     saida = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do desafio aparecerá aqui."
+    entrada = registro["entrada_codigo"] if registro and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
     concluido = registro["concluido"] if registro else 0
+    passos = analisar_codigo_passo_a_passo(codigo)
 
-    return render_template("desafio_diario.html", desafio=DESAFIO_DIARIO, codigo=codigo, saida=saida, concluido=concluido)
+    return render_template("desafio_diario.html", desafio=DESAFIO_DIARIO, codigo=codigo, saida=saida, entrada=entrada, concluido=concluido, passos=passos)
 
 
 @app.route("/verificar", methods=["POST"])
@@ -735,10 +798,11 @@ def executar_codigo():
 
     dados = request.get_json()
     codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
     licao_id = dados.get("licao_id")
     tipo = dados.get("tipo", "licao")
 
-    resultado = executar_codigo_c(codigo)
+    resultado = executar_codigo_c(codigo, entrada)
 
     if tipo == "licao" and licao_id:
         modulo, licao = encontrar_licao(int(licao_id))
@@ -747,15 +811,16 @@ def executar_codigo():
                 conn = conectar()
                 conn.execute(
                     """
-                    INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, codigo_enviado, atualizado_em)
-                    VALUES (?, ?, ?, ?, ?, 1, ?)
+                    INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, entrada_codigo, codigo_enviado, atualizado_em)
+                    VALUES (?, ?, ?, ?, ?, ?, 1, ?)
                     ON CONFLICT(usuario_id, licao_id)
                     DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
                                   saida_codigo = excluded.saida_codigo,
+                                  entrada_codigo = excluded.entrada_codigo,
                                   codigo_enviado = 1,
                                   atualizado_em = excluded.atualizado_em
                     """,
-                    (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], str(date.today()))
+                    (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], entrada, str(date.today()))
                 )
                 conn.commit()
                 conn.close()
@@ -770,13 +835,14 @@ def executar_codigo():
         conn = conectar()
         conn.execute(
             """
-            INSERT INTO desafios_diarios (usuario_id, data, codigo_usuario, saida_codigo, concluido)
-            VALUES (?, ?, ?, ?, 0)
+            INSERT INTO desafios_diarios (usuario_id, data, codigo_usuario, saida_codigo, entrada_codigo, concluido)
+            VALUES (?, ?, ?, ?, ?, 0)
             ON CONFLICT(usuario_id, data)
             DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
-                          saida_codigo = excluded.saida_codigo
+                          saida_codigo = excluded.saida_codigo,
+                          entrada_codigo = excluded.entrada_codigo
             """,
-            (usuario["id"], hoje, codigo, resultado["saida"])
+            (usuario["id"], hoje, codigo, resultado["saida"], entrada)
         )
         conn.commit()
         conn.close()
