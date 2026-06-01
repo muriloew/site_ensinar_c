@@ -174,3 +174,28 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
   - usuário digita dentro da janela;
   - Enter ou Enviar executa o programa;
   - saída final é formatada como Code::Blocks.
+
+
+## Versão 18 — Compilador real
+
+Esta versão implementa um compilador interativo real usando:
+
+- GCC;
+- Flask-SocketIO;
+- WebSocket;
+- pseudo-terminal Linux (`pty`);
+- stdin/stdout em tempo real.
+
+### Importante
+
+Para funcionar no Render, use deploy por Docker, pois o ambiente precisa instalar GCC.
+
+No Render:
+- Runtime: Docker
+- Dockerfile: `./Dockerfile`
+
+O terminal agora funciona de forma real:
+- `printf` aparece;
+- `scanf` espera entrada;
+- usuário digita no terminal;
+- programa continua depois da entrada.

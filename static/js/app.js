@@ -923,3 +923,128 @@ function limparExercicio() {
     if (build) build.textContent = "Aguardando build.";
     if (tela) tela.textContent = "Aguardando compilação.";
 }
+
+
+// Versão 18: compilador real com WebSocket + stdin/stdout.
+let socketTerminal = null;
+let terminalFinalizado = false;
+
+function iniciarSocketTerminal() {
+    if (socketTerminal) {
+        return socketTerminal;
+    }
+
+    socketTerminal = io();
+
+    socketTerminal.on("build_log", (dados) => {
+        const build = document.getElementById("buildExercicio");
+        if (build) build.textContent = dados.texto || "";
+
+        if (!dados.ok) {
+            abrirBuildModal();
+        } else {
+            abrirTerminalReal();
+        }
+    });
+
+    socketTerminal.on("terminal_saida", (dados) => {
+        const saida = document.getElementById("terminalSaidaReal");
+        if (!saida) return;
+
+        saida.textContent += dados.texto || "";
+        saida.scrollTop = saida.scrollHeight;
+    });
+
+    socketTerminal.on("terminal_finalizado", () => {
+        terminalFinalizado = true;
+        const input = document.getElementById("terminalInputReal");
+        if (input) {
+            input.disabled = true;
+            input.placeholder = "Processo finalizado.";
+        }
+    });
+
+    return socketTerminal;
+}
+
+function compilarReal(licaoId) {
+    const codigo = document.getElementById("codigoExercicio");
+    const saida = document.getElementById("terminalSaidaReal");
+    const input = document.getElementById("terminalInputReal");
+    const build = document.getElementById("buildExercicio");
+
+    terminalFinalizado = false;
+
+    if (saida) saida.textContent = "";
+    if (input) {
+        input.value = "";
+        input.disabled = false;
+        input.placeholder = "Digite aqui e pressione Enter";
+    }
+    if (build) build.textContent = "Compilando...";
+
+    const socket = iniciarSocketTerminal();
+
+    socket.emit("compilar_real", {
+        licao_id: licaoId,
+        codigo: codigo ? codigo.value : ""
+    });
+}
+
+function abrirTerminalReal() {
+    const modal = document.getElementById("terminalModalExercicio");
+    if (modal) modal.classList.add("ativo");
+
+    setTimeout(() => {
+        const input = document.getElementById("terminalInputReal");
+        if (input) input.focus();
+    }, 100);
+}
+
+function fecharTerminalReal() {
+    const modal = document.getElementById("terminalModalExercicio");
+    if (modal) modal.classList.remove("ativo");
+}
+
+function abrirBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.add("ativo");
+}
+
+function fecharBuildModal() {
+    const modal = document.getElementById("buildModal");
+    if (modal) modal.classList.remove("ativo");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("terminalInputReal");
+
+    if (input) {
+        input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !terminalFinalizado) {
+                event.preventDefault();
+
+                const texto = input.value + "\n";
+                input.value = "";
+
+                const socket = iniciarSocketTerminal();
+                socket.emit("terminal_entrada", {texto: texto});
+            }
+        });
+    }
+});
+
+function limparTerminalReal() {
+    const codigo = document.getElementById("codigoExercicio");
+    const saida = document.getElementById("terminalSaidaReal");
+    const input = document.getElementById("terminalInputReal");
+    const build = document.getElementById("buildExercicio");
+
+    if (codigo) codigo.value = "";
+    if (saida) saida.textContent = "";
+    if (input) {
+        input.value = "";
+        input.disabled = false;
+    }
+    if (build) build.textContent = "Aguardando compilação.";
+}

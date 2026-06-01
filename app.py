@@ -6,9 +6,16 @@ import tempfile
 import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
+from flask_socketio import SocketIO, emit
+import time
+import signal
+import threading
+import select
+import pty
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "chave-dev-ensinar-c")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
 
 DB_PATH = os.environ.get("DB_PATH", "instance/ensinar_c.db")
 
@@ -1143,8 +1150,236 @@ def concluir_desafio_diario():
     return jsonify({"ok": True, "mensagem": "Desafio diário concluído! +30 XP"})
 
 
+
+# -------------------------------
+# COMPILADOR REAL INTERATIVO
+# -------------------------------
+
+PROCESSOS_TERMINAL = {}
+
+
+def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
+    modulo, licao = encontrar_licao(int(licao_id))
+    if not modulo:
+        return
+
+    conn = conectar()
+    conn.execute(
+        """
+        INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, entrada_codigo, codigo_enviado, atualizado_em)
+        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
+        ON CONFLICT(usuario_id, licao_id)
+        DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                      saida_codigo = excluded.saida_codigo,
+                      entrada_codigo = excluded.entrada_codigo,
+                      codigo_enviado = 1,
+                      atualizado_em = excluded.atualizado_em
+        """,
+        (usuario_id, int(licao_id), modulo["id"], codigo, saida, entrada, str(date.today()))
+    )
+    conn.commit()
+    conn.close()
+
+
+def encerrar_processo_socket(sid):
+    dados = PROCESSOS_TERMINAL.pop(sid, None)
+    if not dados:
+        return
+
+    proc = dados.get("proc")
+    fd = dados.get("fd")
+    temp_dir = dados.get("temp_dir")
+
+    try:
+        if proc and proc.poll() is None:
+            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    except Exception:
+        pass
+
+    try:
+        if fd:
+            os.close(fd)
+    except Exception:
+        pass
+
+    try:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+    except Exception:
+        pass
+
+
+def leitor_terminal(sid):
+    dados = PROCESSOS_TERMINAL.get(sid)
+    if not dados:
+        return
+
+    proc = dados["proc"]
+    fd = dados["fd"]
+    saida_total = ""
+
+    inicio = time.time()
+    limite_segundos = 20
+
+    while True:
+        if time.time() - inicio > limite_segundos:
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except Exception:
+                pass
+            socketio.emit("terminal_saida", {"texto": "\n\nTempo limite excedido.\n"}, to=sid)
+            break
+
+        if proc.poll() is not None:
+            break
+
+        try:
+            pronto, _, _ = select.select([fd], [], [], 0.2)
+            if fd in pronto:
+                dados_lidos = os.read(fd, 4096)
+                if not dados_lidos:
+                    break
+
+                texto = dados_lidos.decode("utf-8", errors="replace")
+                saida_total += texto
+                socketio.emit("terminal_saida", {"texto": texto}, to=sid)
+        except OSError:
+            break
+        except Exception as erro:
+            socketio.emit("terminal_saida", {"texto": f"\nErro no terminal: {erro}\n"}, to=sid)
+            break
+
+    codigo_saida = proc.poll()
+    if codigo_saida is None:
+        codigo_saida = proc.wait()
+
+    fim = "\n\nProcess returned 0 (0x0)\nPress any key to continue.\n" if codigo_saida == 0 else f"\n\nProcess returned {codigo_saida}\nPress any key to continue.\n"
+    saida_total += fim
+    socketio.emit("terminal_saida", {"texto": fim}, to=sid)
+    socketio.emit("terminal_finalizado", {"codigo": codigo_saida}, to=sid)
+
+    usuario_id = dados.get("usuario_id")
+    licao_id = dados.get("licao_id")
+    codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
+
+    if usuario_id and licao_id:
+        salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida_total)
+
+    encerrar_processo_socket(sid)
+
+
+@socketio.on("compilar_real")
+def compilar_real(dados):
+    usuario_id = session.get("usuario_id")
+    if not usuario_id:
+        emit("build_log", {"ok": False, "texto": "Usuário não logado."})
+        return
+
+    sid = request.sid
+    encerrar_processo_socket(sid)
+
+    codigo = dados.get("codigo", "")
+    licao_id = dados.get("licao_id")
+
+    temp_dir = tempfile.mkdtemp(prefix="ensinar_c_")
+    arquivo_c = os.path.join(temp_dir, "programa.c")
+    arquivo_saida = os.path.join(temp_dir, "programa")
+
+    with open(arquivo_c, "w", encoding="utf-8") as f:
+        f.write(codigo)
+
+    try:
+        compilacao = subprocess.run(
+            ["gcc", arquivo_c, "-o", arquivo_saida],
+            capture_output=True,
+            text=True,
+            timeout=8
+        )
+
+        if compilacao.returncode != 0:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            emit("build_log", {
+                "ok": False,
+                "texto": "Build failed.\n\n" + compilacao.stderr
+            })
+            return
+
+        emit("build_log", {
+            "ok": True,
+            "texto": "Build finished successfully.\n0 errors, 0 warnings."
+        })
+
+        master_fd, slave_fd = pty.openpty()
+
+        proc = subprocess.Popen(
+            [arquivo_saida],
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=False,
+            close_fds=True,
+            preexec_fn=os.setsid
+        )
+
+        os.close(slave_fd)
+
+        PROCESSOS_TERMINAL[sid] = {
+            "proc": proc,
+            "fd": master_fd,
+            "temp_dir": temp_dir,
+            "usuario_id": usuario_id,
+            "licao_id": licao_id,
+            "codigo": codigo,
+            "entrada": ""
+        }
+
+        socketio.start_background_task(leitor_terminal, sid)
+
+    except FileNotFoundError:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        emit("build_log", {
+            "ok": False,
+            "texto": "GCC não está instalado no servidor. Use o Dockerfile desta versão para publicar com GCC."
+        })
+    except subprocess.TimeoutExpired:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        emit("build_log", {
+            "ok": False,
+            "texto": "Tempo de compilação excedido."
+        })
+    except Exception as erro:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        emit("build_log", {
+            "ok": False,
+            "texto": f"Erro ao compilar: {erro}"
+        })
+
+
+@socketio.on("terminal_entrada")
+def terminal_entrada(dados):
+    sid = request.sid
+    texto = dados.get("texto", "")
+
+    proc_data = PROCESSOS_TERMINAL.get(sid)
+    if not proc_data:
+        return
+
+    proc_data["entrada"] += texto
+
+    try:
+        os.write(proc_data["fd"], texto.encode("utf-8"))
+    except Exception:
+        pass
+
+
+@socketio.on("disconnect")
+def desconectar_terminal():
+    encerrar_processo_socket(request.sid)
+
+
 # Importante para Render/Gunicorn: cria o banco ao importar o app.
 iniciar_banco()
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)

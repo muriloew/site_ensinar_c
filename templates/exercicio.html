@@ -30,8 +30,8 @@
             <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="abrirTerminalSimulado({{ licao.id }})">⚙️ Compilar</button>
-                <button class="btn btn-ghost" onclick="limparExercicio()">Limpar</button>
+                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
         </div>
@@ -63,20 +63,21 @@
     <div class="console-window codeblocks-window">
         <div class="codeblocks-titlebar">
             <span>"programa.exe"</span>
-            <button onclick="fecharTerminalExercicio()">×</button>
+            <button onclick="fecharTerminalReal()">×</button>
         </div>
 
         <div class="codeblocks-body terminal-real-body">
-            <div id="terminalTela" class="codeblocks-console terminal-real">
-                <span id="terminalPrompt">Aguardando compilação.</span>
-                <textarea id="entradaExercicio" class="terminal-real-input" spellcheck="false"></textarea>
-            </div>
+            <pre id="terminalSaidaReal" class="codeblocks-console terminal-final-output"></pre>
+            <input id="terminalInputReal" class="terminal-real-line" autocomplete="off" spellcheck="false">
         </div>
 
         <div class="console-footer">
-            <button id="btnEnviarEntrada" class="btn btn-primary" onclick="enviarEntradaSimulada()">Enviar</button>
-            <button class="btn btn-ghost" onclick="fecharTerminalExercicio()">Sair</button>
+            <button class="btn btn-ghost" onclick="fecharTerminalReal()">Sair</button>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {% endblock %}
