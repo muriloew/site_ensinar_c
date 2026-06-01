@@ -874,6 +874,26 @@ def exercicio(licao_id):
 
 
 
+
+@app.route("/api/exercicio/preparar-terminal", methods=["POST"])
+def api_exercicio_preparar_terminal():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "build": "Usuário não logado.", "prompt": ""}), 401
+
+    dados = request.get_json()
+    codigo = dados.get("codigo", "")
+
+    resultado_build = compilar_codigo_c(codigo)
+    prompt = detectar_prompt_entrada(codigo)
+
+    return jsonify({
+        "ok": resultado_build.get("ok", False),
+        "build": resultado_build.get("build", ""),
+        "prompt": prompt
+    })
+
+
 @app.route("/api/exercicio/compilar", methods=["POST"])
 def api_exercicio_compilar():
     usuario = usuario_logado()

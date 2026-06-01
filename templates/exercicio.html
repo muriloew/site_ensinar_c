@@ -30,14 +30,14 @@
             <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="abrirTerminalInterativo({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-primary" onclick="prepararTerminalCodeblocks({{ licao.id }})">⚙️ Compilar</button>
                 <button class="btn btn-ghost" onclick="limparExercicio()">Limpar</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
         </div>
 
         <div class="hint">
-            Ao clicar em <strong>Compilar</strong>, será aberta uma janela de terminal. Digite ali os valores de entrada, como no Code::Blocks, e compile pela própria janela.
+            Clique em <strong>Compilar</strong>. Se o código não tiver erro, abrirá um terminal parecido com o Code::Blocks. Digite a entrada no próprio terminal e clique em Enviar.
         </div>
     </section>
 </div>
@@ -66,18 +66,15 @@
             <button onclick="fecharTerminalExercicio()">×</button>
         </div>
 
-        <div class="codeblocks-body terminal-interativo-body">
-            <pre id="saidaExercicio" class="codeblocks-console terminal-preview">{{ saida_salva }}</pre>
-
-            <div id="entradaTerminalArea" class="terminal-entry-area">
-                <span class="terminal-entry-label">Entrada do usuário:</span>
-                <textarea id="entradaExercicio" class="terminal-live-input" placeholder="Digite aqui o que você colocaria no terminal. Exemplo: 19">{{ entrada_salva }}</textarea>
-                <small>Depois de digitar, clique em Compilar nesta janela.</small>
+        <div class="codeblocks-body terminal-real-body">
+            <div id="terminalTela" class="codeblocks-console terminal-real">
+                <span id="terminalPrompt">Aguardando compilação.</span><span id="entradaDigitadaPreview"></span>
+                <textarea id="entradaExercicio" class="terminal-real-input" spellcheck="false"></textarea>
             </div>
         </div>
 
         <div class="console-footer">
-            <button class="btn btn-primary" onclick="executarExercicioComEntrada()">⚙️ Compilar</button>
+            <button id="btnEnviarEntrada" class="btn btn-primary" onclick="enviarEntradaTerminal()">Enviar</button>
             <button class="btn btn-ghost" onclick="fecharTerminalExercicio()">Sair</button>
         </div>
     </div>

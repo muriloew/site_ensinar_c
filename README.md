@@ -147,3 +147,13 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - Ao clicar Compilar, abre diretamente a janela estilo Code::Blocks.
 - A entrada é digitada dentro da própria janela do terminal.
 - O botão Compilar dentro do terminal executa o programa com a entrada digitada.
+
+
+## Versão 15
+
+- Terminal no estilo Code::Blocks:
+  - compila primeiro;
+  - se não tiver erro, abre o terminal;
+  - mostra o prompt do programa;
+  - o usuário digita a entrada dentro da janela;
+  - depois o terminal mostra a saída completa.
