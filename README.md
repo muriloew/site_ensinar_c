@@ -199,3 +199,36 @@ O terminal agora funciona de forma real:
 - `scanf` espera entrada;
 - usuário digita no terminal;
 - programa continua depois da entrada.
+
+
+## Versão 19 — Correção Render
+
+O erro `eventlet.green.thread has no attribute start_joinable_thread` acontece quando o Render roda o projeto como serviço Python usando Python 3.14.
+
+Esta versão deve ser publicada como **Docker Web Service**, porque:
+- precisa de Python 3.11;
+- precisa de GCC;
+- precisa de WebSocket com eventlet;
+- precisa de terminal real com stdin/stdout.
+
+### Como publicar no Render
+
+Crie um novo serviço:
+
+1. New
+2. Web Service
+3. Conecte o repositório
+4. Runtime: Docker
+5. Dockerfile Path: `./Dockerfile`
+
+Não use o serviço Python antigo para esta versão.
+
+Se usar o serviço antigo, ele continuará tentando rodar:
+`gunicorn app:app`
+ou Python 3.14, e vai falhar.
+
+### Comando usado no Docker
+
+```txt
+gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:$PORT
+```

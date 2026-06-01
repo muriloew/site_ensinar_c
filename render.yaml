@@ -1,5 +1,6 @@
 services:
   - type: web
-    name: site-ensinar-c
+    name: site-ensinar-c-real
     env: docker
+    plan: free
     dockerfilePath: ./Dockerfile
