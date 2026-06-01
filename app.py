@@ -15,7 +15,7 @@ import pty
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "chave-dev-ensinar-c")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
 
 DB_PATH = os.environ.get("DB_PATH", "instance/ensinar_c.db")
 
@@ -1382,4 +1382,4 @@ def desconectar_terminal():
 iniciar_banco()
 
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True, allow_unsafe_werkzeug=True)

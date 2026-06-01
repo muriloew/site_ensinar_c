@@ -232,3 +232,41 @@ ou Python 3.14, e vai falhar.
 ```txt
 gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:$PORT
 ```
+
+
+## Versão 20 — Compilador real corrigido
+
+Esta versão remove o `eventlet`, porque ele quebrou no Render com Python 3.14.
+
+Agora usa:
+- Flask-SocketIO;
+- `async_mode="threading"`;
+- `simple-websocket`;
+- Gunicorn com threads;
+- Docker com Python 3.11;
+- GCC instalado no container.
+
+### Deploy correto no Render
+
+Use **novo Web Service com Runtime Docker**.
+
+Configuração:
+- Runtime: Docker
+- Dockerfile Path: `./Dockerfile`
+
+Não use o serviço Python antigo, porque ele roda Python 3.14 e não instala GCC.
+
+### Comando usado no Docker
+
+```txt
+gunicorn -w 1 --threads 8 app:app --bind 0.0.0.0:$PORT
+```
+
+### Como testar local
+
+Instale GCC no computador e rode:
+
+```bash
+python -m pip install -r requirements.txt
+python app.py
+```

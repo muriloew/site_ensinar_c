@@ -15,4 +15,4 @@ COPY . .
 ENV PORT=10000
 ENV PYTHONUNBUFFERED=1
 
-CMD gunicorn --worker-class eventlet -w 1 app:app --bind 0.0.0.0:$PORT
+CMD gunicorn -w 1 --threads 8 app:app --bind 0.0.0.0:$PORT
