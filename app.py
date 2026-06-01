@@ -3,6 +3,7 @@ import sqlite3
 import os
 import subprocess
 import tempfile
+import requests
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date
 
@@ -248,6 +249,18 @@ def iniciar_banco():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS compilador_historico (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            codigo TEXT,
+            entrada TEXT,
+            saida TEXT,
+            build_log TEXT,
+            criado_em TEXT
+        )
+    """)
+
     # Migração para bancos antigos já criados antes das novas funções.
     adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "codigo_enviado", "INTEGER DEFAULT 0")
@@ -398,6 +411,73 @@ def conceder_conquistas(usuario_id):
 
     conn.commit()
     conn.close()
+
+
+
+def executar_com_piston(codigo, entrada=""):
+    url = "https://emkc.org/api/v2/piston/execute"
+
+    payload = {
+        "language": "c",
+        "version": "10.2.0",
+        "files": [{"name": "main.c", "content": codigo}],
+        "stdin": entrada or "",
+        "args": [],
+        "compile_timeout": 10000,
+        "run_timeout": 5000,
+        "compile_memory_limit": -1,
+        "run_memory_limit": -1
+    }
+
+    resposta = requests.post(url, json=payload, timeout=15)
+    resposta.raise_for_status()
+    dados = resposta.json()
+
+    compile_out = dados.get("compile", {}) or {}
+    run_out = dados.get("run", {}) or {}
+
+    build_log = ""
+    if compile_out.get("stdout"):
+        build_log += compile_out.get("stdout", "")
+    if compile_out.get("stderr"):
+        build_log += compile_out.get("stderr", "")
+
+    saida = ""
+    if run_out.get("stdout"):
+        saida += run_out.get("stdout", "")
+    if run_out.get("stderr"):
+        saida += "\nErros:\n" + run_out.get("stderr", "")
+
+    if not build_log.strip():
+        build_log = "Build finished successfully.\n0 errors, 0 warnings."
+
+    if not saida.strip():
+        saida = "Programa executado sem saída na tela."
+
+    return {
+        "ok": run_out.get("code", 0) == 0,
+        "build": build_log,
+        "saida": montar_terminal_unificado(saida, entrada),
+        "origem": "Piston API"
+    }
+
+
+def executar_compilador_online(codigo, entrada=""):
+    try:
+        return executar_com_piston(codigo, entrada)
+    except Exception as erro_api:
+        resultado_local = executar_codigo_c(codigo, entrada)
+
+        if "GCC não está disponível" in resultado_local.get("saida", "") or "GCC não está disponível" in resultado_local.get("build", ""):
+            return {
+                "ok": False,
+                "build": "Não foi possível usar o compilador online.\n\nAPI externa indisponível ou bloqueada:\n" + str(erro_api),
+                "saida": "O código foi salvo, mas não foi possível executar agora.\n\nTente novamente mais tarde ou rode localmente no Code::Blocks.",
+                "origem": "Erro"
+            }
+
+        resultado_local["origem"] = "GCC local"
+        return resultado_local
 
 
 def compilar_codigo_c(codigo):
@@ -650,6 +730,64 @@ def modulos():
         })
 
     return render_template("modulos.html", modulos=modulos_view)
+
+
+
+@app.route("/compilador")
+def compilador():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    licao_id = request.args.get("licao_id", type=int)
+    codigo_inicial = '#include <stdio.h>\n\nint main() {\n    // escreva seu código aqui\n\n    return 0;\n}'
+    titulo = "Compilador Online"
+
+    if licao_id:
+        modulo, licao = encontrar_licao(licao_id)
+        if licao:
+            codigo_inicial = licao.get("codigo_minimo", licao["codigo"])
+            titulo = f"Compilador - {licao['titulo']}"
+
+    conn = conectar()
+    historico = conn.execute(
+        "SELECT * FROM compilador_historico WHERE usuario_id = ? ORDER BY id DESC LIMIT 5",
+        (usuario["id"],)
+    ).fetchall()
+    conn.close()
+
+    return render_template(
+        "compilador.html",
+        codigo_inicial=codigo_inicial,
+        titulo=titulo,
+        historico=historico
+    )
+
+
+@app.route("/api/compilador/executar", methods=["POST"])
+def api_compilador_executar():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+
+    dados = request.get_json()
+    codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
+
+    resultado = executar_compilador_online(codigo, entrada)
+
+    conn = conectar()
+    conn.execute(
+        """
+        INSERT INTO compilador_historico (usuario_id, codigo, entrada, saida, build_log, criado_em)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (usuario["id"], codigo, entrada, resultado.get("saida", ""), resultado.get("build", ""), str(date.today()))
+    )
+    conn.commit()
+    conn.close()
+
+    return jsonify(resultado)
 
 
 @app.route("/estudar/<int:modulo_id>")

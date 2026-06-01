@@ -20,52 +20,16 @@
         </div>
 
         <p class="small-muted">
-            O código inicial está propositalmente incompleto. Complete com o que você aprendeu na lição.
+            Para programar, use o compilador completo. Ele abre em uma página própria com editor, entrada, saída e histórico.
         </p>
 
-        <textarea id="editorCodigo" class="code-editor large">{{ codigo_salvo }}</textarea>
-
-        <div class="editor-actions toolbar-codeblocks">
-            <button class="btn btn-primary" onclick="compilarExecutar({{ licao.id }}, 'licao')">⚙️ Compilar aqui</button>
-            <a class="btn btn-ghost" href="/compilador?licao_id={{ licao.id }}">Abrir compilador completo</a>
-            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Console rápido</button>
-            <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
+        <div class="editor-actions">
+            <a class="btn btn-primary" href="/compilador?licao_id={{ licao.id }}">Abrir compilador completo</a>
             <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
         </div>
 
-        <div class="mini-console-status" onclick="abrirConsole()">
-            <strong>Console integrado</strong>
-            <span>Entrada, build log e saída ficam em uma janela separada.</span>
-        </div>
-
-        <div id="janelaConsole" class="console-modal">
-            <div class="console-window codeblocks-window">
-                <div class="codeblocks-titlebar">
-                    <span id="consoleTitulo">"programa.exe"</span>
-                    <button onclick="fecharConsole()">×</button>
-                </div>
-
-                <div class="codeblocks-body">
-                    <label class="terminal-label">Entrada que será digitada no terminal:</label>
-                    <textarea id="entradaTerminal" class="terminal-input terminal-inline-input" placeholder="Exemplo: 19">{{ entrada_salva }}</textarea>
-
-                    <pre id="saidaCodigo" class="codeblocks-console">{{ saida_salva }}</pre>
-
-                    <details class="build-details">
-                        <summary>Build log</summary>
-                        <pre id="buildLog" class="build-log">Aguardando compilação.</pre>
-                    </details>
-                </div>
-
-                <div class="console-footer">
-                    <button class="btn btn-primary" onclick="compilarExecutar({{ licao.id }}, 'licao')">⚙️ Compilar</button>
-                    <button class="btn btn-ghost" onclick="fecharConsole()">Sair</button>
-                </div>
-            </div>
-        </div>
-
         <div class="hint">
-            Para concluir: primeiro acerte o desafio teórico na página da teoria e depois execute seu código aqui.
+            Para concluir: primeiro acerte o desafio teórico na página da teoria e depois use o compilador completo para fazer o exercício.
         </div>
     </section>
 </div>

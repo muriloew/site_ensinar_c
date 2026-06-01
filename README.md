@@ -120,3 +120,11 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - Mantém fallback com GCC local.
 - Adicionado histórico recente de códigos executados.
 - Lições agora podem abrir o compilador completo com o código inicial do exercício.
+
+
+## Versão 12
+
+- Corrigida rota `/compilador?licao_id=...`.
+- Removido compilador rápido da página de exercício.
+- Agora existe apenas o compilador completo separado.
+- Página de exercício só direciona para o compilador completo.
