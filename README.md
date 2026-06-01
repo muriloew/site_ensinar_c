@@ -111,3 +111,12 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - Também há fallback em localStorage para manter a marcação na interface.
 - O console foi redesenhado para ficar parecido com a janela do Code::Blocks.
 - A saída mostra o prompt com a entrada digitada na mesma linha, quando possível.
+
+
+## Versão 11
+
+- Adicionado Compilador Online separado em `/compilador`.
+- O compilador usa API externa Piston quando disponível.
+- Mantém fallback com GCC local.
+- Adicionado histórico recente de códigos executados.
+- Lições agora podem abrir o compilador completo com o código inicial do exercício.

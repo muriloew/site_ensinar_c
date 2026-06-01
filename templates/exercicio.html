@@ -26,8 +26,9 @@
         <textarea id="editorCodigo" class="code-editor large">{{ codigo_salvo }}</textarea>
 
         <div class="editor-actions toolbar-codeblocks">
-            <button class="btn btn-primary" onclick="compilarExecutar({{ licao.id }}, 'licao')">⚙️ Compilar</button>
-            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Abrir console</button>
+            <button class="btn btn-primary" onclick="compilarExecutar({{ licao.id }}, 'licao')">⚙️ Compilar aqui</button>
+            <a class="btn btn-ghost" href="/compilador?licao_id={{ licao.id }}">Abrir compilador completo</a>
+            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Console rápido</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
         </div>

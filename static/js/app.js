@@ -233,3 +233,73 @@ function limparEditor() {
     const editor = document.getElementById("editorCodigo");
     editor.value = "";
 }
+
+
+function abrirJanelaTerminal() {
+    const modal = document.getElementById("terminalModal");
+    if (modal) {
+        modal.classList.add("ativo");
+    }
+}
+
+function fecharJanelaTerminal() {
+    const modal = document.getElementById("terminalModal");
+    if (modal) {
+        modal.classList.remove("ativo");
+    }
+}
+
+async function executarCompiladorOnline() {
+    const codigo = document.getElementById("codigoCompilador");
+    const entrada = document.getElementById("entradaCompilador");
+    const saida = document.getElementById("saidaCompilador");
+    const build = document.getElementById("buildCompilador");
+
+    if (!codigo || !saida || !build) {
+        return;
+    }
+
+    abrirJanelaTerminal();
+    saida.textContent = "Executando...";
+    build.textContent = "Compilando...";
+
+    try {
+        const retorno = await fetch("/api/compilador/executar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                codigo: codigo.value,
+                entrada: entrada ? entrada.value : ""
+            })
+        });
+
+        const dados = await retorno.json();
+
+        build.textContent = (dados.build || "Build finalizado.") + (dados.origem ? "\n\nOrigem: " + dados.origem : "");
+        saida.textContent = dados.saida || "Programa executado sem saída.";
+    } catch (erro) {
+        build.textContent = "Erro de conexão.";
+        saida.textContent = "Não foi possível executar o compilador agora.";
+    }
+}
+
+function limparCompilador() {
+    const codigo = document.getElementById("codigoCompilador");
+    const entrada = document.getElementById("entradaCompilador");
+    const saida = document.getElementById("saidaCompilador");
+    const build = document.getElementById("buildCompilador");
+
+    if (codigo) codigo.value = "";
+    if (entrada) entrada.value = "";
+    if (saida) saida.textContent = "Aguardando compilação.";
+    if (build) build.textContent = "Aguardando build.";
+}
+
+function carregarHistorico(codigo, entrada) {
+    const editor = document.getElementById("codigoCompilador");
+    const input = document.getElementById("entradaCompilador");
+
+    if (editor) editor.value = codigo || "";
+    if (input) input.value = entrada || "";
+}
+

@@ -920,3 +920,50 @@ a { color: inherit; text-decoration: none; }
 .codeblocks-window .console-footer .btn-primary {
     color: white;
 }
+
+
+.compiler-page {
+    display: grid;
+    grid-template-columns: 1fr 330px;
+    gap: 18px;
+}
+
+.compiler-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.compiler-code {
+    min-height: 560px;
+}
+
+.compiler-input {
+    min-height: 180px;
+}
+
+.history-list {
+    display: grid;
+    gap: 10px;
+}
+
+.history-list button {
+    background: rgba(255,255,255,.04);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.history-list button:hover {
+    border-color: var(--blue);
+}
+
+@media (max-width: 1000px) {
+    .compiler-page {
+        grid-template-columns: 1fr;
+    }
+}
