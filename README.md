@@ -71,3 +71,15 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - A entrada digitada é enviada para o programa durante a execução.
 - Adicionado painel de passo a passo do código, explicando linha por linha.
 - Entrada do terminal e código do usuário ficam salvos.
+
+
+## Versão 7
+
+- Removido o passo a passo no final.
+- Adicionada interface semelhante ao Code::Blocks:
+  - botão Compilar;
+  - botão Executar;
+  - Build log;
+  - Terminal de entrada;
+  - Terminal de saída.
+- A entrada do terminal é enviada para programas com scanf.

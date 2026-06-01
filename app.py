@@ -400,57 +400,10 @@ def conceder_conquistas(usuario_id):
     conn.close()
 
 
-def analisar_codigo_passo_a_passo(codigo):
-    linhas = codigo.splitlines()
-    passos = []
-
-    for numero, linha in enumerate(linhas, start=1):
-        texto = linha.strip()
-
-        if not texto:
-            continue
-
-        explicacao = "Linha do programa."
-
-        if texto.startswith("#include"):
-            explicacao = "Inclui uma biblioteca necessária para usar funções prontas."
-        elif "int main" in texto:
-            explicacao = "Inicia a função principal, onde o programa começa a executar."
-        elif texto == "{" or texto == "}":
-            explicacao = "Abre ou fecha um bloco de comandos."
-        elif texto.startswith("//"):
-            explicacao = "Comentário usado para orientar o programador. Não é executado."
-        elif "printf" in texto:
-            explicacao = "Mostra uma mensagem ou valor na tela."
-        elif "scanf" in texto:
-            explicacao = "Lê um valor digitado pelo usuário no terminal."
-        elif "if" in texto:
-            explicacao = "Testa uma condição para decidir qual bloco executar."
-        elif "else" in texto:
-            explicacao = "Executa um bloco alternativo quando a condição do if é falsa."
-        elif "for" in texto:
-            explicacao = "Cria uma repetição controlada por contador."
-        elif "while" in texto:
-            explicacao = "Repete comandos enquanto a condição for verdadeira."
-        elif "return" in texto:
-            explicacao = "Finaliza a função main e encerra o programa."
-        elif "=" in texto and "==" not in texto:
-            explicacao = "Atribui ou calcula um valor em uma variável."
-        elif any(tipo in texto for tipo in ["int ", "float ", "double ", "char "]):
-            explicacao = "Declara uma variável para guardar dados na memória."
-
-        passos.append(f"Linha {numero}: {texto}\n→ {explicacao}")
-
-    if not passos:
-        return "Nenhuma linha de código foi identificada."
-
-    return "\n\n".join(passos)
-
-
-def executar_codigo_c(codigo, entrada=""):
+def compilar_codigo_c(codigo):
     """
-    Compila e executa código C usando gcc quando disponível no servidor.
-    A entrada simula o que o usuário digitaria no terminal, útil para scanf.
+    Compila o código C e retorna apenas o build log.
+    Parecido com a etapa Build do Code::Blocks.
     """
     with tempfile.TemporaryDirectory() as temp_dir:
         arquivo_c = os.path.join(temp_dir, "programa.c")
@@ -458,8 +411,6 @@ def executar_codigo_c(codigo, entrada=""):
 
         with open(arquivo_c, "w", encoding="utf-8") as f:
             f.write(codigo)
-
-        passos = analisar_codigo_passo_a_passo(codigo)
 
         try:
             compilacao = subprocess.run(
@@ -472,8 +423,61 @@ def executar_codigo_c(codigo, entrada=""):
             if compilacao.returncode != 0:
                 return {
                     "ok": False,
-                    "saida": "Erro de compilação:\n" + compilacao.stderr,
-                    "passos": passos
+                    "build": "Build failed.\n\n" + compilacao.stderr,
+                    "saida": ""
+                }
+
+            return {
+                "ok": True,
+                "build": "Build finished successfully.\n0 errors, 0 warnings.",
+                "saida": ""
+            }
+
+        except FileNotFoundError:
+            return {
+                "ok": False,
+                "build": "Não foi possível compilar: GCC não está disponível no servidor.\n\nNo Render gratuito, normalmente o ambiente não vem preparado para compilar C. Para produção, use uma API externa de compilação ou configure um ambiente com GCC.",
+                "saida": ""
+            }
+        except subprocess.TimeoutExpired:
+            return {
+                "ok": False,
+                "build": "Tempo de compilação excedido.",
+                "saida": ""
+            }
+        except Exception as erro:
+            return {
+                "ok": False,
+                "build": f"Erro ao compilar: {erro}",
+                "saida": ""
+            }
+
+
+def executar_codigo_c(codigo, entrada=""):
+    """
+    Compila e executa o código C.
+    A entrada simula o que seria digitado no terminal quando o programa usa scanf.
+    """
+    with tempfile.TemporaryDirectory() as temp_dir:
+        arquivo_c = os.path.join(temp_dir, "programa.c")
+        arquivo_saida = os.path.join(temp_dir, "programa")
+
+        with open(arquivo_c, "w", encoding="utf-8") as f:
+            f.write(codigo)
+
+        try:
+            compilacao = subprocess.run(
+                ["gcc", arquivo_c, "-o", arquivo_saida],
+                capture_output=True,
+                text=True,
+                timeout=8
+            )
+
+            if compilacao.returncode != 0:
+                return {
+                    "ok": False,
+                    "build": "Build failed.\n\n" + compilacao.stderr,
+                    "saida": ""
                 }
 
             execucao = subprocess.run(
@@ -485,31 +489,36 @@ def executar_codigo_c(codigo, entrada=""):
             )
 
             saida = execucao.stdout
+
             if execucao.stderr:
                 saida += "\nErros:\n" + execucao.stderr
 
             if not saida.strip():
-                saida = "Programa executado sem saída na tela."
+                saida = "Process returned 0.\nO programa executou, mas não mostrou nenhuma saída."
 
-            return {"ok": True, "saida": saida, "passos": passos}
+            return {
+                "ok": True,
+                "build": "Build finished successfully.\n0 errors, 0 warnings.",
+                "saida": saida + "\n\nProcess returned 0."
+            }
 
         except FileNotFoundError:
             return {
                 "ok": False,
-                "saida": "O código foi salvo, mas o GCC não está disponível no servidor para compilar.\n\nPara testar scanf, digite os valores no campo Entrada do terminal. Quando houver GCC, esses valores serão enviados ao programa.\n\nPara funcionar no Render, é necessário usar um ambiente com GCC instalado ou integrar uma API externa de compilação.\n\nDica local no Windows: instale MinGW ou MSYS2 e confirme com: gcc --version",
-                "passos": passos
+                "build": "Não foi possível compilar: GCC não está disponível no servidor.",
+                "saida": "O código foi salvo, mas o servidor não possui GCC para executar.\n\nPara ter compilação real online, será necessário configurar GCC no Render ou usar uma API externa segura de compilação.\n\nA entrada do terminal ficará salva para quando a execução estiver disponível."
             }
         except subprocess.TimeoutExpired:
             return {
                 "ok": False,
-                "saida": "Tempo de execução excedido. Verifique se o código não possui loop infinito ou se faltou entrada para scanf.",
-                "passos": passos
+                "build": "Build/Run interrompido por tempo excedido.",
+                "saida": "Tempo de execução excedido.\nVerifique se há loop infinito ou se faltou entrada para scanf."
             }
         except Exception as erro:
             return {
                 "ok": False,
-                "saida": f"Erro ao executar o código: {erro}",
-                "passos": passos
+                "build": "Erro durante build/run.",
+                "saida": f"Erro ao executar o código: {erro}"
             }
 
 
@@ -716,16 +725,13 @@ def exercicio(licao_id):
     codigo_salvo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else codigo_padrao
     saida_salva = registro["saida_codigo"] if registro and "saida_codigo" in registro.keys() and registro["saida_codigo"] else "A saída do compilador aparecerá aqui."
     entrada_salva = registro["entrada_codigo"] if registro and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
-    passos_salvos = analisar_codigo_passo_a_passo(codigo_salvo)
-
     return render_template(
         "exercicio.html",
         modulo=modulo,
         licao=licao,
         codigo_salvo=codigo_salvo,
         saida_salva=saida_salva,
-        entrada_salva=entrada_salva,
-        passos_salvos=passos_salvos
+        entrada_salva=entrada_salva
     )
 
 
@@ -747,9 +753,7 @@ def desafio_diario():
     saida = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do desafio aparecerá aqui."
     entrada = registro["entrada_codigo"] if registro and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
     concluido = registro["concluido"] if registro else 0
-    passos = analisar_codigo_passo_a_passo(codigo)
-
-    return render_template("desafio_diario.html", desafio=DESAFIO_DIARIO, codigo=codigo, saida=saida, entrada=entrada, concluido=concluido, passos=passos)
+    return render_template("desafio_diario.html", desafio=DESAFIO_DIARIO, codigo=codigo, saida=saida, entrada=entrada, concluido=concluido)
 
 
 @app.route("/verificar", methods=["POST"])
@@ -788,6 +792,20 @@ def verificar():
         "correta": correta,
         "mensagem": "Resposta correta! Agora faça o exercício de código para concluir." if correta else "Resposta incorreta. Revise o conteúdo e tente novamente."
     })
+
+
+
+@app.route("/compilar-codigo", methods=["POST"])
+def compilar_codigo():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+
+    dados = request.get_json()
+    codigo = dados.get("codigo", "")
+
+    resultado = compilar_codigo_c(codigo)
+    return jsonify(resultado)
 
 
 @app.route("/executar-codigo", methods=["POST"])

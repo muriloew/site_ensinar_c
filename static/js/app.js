@@ -42,15 +42,50 @@ async function verificarResposta(licaoId, resposta, botao) {
     }
 }
 
+
+async function compilarCodigo() {
+    const editor = document.getElementById("editorCodigo");
+    const buildLog = document.getElementById("buildLog");
+
+    if (!buildLog) {
+        return;
+    }
+
+    buildLog.textContent = "Compilando...";
+
+    try {
+        const retorno = await fetch("/compilar-codigo", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                codigo: editor.value
+            })
+        });
+
+        let dados;
+        try {
+            dados = await retorno.json();
+        } catch {
+            buildLog.textContent = "Erro no servidor: resposta inválida. Veja os logs do Render.";
+            return;
+        }
+
+        buildLog.textContent = dados.build || "Compilação finalizada.";
+    } catch (erro) {
+        buildLog.textContent = "Erro de conexão ao compilar. Verifique se o site está online.";
+    }
+}
+
+
 async function executarCodigo(licaoId, tipo) {
     const editor = document.getElementById("editorCodigo");
     const entradaTerminal = document.getElementById("entradaTerminal");
     const saida = document.getElementById("saidaCodigo");
-    const passos = document.getElementById("passosCodigo");
+    const buildLog = document.getElementById("buildLog");
 
-    saida.textContent = "Compilando e executando...";
-    if (passos) {
-        passos.textContent = "Analisando o código passo a passo...";
+    saida.textContent = "Executando programa...";
+    if (buildLog) {
+        buildLog.textContent = "Compilando antes de executar...";
     }
 
     try {
@@ -73,10 +108,10 @@ async function executarCodigo(licaoId, tipo) {
             return;
         }
 
-        saida.textContent = dados.saida || dados.mensagem || "Execução finalizada sem mensagem.";
-        if (passos) {
-            passos.textContent = dados.passos || "Não foi possível montar o passo a passo.";
+        if (buildLog) {
+            buildLog.textContent = dados.build || "Build finalizado.";
         }
+        saida.textContent = dados.saida || dados.mensagem || "Execução finalizada sem mensagem.";
     } catch (erro) {
         saida.textContent = "Erro de conexão ao executar. Verifique se o site está online e tente novamente.";
     }

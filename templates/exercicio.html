@@ -25,23 +25,28 @@
 
         <textarea id="editorCodigo" class="code-editor large">{{ codigo_salvo }}</textarea>
 
-        <div class="terminal-box">
-            <h3>Entrada do terminal</h3>
-            <p class="small-muted">Digite aqui o que o usuário colocaria no terminal. Para vários scanf, coloque um valor por linha ou separado por espaço.</p>
-            <textarea id="entradaTerminal" class="terminal-input" placeholder="Exemplo:&#10;18&#10;7.5">{{ entrada_salva }}</textarea>
-        </div>
-
-        <div class="editor-actions">
-            <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Compilar e executar</button>
+        <div class="editor-actions toolbar-codeblocks">
+            <button class="btn btn-primary" onclick="compilarCodigo()">⚙️ Compilar</button>
+            <button class="btn btn-primary" onclick="executarCodigo({{ licao.id }}, 'licao')">▶ Executar</button>
             <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
         </div>
 
-        <h3>Saída do programa</h3>
-        <pre id="saidaCodigo" class="output">{{ saida_salva }}</pre>
+        <div class="console-grid">
+            <div class="terminal-box">
+                <h3>Entrada do terminal</h3>
+                <p class="small-muted">Digite aqui os valores que seriam colocados quando o programa pedir scanf. Use um valor por linha ou separado por espaço.</p>
+                <textarea id="entradaTerminal" class="terminal-input" placeholder="Exemplo:&#10;18&#10;7.5">{{ entrada_salva }}</textarea>
+            </div>
 
-        <h3>Passo a passo do código</h3>
-        <pre id="passosCodigo" class="output steps">{{ passos_salvos }}</pre>
+            <div class="terminal-box">
+                <h3>Build log</h3>
+                <pre id="buildLog" class="output console-output">Aguardando compilação.</pre>
+            </div>
+        </div>
+
+        <h3>Terminal de saída</h3>
+        <pre id="saidaCodigo" class="output console-output">{{ saida_salva }}</pre>
 
         <div class="hint">
             Para concluir: primeiro acerte o desafio teórico na página da teoria e depois execute seu código aqui.
