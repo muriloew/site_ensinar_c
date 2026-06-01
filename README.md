@@ -157,3 +157,11 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
   - mostra o prompt do programa;
   - o usuário digita a entrada dentro da janela;
   - depois o terminal mostra a saída completa.
+
+
+## Versão 16
+
+- Removida chamada para `/api/exercicio/preparar-terminal`, evitando erro 500 antes da execução.
+- O prompt do scanf é detectado no navegador.
+- Removidas dicas amarelas fixas.
+- Dica aparece apenas após algumas tentativas de compilação com erro.

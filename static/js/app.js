@@ -629,3 +629,135 @@ function limparExercicio() {
     if (prompt) prompt.textContent = "Aguardando compilação.";
     if (preview) preview.textContent = "";
 }
+
+
+// Versão 16: não usa /api/exercicio/preparar-terminal.
+// O prompt é detectado no navegador para evitar erro 500 antes da execução.
+function detectarPromptNoCliente(codigo) {
+    const regex = /printf\s*\(\s*"([^"]*)"\s*\)\s*;\s*scanf/s;
+    const achou = codigo.match(regex);
+
+    if (achou && achou[1]) {
+        return achou[1].replaceAll("\\n", "\n").replaceAll("\\t", "\t");
+    }
+
+    if (codigo.includes("scanf")) {
+        return "Entrada: ";
+    }
+
+    return "";
+}
+
+function registrarTentativaCodigo(falhou) {
+    const path = window.location.pathname;
+    const chave = "tentativas_codigo_" + path;
+    let total = Number(localStorage.getItem(chave) || "0");
+
+    if (falhou) {
+        total += 1;
+        localStorage.setItem(chave, String(total));
+    }
+
+    const dica = document.getElementById("dicaTentativas");
+    if (dica && total >= 3) {
+        dica.classList.remove("hidden-hint");
+    }
+}
+
+async function prepararTerminalCodeblocks(licaoId) {
+    const codigo = document.getElementById("codigoExercicio");
+    const prompt = document.getElementById("terminalPrompt");
+    const entrada = document.getElementById("entradaExercicio");
+    const preview = document.getElementById("entradaDigitadaPreview");
+    const btn = document.getElementById("btnEnviarEntrada");
+
+    exercicioTerminalAtual = licaoId;
+    codigoTerminalAtual = codigo ? codigo.value : "";
+
+    const textoPrompt = detectarPromptNoCliente(codigoTerminalAtual);
+
+    if (prompt) {
+        prompt.textContent = textoPrompt || "Executando programa...";
+    }
+
+    if (entrada) {
+        entrada.value = "";
+        entrada.style.display = textoPrompt ? "inline-block" : "none";
+    }
+
+    if (preview) {
+        preview.textContent = "";
+    }
+
+    if (btn) {
+        btn.style.display = textoPrompt ? "inline-block" : "none";
+    }
+
+    abrirTerminalExercicio();
+
+    if (textoPrompt) {
+        setTimeout(() => {
+            if (entrada) entrada.focus();
+        }, 100);
+    } else {
+        await enviarEntradaTerminal();
+    }
+}
+
+async function enviarEntradaTerminal() {
+    const entrada = document.getElementById("entradaExercicio");
+    const preview = document.getElementById("entradaDigitadaPreview");
+    const btn = document.getElementById("btnEnviarEntrada");
+
+    const valor = entrada ? entrada.value : "";
+
+    if (preview) {
+        preview.textContent = valor ? valor : "";
+    }
+
+    if (entrada) {
+        entrada.style.display = "none";
+    }
+
+    if (btn) {
+        btn.style.display = "none";
+    }
+
+    try {
+        const retorno = await fetch("/api/exercicio/compilar", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                licao_id: exercicioTerminalAtual,
+                codigo: codigoTerminalAtual,
+                entrada: valor
+            })
+        });
+
+        const dados = await retorno.json();
+
+        if (!dados.ok) {
+            registrarTentativaCodigo(true);
+            const build = document.getElementById("buildExercicio");
+            if (build) build.textContent = dados.build || "Build failed.";
+            abrirBuildModal();
+            return;
+        }
+
+        registrarTentativaCodigo(false);
+
+        const tela = document.getElementById("terminalTela");
+        if (tela) {
+            tela.innerHTML = "";
+            const pre = document.createElement("pre");
+            pre.className = "terminal-final-output";
+            pre.textContent = dados.saida || "Programa executado sem saída.";
+            tela.appendChild(pre);
+        }
+    } catch (erro) {
+        registrarTentativaCodigo(true);
+        const build = document.getElementById("buildExercicio");
+        if (build) build.textContent = "Erro de conexão ao executar.";
+        abrirBuildModal();
+    }
+}

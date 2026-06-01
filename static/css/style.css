@@ -1123,3 +1123,8 @@ a { color: inherit; text-decoration: none; }
     line-height: 1.35;
     white-space: pre-wrap;
 }
+
+
+.hidden-hint {
+    display: none;
+}
