@@ -54,10 +54,36 @@ document.addEventListener("DOMContentLoaded", () => {
             verificarResposta(licaoId, resposta, botao);
         });
     });
+
+    document.querySelectorAll(".quiz").forEach((quiz) => {
+        const licaoId = Number(quiz.dataset.licaoId);
+        let respostaSalva = quiz.dataset.respostaSalva;
+        let correta = quiz.dataset.correta === "1";
+
+        if (!respostaSalva) {
+            const local = localStorage.getItem("quiz_licao_" + licaoId);
+            if (local) {
+                try {
+                    const dados = JSON.parse(local);
+                    respostaSalva = dados.resposta;
+                    correta = !!dados.correta;
+                } catch {}
+            }
+        }
+
+        if (respostaSalva) {
+            quiz.querySelectorAll("button[data-resposta]").forEach((btn) => {
+                if (btn.dataset.resposta === respostaSalva) {
+                    btn.classList.add(correta ? "correct" : "wrong");
+                }
+            });
+        }
+    });
 });
 
 async function verificarResposta(licaoId, resposta, botao) {
     const resultado = document.getElementById("resultadoQuiz");
+    const quiz = botao.closest(".quiz");
 
     document.querySelectorAll(".quiz button").forEach(btn => {
         btn.classList.remove("correct", "wrong");
@@ -77,19 +103,27 @@ async function verificarResposta(licaoId, resposta, botao) {
             return;
         }
 
-        resultado.textContent = dados.mensagem;
-
         if (dados.correta) {
             botao.classList.add("correct");
+            resultado.textContent = "Resposta salva: correta.";
         } else {
             botao.classList.add("wrong");
+            resultado.textContent = "Resposta salva: incorreta.";
         }
+
+        if (quiz) {
+            quiz.dataset.respostaSalva = resposta;
+            quiz.dataset.correta = dados.correta ? "1" : "0";
+        }
+
+        localStorage.setItem("quiz_licao_" + licaoId, JSON.stringify({
+            resposta: resposta,
+            correta: dados.correta
+        }));
     } catch (erro) {
         resultado.textContent = "Erro ao verificar resposta. Recarregue a página e tente novamente.";
     }
 }
-
-
 
 async function compilarExecutar(licaoId, tipo) {
     abrirConsole();

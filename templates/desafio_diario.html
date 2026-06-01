@@ -40,27 +40,22 @@
         </div>
 
         <div id="janelaConsole" class="console-modal">
-            <div class="console-window">
-                <div class="console-titlebar">
-                    <div>
-                        <strong>Console - Desafio diário</strong>
-                        <span>Terminal integrado</span>
-                    </div>
+            <div class="console-window codeblocks-window">
+                <div class="codeblocks-titlebar">
+                    <span id="consoleTitulo">"desafio_diario.exe"</span>
                     <button onclick="fecharConsole()">×</button>
                 </div>
 
-                <div class="console-single">
-                    <h3>Terminal</h3>
-                    <p class="small-muted">Digite a entrada que o programa usaria no scanf. Ao compilar, a entrada e a saída aparecem juntas como em um console.</p>
+                <div class="codeblocks-body">
+                    <label class="terminal-label">Entrada que será digitada no terminal:</label>
+                    <textarea id="entradaTerminal" class="terminal-input terminal-inline-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
 
-                    <label>Entrada do usuário:</label>
-                    <textarea id="entradaTerminal" class="terminal-input modal-input-small" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
+                    <pre id="saidaCodigo" class="codeblocks-console">{{ saida }}</pre>
 
-                    <label>Saída do programa:</label>
-                    <pre id="saidaCodigo" class="output console-output modal-output">{{ saida }}</pre>
-
-                    <label>Build log:</label>
-                    <pre id="buildLog" class="output console-output build-small">Aguardando compilação.</pre>
+                    <details class="build-details">
+                        <summary>Build log</summary>
+                        <pre id="buildLog" class="build-log">Aguardando compilação.</pre>
+                    </details>
                 </div>
 
                 <div class="console-footer">

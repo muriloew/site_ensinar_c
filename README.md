@@ -103,3 +103,11 @@ O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o si
 - O botão Compilar agora compila e executa.
 - A janela tem apenas Compilar e Sair.
 - A saída mostra entrada do usuário, saída do programa e build log juntos.
+
+
+## Versão 10
+
+- A resposta do desafio teórico agora permanece visualmente marcada ao trocar de tela.
+- Também há fallback em localStorage para manter a marcação na interface.
+- O console foi redesenhado para ficar parecido com a janela do Code::Blocks.
+- A saída mostra o prompt com a entrada digitada na mesma linha, quando possível.
