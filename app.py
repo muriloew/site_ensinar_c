@@ -496,6 +496,353 @@ def aplicar_conteudo_expandido():
 aplicar_conteudo_expandido()
 
 
+TRILHA_COMPLETA_C = [
+    {
+        "id": 1,
+        "titulo": "Introdução ao C",
+        "descricao": "Primeiros conceitos da linguagem C, estrutura de programas e processo de compilação.",
+        "icone": "C",
+        "conteudos": ["O que é C", "Estrutura básica", "Comentários", "Compilação"],
+        "topicos": [
+            "linguagem compilada", "sintaxe básica", "estrutura de programas", "eficiência",
+            "desempenho", "gerenciamento de memória", "comandos básicos", "bibliotecas",
+            "pré-processador", "função main()", "comentários", "compilação e execução",
+            "erros de compilação", "mensagens do compilador"
+        ]
+    },
+    {
+        "id": 2,
+        "titulo": "printf e scanf",
+        "descricao": "Saída formatada e entrada de dados pelo teclado.",
+        "icone": "io",
+        "conteudos": ["printf", "scanf"],
+        "topicos": [
+            "saída de dados", "formatação", "%d", "%f", "%c", "%s", "entrada de dados",
+            "leitura do teclado", "operador &", "armazenamento de entrada", "validação básica"
+        ]
+    },
+    {
+        "id": 3,
+        "titulo": "Variáveis",
+        "descricao": "Tipos, constantes, macros e escopo de variáveis.",
+        "icone": "var",
+        "conteudos": ["int", "float e double", "char", "constantes", "#define", "escopo"],
+        "topicos": [
+            "declaração", "inicialização", "memória", "precisão", "ASCII", "constantes",
+            "macros", "variáveis locais e globais"
+        ]
+    },
+    {
+        "id": 4,
+        "titulo": "Operadores",
+        "descricao": "Operações matemáticas, comparação, lógica e incremento.",
+        "icone": "+-",
+        "conteudos": [
+            "soma", "subtração", "multiplicação", "divisão",
+            "operadores relacionais", "operadores lógicos", "incremento"
+        ],
+        "topicos": [
+            "operadores matemáticos", "comparação", "expressões booleanas",
+            "incremento e decremento", "operações condicionais"
+        ]
+    },
+    {
+        "id": 5,
+        "titulo": "Decisão",
+        "descricao": "Controle de fluxo com decisões simples e múltiplas.",
+        "icone": "if",
+        "conteudos": ["if", "else", "else if", "switch", "ternário"],
+        "topicos": ["condições", "execução condicional", "múltiplas decisões", "switch case", "operador ternário"]
+    },
+    {
+        "id": 6,
+        "titulo": "Repetição",
+        "descricao": "Laços de repetição e controle de execução.",
+        "icone": "for",
+        "conteudos": ["while", "do while", "for", "break", "continue"],
+        "topicos": ["loops", "repetição", "controle de execução", "interrupção de laços"]
+    },
+    {
+        "id": 7,
+        "titulo": "Funções",
+        "descricao": "Criação de funções, parâmetros, retorno, protótipos e recursão.",
+        "icone": "fn",
+        "conteudos": ["criando função", "parâmetros", "retorno", "protótipos", "recursão"],
+        "topicos": [
+            "modularização", "reutilização", "passagem de parâmetros",
+            "retorno de valores", "chamadas recursivas"
+        ]
+    },
+    {
+        "id": 8,
+        "titulo": "Arrays e strings",
+        "descricao": "Vetores, matrizes e manipulação de textos em C.",
+        "icone": "[]",
+        "conteudos": ["arrays", "matrizes", "strings", "strlen", "strcpy", "strcmp", "strcat", "fgets"],
+        "topicos": ["vetores", "matrizes", "manipulação textual", "entrada segura", "funções da biblioteca string"]
+    },
+    {
+        "id": 9,
+        "titulo": "Ponteiros",
+        "descricao": "Endereços de memória, desreferenciamento e ponteiros em funções e arrays.",
+        "icone": "*",
+        "conteudos": ["memória", "operador &", "ponteiros + funções", "ponteiros + arrays", "ponteiro para ponteiro"],
+        "topicos": ["endereços de memória", "desreferenciamento", "aritmética de ponteiros", "passagem por referência"]
+    },
+    {
+        "id": 10,
+        "titulo": "Alocação dinâmica",
+        "descricao": "Uso da heap e gerenciamento manual de memória.",
+        "icone": "mem",
+        "conteudos": ["malloc", "calloc", "realloc", "free", "memory leak"],
+        "topicos": ["alocação dinâmica", "heap", "gerenciamento de memória", "vazamento de memória"]
+    },
+    {
+        "id": 11,
+        "titulo": "Structs",
+        "descricao": "Tipos compostos com struct, typedef, unions e enum.",
+        "icone": "{}",
+        "conteudos": ["structs", "typedef", "unions", "enum"],
+        "topicos": ["agrupamento de dados", "tipos personalizados", "compartilhamento de memória", "conjuntos nomeados"]
+    },
+    {
+        "id": 12,
+        "titulo": "Arquivos",
+        "descricao": "Leitura e escrita de arquivos usando a biblioteca padrão.",
+        "icone": "file",
+        "conteudos": ["fopen", "fclose", "fprintf", "fscanf"],
+        "topicos": ["abertura de arquivos", "fechamento de arquivos", "gravação", "leitura formatada"]
+    },
+    {
+        "id": 13,
+        "titulo": "Modularização",
+        "descricao": "Separação de código em arquivos .h e .c com proteção de inclusão.",
+        "icone": ".h",
+        "conteudos": [".h", ".c", "include guards"],
+        "topicos": ["cabeçalhos", "arquivos fonte", "organização de projetos", "proteção contra inclusão duplicada"]
+    },
+    {
+        "id": 14,
+        "titulo": "Bibliotecas",
+        "descricao": "Principais bibliotecas padrão usadas em programas C.",
+        "icone": "lib",
+        "conteudos": ["stdio", "stdlib", "string", "math"],
+        "topicos": ["entrada e saída", "utilidades gerais", "manipulação de strings", "funções matemáticas"]
+    },
+    {
+        "id": 15,
+        "titulo": "Bits",
+        "descricao": "Operadores bitwise e criação de máscaras.",
+        "icone": "01",
+        "conteudos": ["bitwise", "máscaras"],
+        "topicos": ["operações bit a bit", "AND", "OR", "XOR", "deslocamento", "máscaras de bits"]
+    },
+    {
+        "id": 16,
+        "titulo": "Debug",
+        "descricao": "Identificação de erros de sintaxe, erros lógicos e técnicas de depuração.",
+        "icone": "bug",
+        "conteudos": ["erros de sintaxe", "erros lógicos", "debug"],
+        "topicos": ["mensagens de erro", "teste de hipóteses", "rastreamento de valores", "correção de falhas"]
+    },
+    {
+        "id": 17,
+        "titulo": "GCC e build",
+        "descricao": "Compilação pela linha de comando, linking e automação com Makefile.",
+        "icone": "gcc",
+        "conteudos": ["gcc", "linking", "makefile"],
+        "topicos": ["compilador GCC", "etapas de build", "ligação de objetos", "automação de compilação"]
+    },
+    {
+        "id": 18,
+        "titulo": "Segurança",
+        "descricao": "Cuidados com buffer overflow e validação de entrada.",
+        "icone": "sec",
+        "conteudos": ["buffer overflow", "validação"],
+        "topicos": ["limites de buffers", "entrada insegura", "validação de dados", "boas práticas"]
+    },
+    {
+        "id": 19,
+        "titulo": "Estruturas de dados",
+        "descricao": "Listas, pilhas, filas e árvores.",
+        "icone": "ds",
+        "conteudos": ["listas", "pilhas", "filas", "árvores"],
+        "topicos": ["organização de dados", "inserção", "remoção", "percurso", "uso de ponteiros"]
+    },
+    {
+        "id": 20,
+        "titulo": "Algoritmos",
+        "descricao": "Busca, ordenação e noções de eficiência.",
+        "icone": "alg",
+        "conteudos": ["busca linear", "bubble sort", "eficiência"],
+        "topicos": ["busca sequencial", "ordenação simples", "complexidade", "comparação de desempenho"]
+    },
+    {
+        "id": 21,
+        "titulo": "Projetos",
+        "descricao": "Projetos práticos para consolidar a linguagem C.",
+        "icone": "app",
+        "conteudos": [
+            "calculadora", "cadastro", "agenda", "jogo terminal",
+            "sistema biblioteca", "editor texto", "projeto final"
+        ],
+        "topicos": ["integração de conteúdos", "organização", "entrada e saída", "persistência", "projeto completo"]
+    }
+]
+
+
+def codigo_exemplo_para_conteudo(conteudo):
+    chave = conteudo.lower()
+
+    if "scanf" in chave or "entrada" in chave or "validação" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int numero;\n    printf("Digite um numero: ");\n    scanf("%d", &numero);\n    printf("Valor informado: %d\\n", numero);\n    return 0;\n}'
+    if "if" in chave or "else" in chave or "ternário" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n    if (idade >= 18) {\n        printf("Maior de idade\\n");\n    } else {\n        printf("Menor de idade\\n");\n    }\n    return 0;\n}'
+    if "switch" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int opcao = 2;\n    switch (opcao) {\n        case 1: printf("Cadastrar\\n"); break;\n        case 2: printf("Consultar\\n"); break;\n        default: printf("Opcao invalida\\n");\n    }\n    return 0;\n}'
+    if "while" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int contador = 1;\n    while (contador <= 3) {\n        printf("%d\\n", contador);\n        contador++;\n    }\n    return 0;\n}'
+    if "do while" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int contador = 1;\n    do {\n        printf("%d\\n", contador);\n        contador++;\n    } while (contador <= 3);\n    return 0;\n}'
+    if "for" in chave or "break" in chave or "continue" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    for (int i = 1; i <= 5; i++) {\n        if (i == 3) continue;\n        printf("%d\\n", i);\n    }\n    return 0;\n}'
+    if "função" in chave or "parâmetro" in chave or "retorno" in chave or "protótipo" in chave:
+        return '#include <stdio.h>\n\nint dobro(int n) {\n    return n * 2;\n}\n\nint main() {\n    printf("%d\\n", dobro(5));\n    return 0;\n}'
+    if "recurs" in chave:
+        return '#include <stdio.h>\n\nint fatorial(int n) {\n    if (n <= 1) return 1;\n    return n * fatorial(n - 1);\n}\n\nint main() {\n    printf("%d\\n", fatorial(5));\n    return 0;\n}'
+    if "array" in chave or "vetor" in chave or "matriz" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int valores[3] = {10, 20, 30};\n    for (int i = 0; i < 3; i++) {\n        printf("%d\\n", valores[i]);\n    }\n    return 0;\n}'
+    if "string" in chave or "strlen" in chave or "strcpy" in chave or "strcmp" in chave or "strcat" in chave or "fgets" in chave:
+        return '#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char palavra[] = "codigo";\n    printf("Tamanho: %zu\\n", strlen(palavra));\n    return 0;\n}'
+    if "ponteiro" in chave or "memória" in chave or "operador &" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int valor = 10;\n    int *p = &valor;\n    printf("%d\\n", *p);\n    return 0;\n}'
+    if "malloc" in chave or "calloc" in chave or "realloc" in chave or "free" in chave or "memory leak" in chave:
+        return '#include <stdio.h>\n#include <stdlib.h>\n\nint main() {\n    int *numero = malloc(sizeof(int));\n    *numero = 30;\n    printf("%d\\n", *numero);\n    free(numero);\n    return 0;\n}'
+    if "struct" in chave or "typedef" in chave:
+        return '#include <stdio.h>\n\ntypedef struct {\n    char nome[30];\n    int idade;\n} Pessoa;\n\nint main() {\n    Pessoa pessoa = {"Ana", 20};\n    printf("%s %d\\n", pessoa.nome, pessoa.idade);\n    return 0;\n}'
+    if "union" in chave:
+        return '#include <stdio.h>\n\nunion Valor {\n    int inteiro;\n    float decimal;\n};\n\nint main() {\n    union Valor v;\n    v.inteiro = 10;\n    printf("%d\\n", v.inteiro);\n    return 0;\n}'
+    if "enum" in chave:
+        return '#include <stdio.h>\n\nenum Status {ABERTO, FECHADO};\n\nint main() {\n    enum Status atual = ABERTO;\n    printf("%d\\n", atual);\n    return 0;\n}'
+    if "fopen" in chave or "fclose" in chave or "fprintf" in chave or "fscanf" in chave or "arquivo" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    FILE *arquivo = fopen("saida.txt", "w");\n    fprintf(arquivo, "Curso de C");\n    fclose(arquivo);\n    printf("Arquivo gravado\\n");\n    return 0;\n}'
+    if "math" in chave:
+        return '#include <stdio.h>\n#include <math.h>\n\nint main() {\n    printf("%.0f\\n", sqrt(25));\n    return 0;\n}'
+    if "bit" in chave or "máscara" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int permissoes = 6;\n    int leitura = 2;\n    printf("%d\\n", permissoes & leitura);\n    return 0;\n}'
+    if "busca" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int valores[4] = {4, 8, 15, 16};\n    int alvo = 15;\n    for (int i = 0; i < 4; i++) {\n        if (valores[i] == alvo) printf("Encontrado\\n");\n    }\n    return 0;\n}'
+    if "bubble" in chave or "sort" in chave:
+        return '#include <stdio.h>\n\nint main() {\n    int v[3] = {3, 1, 2};\n    for (int i = 0; i < 2; i++) {\n        for (int j = 0; j < 2 - i; j++) {\n            if (v[j] > v[j + 1]) {\n                int temp = v[j];\n                v[j] = v[j + 1];\n                v[j + 1] = temp;\n            }\n        }\n    }\n    printf("%d %d %d\\n", v[0], v[1], v[2]);\n    return 0;\n}'
+
+    return f'#include <stdio.h>\n\nint main() {{\n    printf("Estudo de {conteudo} em C\\\\n");\n    return 0;\n}}'
+
+
+def regra_correcao_para_conteudo(conteudo):
+    chave = conteudo.lower()
+    termos = ["printf"]
+
+    if "scanf" in chave:
+        termos = ["scanf", "&", "printf"]
+    elif any(item in chave for item in ["if", "else", "ternário"]):
+        termos = ["if", "printf"]
+    elif "switch" in chave:
+        termos = ["switch", "case", "printf"]
+    elif "while" in chave:
+        termos = ["while", "printf"]
+    elif "do while" in chave:
+        termos = ["do", "while", "printf"]
+    elif "for" in chave:
+        termos = ["for", "printf"]
+    elif "break" in chave:
+        termos = ["break", "printf"]
+    elif "continue" in chave:
+        termos = ["continue", "printf"]
+    elif "função" in chave or "parâmetro" in chave or "retorno" in chave or "protótipo" in chave:
+        termos = ["(", ")", "return", "printf"]
+    elif "recurs" in chave:
+        termos = ["return", "printf"]
+    elif any(item in chave for item in ["array", "matriz", "lista", "pilha", "fila", "árvore"]):
+        termos = ["[", "]", "printf"]
+    elif any(item in chave for item in ["string", "strlen", "strcpy", "strcmp", "strcat", "fgets"]):
+        termos = ["char", "printf"]
+    elif any(item in chave for item in ["ponteiro", "memória", "operador &"]):
+        termos = ["*", "&", "printf"]
+    elif any(item in chave for item in ["malloc", "calloc", "realloc", "free", "memory leak"]):
+        termos = ["stdlib.h", "free", "printf"]
+    elif any(item in chave for item in ["struct", "typedef"]):
+        termos = ["struct", "printf"]
+    elif "union" in chave:
+        termos = ["union", "printf"]
+    elif "enum" in chave:
+        termos = ["enum", "printf"]
+    elif any(item in chave for item in ["fopen", "fclose", "fprintf", "fscanf"]):
+        termos = ["FILE", "fopen", "fclose", "printf"]
+    elif any(item in chave for item in ["bitwise", "máscara"]):
+        termos = ["&", "printf"]
+
+    return {"codigo_contem": termos, "saida_obrigatoria": True}
+
+
+def criar_alternativas(conteudos_modulo, resposta):
+    alternativas = [resposta]
+    for item in conteudos_modulo:
+        if item != resposta and item not in alternativas:
+            alternativas.append(item)
+        if len(alternativas) == 4:
+            break
+
+    for item in ["printf", "scanf", "main", "for", "struct"]:
+        if len(alternativas) == 4:
+            break
+        if item not in alternativas:
+            alternativas.append(item)
+
+    return alternativas[:4]
+
+
+def gerar_trilha_completa_c():
+    licoes = []
+    proximo_id = 1
+    trilha = []
+
+    for modulo in TRILHA_COMPLETA_C:
+        modulo_licoes = []
+        topicos = "; ".join(modulo["topicos"])
+
+        for conteudo in modulo["conteudos"]:
+            codigo = codigo_exemplo_para_conteudo(conteudo)
+            modulo_licoes.append({
+                "id": proximo_id,
+                "titulo": conteudo,
+                "conteudo": (
+                    f"{conteudo} faz parte do módulo {modulo['titulo']}. "
+                    f"Nesta lição você estuda: {topicos}."
+                ),
+                "codigo": codigo,
+                "pergunta": f"Qual conteúdo é o foco desta lição do módulo {modulo['titulo']}?",
+                "alternativas": criar_alternativas(modulo["conteudos"], conteudo),
+                "resposta": conteudo,
+                "exercicio_codigo": f"Faça um programa em C que demonstre {conteudo} e mostre uma saída no terminal.",
+                "codigo_minimo": codigo,
+                "correcao": regra_correcao_para_conteudo(conteudo)
+            })
+            proximo_id += 1
+
+        trilha.append({
+            "id": modulo["id"],
+            "titulo": modulo["titulo"],
+            "descricao": modulo["descricao"],
+            "icone": modulo["icone"],
+            "licoes": modulo_licoes
+        })
+
+    return trilha
+
+
+MODULOS = gerar_trilha_completa_c()
+
+
 def conectar():
     pasta = os.path.dirname(DB_PATH)
     if pasta:

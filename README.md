@@ -16,7 +16,7 @@ Plataforma web educativa para ensino da linguagem C.
 - Terminal interativo real nos exercícios e desafios diários
 - Correção automática de exercícios e desafios antes da conclusão
 - Rodízio com maior variedade de desafios diários
-- Módulos ampliados: arrays, strings, funções, ponteiros, structs, arquivos e memória
+- Trilha ampliada para 21 módulos e 91 lições, cobrindo introdução, variáveis, operadores, decisão, repetição, funções, arrays, strings, ponteiros, memória, structs, arquivos, modularização, bibliotecas, bits, debug, GCC, segurança, estruturas de dados, algoritmos e projetos
 - Backup automático do progresso em `instance/backups`
 - Sem certificado, pois o projeto não possui licença para certificação oficial
 
