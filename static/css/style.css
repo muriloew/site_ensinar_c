@@ -1129,6 +1129,27 @@ a { color: inherit; text-decoration: none; }
     display: none;
 }
 
+.correction-feedback {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,.04);
+    color: var(--muted);
+}
+
+.correction-feedback.success {
+    border-color: rgba(34, 197, 94, .65);
+    background: rgba(34, 197, 94, .12);
+    color: #bbf7d0;
+}
+
+.correction-feedback.warning {
+    border-color: rgba(245, 158, 11, .65);
+    background: rgba(245, 158, 11, .12);
+    color: #fde68a;
+}
+
 
 .terminal-real-body {
     display: flex;

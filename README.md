@@ -13,6 +13,11 @@ Plataforma web educativa para ensino da linguagem C.
 - Exercício de código no final de cada lição
 - Editor de código nas lições
 - Rota para compilar e executar código C usando GCC quando disponível
+- Terminal interativo real nos exercícios e desafios diários
+- Correção automática de exercícios e desafios antes da conclusão
+- Rodízio com maior variedade de desafios diários
+- Módulos ampliados: arrays, strings, funções, ponteiros, structs, arquivos e memória
+- Backup automático do progresso em `instance/backups`
 - Sem certificado, pois o projeto não possui licença para certificação oficial
 
 ## Como rodar localmente

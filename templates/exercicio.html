@@ -30,10 +30,18 @@
             <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }})">⚙️ Compilar</button>
+                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">⚙️ Compilar</button>
                 <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
+        </div>
+
+        <div id="feedbackCorrecao" class="correction-feedback {% if codigo_validado %}success{% elif feedback_codigo %}warning{% endif %}">
+            {% if feedback_codigo %}
+                {{ feedback_codigo }}
+            {% else %}
+                Execute o código para receber a correção automática.
+            {% endif %}
         </div>
 
         <div id="dicaTentativas" class="hint hidden-hint">

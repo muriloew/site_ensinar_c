@@ -89,6 +89,16 @@
                 {% endfor %}
             </ol>
         </div>
+
+        <div class="card backup-card">
+            <h3>Backup do progresso</h3>
+            {% if backup_recente %}
+                <p class="small-muted">Último backup: {{ backup_recente.criado_em }}</p>
+            {% else %}
+                <p class="small-muted">O primeiro backup será gerado automaticamente ao salvar progresso.</p>
+            {% endif %}
+            <a class="btn btn-ghost full" href="/backup-progresso">Baixar backup</a>
+        </div>
     </aside>
 </section>
 {% endblock %}

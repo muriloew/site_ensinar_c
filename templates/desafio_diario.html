@@ -5,12 +5,12 @@
 <div class="topbar">
     <div>
         <h1>Desafio diário</h1>
-        <p>Complete um desafio de código para ganhar XP e praticar todos os dias.</p>
+        <p>Complete o desafio do dia, teste no terminal real e ganhe XP ao passar na correção.</p>
     </div>
 </div>
 
 <div class="daily-layout">
-    <section class="card">
+    <section class="card daily-card">
         <span class="daily-icon">🎯</span>
         <h2>{{ desafio.titulo }}</h2>
         <p>{{ desafio.descricao }}</p>
@@ -23,47 +23,61 @@
             <div class="success-box">Desafio diário já concluído hoje.</div>
         {% endif %}
 
-        <p class="small-muted">O código inicial vem com o mínimo para você pensar e completar.</p>
-
         <textarea id="editorCodigo" class="code-editor large">{{ codigo }}</textarea>
 
         <div class="editor-actions toolbar-codeblocks">
-            <button class="btn btn-primary" onclick="compilarExecutar(null, 'diario')">⚙️ Compilar</button>
-            <button class="btn btn-ghost" onclick="abrirConsole()">🖥️ Abrir console</button>
-            <button class="btn btn-ghost" onclick="limparEditor()">Limpar</button>
+            <button class="btn btn-primary" onclick="compilarReal(null, 'diario')">⚙️ Compilar</button>
+            <button class="btn btn-ghost" onclick="abrirTerminalReal()">Abrir terminal</button>
+            <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
             <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
         </div>
 
-        <div class="mini-console-status" onclick="abrirConsole()">
-            <strong>Console integrado</strong>
-            <span>Entrada, build log e saída ficam em uma janela separada.</span>
-        </div>
-
-        <div id="janelaConsole" class="console-modal">
-            <div class="console-window codeblocks-window">
-                <div class="codeblocks-titlebar">
-                    <span id="consoleTitulo">"desafio_diario.exe"</span>
-                    <button onclick="fecharConsole()">×</button>
-                </div>
-
-                <div class="codeblocks-body">
-                    <label class="terminal-label">Entrada que será digitada no terminal:</label>
-                    <textarea id="entradaTerminal" class="terminal-input terminal-inline-input" placeholder="Exemplo:&#10;8.0&#10;7.0">{{ entrada }}</textarea>
-
-                    <pre id="saidaCodigo" class="codeblocks-console">{{ saida }}</pre>
-
-                    <details class="build-details">
-                        <summary>Build log</summary>
-                        <pre id="buildLog" class="build-log">Aguardando compilação.</pre>
-                    </details>
-                </div>
-
-                <div class="console-footer">
-                    <button class="btn btn-primary" onclick="compilarExecutar(null, 'diario')">⚙️ Compilar</button>
-                    <button class="btn btn-ghost" onclick="fecharConsole()">Sair</button>
-                </div>
-            </div>
+        <div id="feedbackCorrecao" class="correction-feedback {% if codigo_validado %}success{% elif feedback_codigo %}warning{% endif %}">
+            {% if feedback_codigo %}
+                {{ feedback_codigo }}
+            {% else %}
+                Execute o código para receber a correção automática.
+            {% endif %}
         </div>
     </section>
 </div>
+
+<div id="buildModal" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>Build log</span>
+            <button onclick="fecharBuildModal()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="buildExercicio" class="codeblocks-console">Aguardando compilação.</pre>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharBuildModal()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<div id="terminalModalExercicio" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>"desafio_diario.exe"</span>
+            <button onclick="fecharTerminalReal()">×</button>
+        </div>
+
+        <div class="codeblocks-body terminal-real-body">
+            <pre id="terminalSaidaReal" class="codeblocks-console terminal-final-output">{{ saida }}</pre>
+            <input id="terminalInputReal" class="terminal-real-line" autocomplete="off" spellcheck="false" placeholder="Digite aqui e pressione Enter">
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharTerminalReal()">Sair</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {% endblock %}

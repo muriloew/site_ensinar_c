@@ -929,6 +929,17 @@ function limparExercicio() {
 let socketTerminal = null;
 let terminalFinalizado = false;
 
+function atualizarFeedbackCorrecao(correcao) {
+    const feedback = document.getElementById("feedbackCorrecao");
+    if (!feedback || !correcao) {
+        return;
+    }
+
+    feedback.textContent = correcao.mensagem || "";
+    feedback.classList.remove("success", "warning");
+    feedback.classList.add(correcao.ok ? "success" : "warning");
+}
+
 function iniciarSocketTerminal() {
     if (socketTerminal) {
         return socketTerminal;
@@ -941,6 +952,10 @@ function iniciarSocketTerminal() {
         if (build) build.textContent = dados.texto || "";
 
         if (!dados.ok) {
+            atualizarFeedbackCorrecao({
+                ok: false,
+                mensagem: dados.texto || "Não foi possível compilar o código."
+            });
             abrirBuildModal();
         } else {
             abrirTerminalReal();
@@ -964,14 +979,19 @@ function iniciarSocketTerminal() {
         }
     });
 
+    socketTerminal.on("correcao_resultado", (dados) => {
+        atualizarFeedbackCorrecao(dados);
+    });
+
     return socketTerminal;
 }
 
-function compilarReal(licaoId) {
-    const codigo = document.getElementById("codigoExercicio");
+function compilarReal(licaoId, tipo = "licao") {
+    const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
     const saida = document.getElementById("terminalSaidaReal");
     const input = document.getElementById("terminalInputReal");
     const build = document.getElementById("buildExercicio");
+    const feedback = document.getElementById("feedbackCorrecao");
 
     terminalFinalizado = false;
 
@@ -982,11 +1002,16 @@ function compilarReal(licaoId) {
         input.placeholder = "Digite aqui e pressione Enter";
     }
     if (build) build.textContent = "Compilando...";
+    if (feedback) {
+        feedback.textContent = "Executando e corrigindo automaticamente...";
+        feedback.classList.remove("success", "warning");
+    }
 
     const socket = iniciarSocketTerminal();
 
     socket.emit("compilar_real", {
         licao_id: licaoId,
+        tipo: tipo,
         codigo: codigo ? codigo.value : ""
     });
 }
@@ -1035,10 +1060,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function limparTerminalReal() {
-    const codigo = document.getElementById("codigoExercicio");
+    const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
     const saida = document.getElementById("terminalSaidaReal");
     const input = document.getElementById("terminalInputReal");
     const build = document.getElementById("buildExercicio");
+    const feedback = document.getElementById("feedbackCorrecao");
 
     if (codigo) codigo.value = "";
     if (saida) saida.textContent = "";
@@ -1047,4 +1073,8 @@ function limparTerminalReal() {
         input.disabled = false;
     }
     if (build) build.textContent = "Aguardando compilação.";
+    if (feedback) {
+        feedback.textContent = "Execute o código para receber a correção automática.";
+        feedback.classList.remove("success", "warning");
+    }
 }
