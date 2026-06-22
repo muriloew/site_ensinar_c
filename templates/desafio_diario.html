@@ -23,7 +23,8 @@
             <div class="success-box">Desafio diário já concluído hoje.</div>
         {% endif %}
 
-        <textarea id="editorCodigo" class="code-editor large">{{ codigo }}</textarea>
+        <textarea id="editorCodigo" data-tipo="diario" class="code-editor large">{{ codigo }}</textarea>
+        <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
 
         <div class="editor-actions toolbar-codeblocks">
             <button class="btn btn-primary" onclick="compilarReal(null, 'diario')">⚙️ Compilar</button>

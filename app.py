@@ -976,6 +976,8 @@ def iniciar_banco():
             licao_id INTEGER NOT NULL,
             modulo_id INTEGER NOT NULL,
             quiz_correto INTEGER DEFAULT 0,
+            quiz_respondido INTEGER DEFAULT 0,
+            resposta_teorica TEXT,
             codigo_enviado INTEGER DEFAULT 0,
             concluida INTEGER DEFAULT 0,
             codigo_usuario TEXT,
@@ -1038,6 +1040,8 @@ def iniciar_banco():
 
     # Migração para bancos antigos já criados antes das novas funções.
     adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "progresso", "quiz_respondido", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "progresso", "resposta_teorica", "TEXT")
     adicionar_coluna(conn, "progresso", "codigo_enviado", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "codigo_usuario", "TEXT")
     adicionar_coluna(conn, "progresso", "saida_codigo", "TEXT")
@@ -1854,7 +1858,8 @@ def estudar(modulo_id):
     codigo_padrao = licao.get("codigo_minimo", licao["codigo"])
     codigo_salvo = registro_licao["codigo_usuario"] if registro_licao and "codigo_usuario" in registro_licao.keys() and registro_licao["codigo_usuario"] else codigo_padrao
     saida_salva = registro_licao["saida_codigo"] if registro_licao and "saida_codigo" in registro_licao.keys() and registro_licao["saida_codigo"] else "A saída do compilador aparecerá aqui."
-    quiz_correto = registro_licao["quiz_correto"] if registro_licao and "quiz_correto" in registro_licao.keys() else 0
+    quiz_correto = int(registro_licao["quiz_correto"]) if registro_licao and "quiz_correto" in registro_licao.keys() and registro_licao["quiz_correto"] is not None else 0
+    resposta_teorica = registro_licao["resposta_teorica"] if registro_licao and "resposta_teorica" in registro_licao.keys() and registro_licao["resposta_teorica"] else ""
 
     return render_template(
         "estudar.html",
@@ -1863,7 +1868,7 @@ def estudar(modulo_id):
         concluidas_ids=concluidas_ids,
         codigo_salvo=codigo_salvo,
         saida_salva=saida_salva,
-        resposta_teorica="",
+        resposta_teorica=resposta_teorica,
         quiz_correto=quiz_correto
     )
 
@@ -1907,6 +1912,67 @@ def exercicio(licao_id):
     )
 
 
+
+
+@app.route("/api/exercicio/salvar-rascunho", methods=["POST"])
+def salvar_rascunho_exercicio():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
+
+    dados = request.get_json() or {}
+    licao_id = int(dados.get("licao_id"))
+    codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
+
+    modulo, licao = encontrar_licao(licao_id)
+    if not licao:
+        return jsonify({"ok": False, "mensagem": "Lição não encontrada."}), 404
+
+    conn = conectar()
+    conn.execute(
+        """
+        INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, entrada_codigo, atualizado_em)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(usuario_id, licao_id)
+        DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                      entrada_codigo = excluded.entrada_codigo,
+                      atualizado_em = excluded.atualizado_em
+        """,
+        (usuario["id"], licao_id, modulo["id"], codigo, entrada, str(date.today()))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "mensagem": "Rascunho salvo."})
+
+
+@app.route("/api/desafio/salvar-rascunho", methods=["POST"])
+def salvar_rascunho_desafio():
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
+
+    dados = request.get_json() or {}
+    codigo = dados.get("codigo", "")
+    entrada = dados.get("entrada", "")
+    hoje = str(date.today())
+    desafio = desafio_do_dia(hoje)
+
+    conn = conectar()
+    conn.execute(
+        """
+        INSERT INTO desafios_diarios (usuario_id, data, desafio_id, codigo_usuario, entrada_codigo, concluido)
+        VALUES (?, ?, ?, ?, ?, 0)
+        ON CONFLICT(usuario_id, data)
+        DO UPDATE SET desafio_id = excluded.desafio_id,
+                      codigo_usuario = excluded.codigo_usuario,
+                      entrada_codigo = excluded.entrada_codigo
+        """,
+        (usuario["id"], hoje, desafio["id"], codigo, entrada)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"ok": True, "mensagem": "Rascunho salvo."})
 
 
 @app.route("/api/exercicio/preparar-terminal", methods=["POST"])
@@ -2006,42 +2072,48 @@ def desafio_diario():
 
 @app.route("/verificar", methods=["POST"])
 def verificar():
-    dados = request.get_json()
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"correta": False, "mensagem": "Usuário não logado."}), 401
+
+    dados = request.get_json() or {}
     licao_id = int(dados.get("licao_id"))
-    resposta = dados.get("resposta", "")
+    resposta = str(dados.get("resposta", ""))
 
     modulo, licao = encontrar_licao(licao_id)
     if not licao:
-        return jsonify({"correta": False, "mensagem": "Lição não encontrada."})
+        return jsonify({"correta": False, "mensagem": "Lição não encontrada."}), 404
 
     correta = resposta == licao["resposta"]
 
-    if correta and usuario_logado():
-        try:
-            conn = conectar()
-            conn.execute(
-                """
-                INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, atualizado_em)
-                VALUES (?, ?, ?, 1, ?)
-                ON CONFLICT(usuario_id, licao_id)
-                DO UPDATE SET quiz_correto = 1, atualizado_em = excluded.atualizado_em
-                """,
-                (usuario_logado()["id"], licao_id, modulo["id"], str(date.today()))
-            )
-            conn.commit()
-            conn.close()
-            criar_backup_progresso(usuario_logado()["id"])
-        except Exception as erro:
-            return jsonify({
-                "correta": False,
-                "mensagem": f"Erro ao salvar resposta: {erro}"
-            }), 500
+    try:
+        conn = conectar()
+        conn.execute(
+            """
+            INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, quiz_respondido, resposta_teorica, atualizado_em)
+            VALUES (?, ?, ?, ?, 1, ?, ?)
+            ON CONFLICT(usuario_id, licao_id)
+            DO UPDATE SET quiz_correto = excluded.quiz_correto,
+                          quiz_respondido = 1,
+                          resposta_teorica = excluded.resposta_teorica,
+                          atualizado_em = excluded.atualizado_em
+            """,
+            (usuario["id"], licao_id, modulo["id"], 1 if correta else 0, resposta, str(date.today()))
+        )
+        conn.commit()
+        conn.close()
+        criar_backup_progresso(usuario["id"])
+    except Exception as erro:
+        return jsonify({
+            "correta": False,
+            "mensagem": f"Erro ao salvar resposta: {erro}"
+        }), 500
 
     return jsonify({
         "correta": correta,
-        "mensagem": "Resposta correta! Agora faça o exercício de código para concluir." if correta else "Resposta incorreta. Revise o conteúdo e tente novamente."
+        "resposta_salva": True,
+        "mensagem": "Resposta salva: correta. Agora faça o exercício de código para concluir." if correta else "Resposta salva: incorreta. Revise o conteúdo e tente novamente."
     })
-
 
 
 @app.route("/compilar-codigo", methods=["POST"])

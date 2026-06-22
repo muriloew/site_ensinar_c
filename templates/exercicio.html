@@ -42,7 +42,8 @@
                 <span>Ajuda</span>
             </div>
 
-            <textarea id="codigoExercicio" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
+            <textarea id="codigoExercicio" data-licao-id="{{ licao.id }}" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
+            <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
 
             <div class="codeblocks-bottom-bar">
                 <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">⚙️ Compilar</button>

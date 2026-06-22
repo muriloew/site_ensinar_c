@@ -1078,3 +1078,73 @@ function limparTerminalReal() {
         feedback.classList.remove("success", "warning");
     }
 }
+
+
+// Salvamento automático de respostas/códigos
+let timerSalvamentoAutomatico = null;
+
+function mostrarStatusSalvamento(texto, tipo = "normal") {
+    const status = document.getElementById("statusSalvamento");
+    if (!status) return;
+    status.textContent = texto;
+    status.classList.remove("saving", "saved", "error");
+    status.classList.add(tipo);
+}
+
+async function salvarRascunhoAtual() {
+    const editorExercicio = document.getElementById("codigoExercicio");
+    const editorDiario = document.getElementById("editorCodigo");
+    const entrada = document.getElementById("terminalInputReal") || document.getElementById("entradaTerminal") || document.getElementById("entradaExercicio");
+
+    try {
+        if (editorExercicio && editorExercicio.dataset.licaoId) {
+            mostrarStatusSalvamento("Salvando rascunho...", "saving");
+            const retorno = await fetch("/api/exercicio/salvar-rascunho", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    licao_id: Number(editorExercicio.dataset.licaoId),
+                    codigo: editorExercicio.value,
+                    entrada: entrada ? entrada.value : ""
+                })
+            });
+            const dados = await retorno.json();
+            mostrarStatusSalvamento(dados.ok ? "Rascunho salvo." : "Erro ao salvar rascunho.", dados.ok ? "saved" : "error");
+        }
+
+        if (editorDiario && editorDiario.dataset.tipo === "diario") {
+            mostrarStatusSalvamento("Salvando desafio...", "saving");
+            const retorno = await fetch("/api/desafio/salvar-rascunho", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    codigo: editorDiario.value,
+                    entrada: entrada ? entrada.value : ""
+                })
+            });
+            const dados = await retorno.json();
+            mostrarStatusSalvamento(dados.ok ? "Rascunho salvo." : "Erro ao salvar rascunho.", dados.ok ? "saved" : "error");
+        }
+    } catch (erro) {
+        mostrarStatusSalvamento("Erro ao salvar automaticamente.", "error");
+    }
+}
+
+function agendarSalvamentoAutomatico() {
+    clearTimeout(timerSalvamentoAutomatico);
+    mostrarStatusSalvamento("Alterações ainda não salvas...", "saving");
+    timerSalvamentoAutomatico = setTimeout(salvarRascunhoAtual, 900);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const editorExercicio = document.getElementById("codigoExercicio");
+    const editorDiario = document.getElementById("editorCodigo");
+
+    if (editorExercicio) {
+        editorExercicio.addEventListener("input", agendarSalvamentoAutomatico);
+    }
+
+    if (editorDiario && editorDiario.dataset.tipo === "diario") {
+        editorDiario.addEventListener("input", agendarSalvamentoAutomatico);
+    }
+});
