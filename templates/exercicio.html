@@ -19,6 +19,21 @@
             <p>{{ licao.exercicio_codigo }}</p>
         </div>
 
+        <div class="exercise-criteria">
+            <strong>O que será verificado</strong>
+            <ul>
+                <li>O programa precisa compilar e terminar sem erro.</li>
+                {% if licao.correcao.codigo_contem %}
+                <li>Recursos esperados:
+                    {% for termo in licao.correcao.codigo_contem %}
+                        <code>{{ termo }}</code>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endif %}
+                <li>A saída será conferida automaticamente; quando houver entrada, outros valores também poderão ser testados.</li>
+            </ul>
+        </div>
+
         <div class="codeblocks-editor-shell">
             <div class="fake-menu-bar">
                 <span>Arquivo</span>

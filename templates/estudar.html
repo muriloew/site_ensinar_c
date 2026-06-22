@@ -23,17 +23,38 @@
 
         <div class="card">
             <h2>Conteúdo teórico</h2>
-            <p>{{ licao.conteudo }}</p>
+            <p class="theory-lead">{{ licao.conteudo }}</p>
+
+            {% if licao.pontos_chave %}
+            <div class="theory-section">
+                <h3>Pontos-chave</h3>
+                <ul class="theory-points">
+                    {% for ponto in licao.pontos_chave %}
+                    <li>{{ ponto }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if licao.erro_comum %}
+            <div class="common-mistake">
+                <strong>Erro comum</strong>
+                <p>{{ licao.erro_comum }}</p>
+            </div>
+            {% endif %}
 
             <h2>Exemplo explicado</h2>
             <div class="code-window">
                 <div class="dots"><span></span><span></span><span></span></div>
                 <pre><code>{{ licao.codigo }}</code></pre>
             </div>
+            {% if licao.explicacao_codigo %}
+            <p class="code-explanation">{{ licao.explicacao_codigo }}</p>
+            {% endif %}
 
             <div class="next-box">
-                <h2>Depois da teoria</h2>
-                <p>Responda o desafio teórico ao lado e depois vá para o exercício de código. O exercício vem em outra página para separar estudo e prática.</p>
+                <h2>Hora de praticar</h2>
+                <p>{{ licao.exercicio_codigo }}</p>
                 <a class="btn btn-primary" href="/exercicio/{{ licao.id }}">Ir para exercício de código →</a>
             </div>
         </div>

@@ -11,6 +11,7 @@ import unicodedata
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime
 from flask_socketio import SocketIO, emit
+from conteudo_pedagogico import PLANOS_LICOES, obter_plano
 import time
 import signal
 import threading
@@ -694,16 +695,90 @@ TRILHA_COMPLETA_C = [
 def codigo_exemplo_para_conteudo(conteudo):
     chave = conteudo.lower()
 
+    exemplos_diretos = {
+        "o que é c": '#include <stdio.h>\n\nint main(void) {\n    printf("C transforma codigo-fonte em programas eficientes.\\n");\n    return 0;\n}',
+        "estrutura básica": '#include <stdio.h>\n\nint main(void) {\n    int resposta = 42;\n    printf("Resposta: %d\\n", resposta);\n    return 0;\n}',
+        "comentários": '#include <stdio.h>\n\nint main(void) {\n    // Comentario de uma linha\n    /* Comentario de bloco: explica a intencao. */\n    printf("Comentarios nao sao executados.\\n");\n    return 0;\n}',
+        "compilação": '#include <stdio.h>\n\nint main(void) {\n    int resultado = 6 * 7;\n    printf("Resultado compilado: %d\\n", resultado);\n    return 0;\n}',
+        "printf": '#include <stdio.h>\n\nint main(void) {\n    int quantidade = 3;\n    double preco = 12.50;\n    char categoria = \'A\';\n    printf("%d itens | R$ %.2f | categoria %c\\n", quantidade, preco, categoria);\n    return 0;\n}',
+        "int": '#include <stdio.h>\n\nint main(void) {\n    int caixas = 6;\n    int itensPorCaixa = 7;\n    printf("Total: %d\\n", caixas * itensPorCaixa);\n    return 0;\n}',
+        "float e double": '#include <stdio.h>\n\nint main(void) {\n    float nota = 8.5f;\n    double media = (nota + 9.5) / 2.0;\n    printf("Media: %.2f\\n", media);\n    return 0;\n}',
+        "char": '#include <stdio.h>\n\nint main(void) {\n    char letra = \'C\';\n    printf("Caractere: %c | codigo: %d\\n", letra, letra);\n    return 0;\n}',
+        "constantes": '#include <stdio.h>\n\nint main(void) {\n    const int DIAS_SEMANA = 7;\n    printf("Tres semanas: %d dias\\n", DIAS_SEMANA * 3);\n    return 0;\n}',
+        "#define": '#include <stdio.h>\n\n#define QUADRADO(x) ((x) * (x))\n\nint main(void) {\n    printf("Quadrado: %d\\n", QUADRADO(6));\n    return 0;\n}',
+        "escopo": '#include <stdio.h>\n\nconst int LIMITE = 100;\n\nint main(void) {\n    int valor = 42;\n    if (valor < LIMITE) {\n        int diferenca = LIMITE - valor;\n        printf("Faltam %d\\n", diferenca);\n    }\n    return 0;\n}',
+        "soma": '#include <stdio.h>\n\nint main(void) {\n    int a = 19;\n    int b = 23;\n    printf("Soma: %d\\n", a + b);\n    return 0;\n}',
+        "subtração": '#include <stdio.h>\n\nint main(void) {\n    int saldo = 100;\n    int retirada = 58;\n    printf("Saldo: %d\\n", saldo - retirada);\n    return 0;\n}',
+        "multiplicação": '#include <stdio.h>\n\nint main(void) {\n    int linhas = 6;\n    int colunas = 7;\n    printf("Celulas: %d\\n", linhas * colunas);\n    return 0;\n}',
+        "divisão": '#include <stdio.h>\n\nint main(void) {\n    int total = 7;\n    int pessoas = 2;\n    printf("Divisao inteira: %d\\n", total / pessoas);\n    printf("Divisao real: %.2f\\n", (double) total / pessoas);\n    return 0;\n}',
+        "operadores relacionais": '#include <stdio.h>\n\nint main(void) {\n    int a = 42;\n    int b = 20;\n    printf("a > b: %d | a == b: %d\\n", a > b, a == b);\n    return 0;\n}',
+        "operadores lógicos": '#include <stdio.h>\n\nint main(void) {\n    int idade = 20;\n    int temDocumento = 1;\n    if (idade >= 18 && temDocumento) {\n        printf("Entrada permitida\\n");\n    }\n    return 0;\n}',
+        "incremento": '#include <stdio.h>\n\nint main(void) {\n    int contador = 40;\n    contador++;\n    ++contador;\n    printf("%d\\n", contador);\n    return 0;\n}',
+        "else if": '#include <stdio.h>\n\nint main(void) {\n    int nota = 8;\n    if (nota >= 9) {\n        printf("Conceito A\\n");\n    } else if (nota >= 7) {\n        printf("Conceito B\\n");\n    } else {\n        printf("Conceito C\\n");\n    }\n    return 0;\n}',
+        "ternário": '#include <stdio.h>\n\nint main(void) {\n    int a = 17, b = 42;\n    int maior = a > b ? a : b;\n    printf("Maior: %d\\n", maior);\n    return 0;\n}',
+        "break": '#include <stdio.h>\n\nint main(void) {\n    for (int i = 1; i <= 10; i++) {\n        if (i == 6) break;\n        printf("%d ", i);\n    }\n    printf("\\n");\n    return 0;\n}',
+        "continue": '#include <stdio.h>\n\nint main(void) {\n    for (int i = 1; i <= 6; i++) {\n        if (i % 2 == 0) continue;\n        printf("%d ", i);\n    }\n    printf("\\n");\n    return 0;\n}',
+        "matrizes": '#include <stdio.h>\n\nint main(void) {\n    int matriz[2][2] = {{10, 2}, {3, 32}};\n    int diagonal = 0;\n    for (int i = 0; i < 2; i++) diagonal += matriz[i][i];\n    printf("Diagonal: %d\\n", diagonal);\n    return 0;\n}',
+        "strings": '#include <stdio.h>\n\nint main(void) {\n    char texto[] = "Linguagem C";\n    for (int i = 0; texto[i] != \'\\0\'; i++) putchar(texto[i]);\n    putchar(\'\\n\');\n    return 0;\n}',
+        "strlen": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    const char palavra[] = "compilar";\n    printf("Tamanho: %zu\\n", strlen(palavra));\n    return 0;\n}',
+        "strcpy": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char destino[20];\n    strcpy(destino, "C seguro");\n    printf("%s\\n", destino);\n    return 0;\n}',
+        "strcmp": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    const char a[] = "casa";\n    const char b[] = "casa";\n    if (strcmp(a, b) == 0) printf("Iguais\\n");\n    return 0;\n}',
+        "strcat": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char destino[30] = "Curso ";\n    strcat(destino, "de C");\n    printf("%s\\n", destino);\n    return 0;\n}',
+        "fgets": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char nome[40];\n    printf("Nome: ");\n    if (fgets(nome, sizeof(nome), stdin) != NULL) {\n        nome[strcspn(nome, "\\n")] = \'\\0\';\n        printf("Ola, %s\\n", nome);\n    }\n    return 0;\n}',
+        "operador &": '#include <stdio.h>\n\nint main(void) {\n    int valor = 42;\n    int *ponteiro = &valor;\n    printf("Valor: %d\\n", *ponteiro);\n    return 0;\n}',
+        "ponteiros + funções": '#include <stdio.h>\n\nvoid trocar(int *a, int *b) {\n    int temporario = *a;\n    *a = *b;\n    *b = temporario;\n}\n\nint main(void) {\n    int a = 10, b = 42;\n    trocar(&a, &b);\n    printf("%d %d\\n", a, b);\n    return 0;\n}',
+        "ponteiros + arrays": '#include <stdio.h>\n\nint main(void) {\n    int valores[] = {10, 20, 12};\n    int *p = valores;\n    int total = 0;\n    for (int i = 0; i < 3; i++) total += *(p + i);\n    printf("%d\\n", total);\n    return 0;\n}',
+        "ponteiro para ponteiro": '#include <stdio.h>\n\nint main(void) {\n    int valor = 10;\n    int *p = &valor;\n    int **pp = &p;\n    **pp = 42;\n    printf("%d\\n", valor);\n    return 0;\n}',
+        "calloc": '#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *valores = calloc(4, sizeof(*valores));\n    if (valores == NULL) return 1;\n    valores[3] = 42;\n    for (int i = 0; i < 4; i++) printf("%d ", valores[i]);\n    printf("\\n");\n    free(valores);\n    return 0;\n}',
+        "realloc": '#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *valores = malloc(2 * sizeof(*valores));\n    if (valores == NULL) return 1;\n    int *temporario = realloc(valores, 3 * sizeof(*valores));\n    if (temporario == NULL) {\n        free(valores);\n        return 1;\n    }\n    valores = temporario;\n    valores[0] = 10; valores[1] = 20; valores[2] = 12;\n    printf("%d\\n", valores[0] + valores[1] + valores[2]);\n    free(valores);\n    return 0;\n}',
+        "free": '#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    int *valor = malloc(sizeof(*valor));\n    if (valor == NULL) return 1;\n    *valor = 42;\n    printf("%d\\n", *valor);\n    free(valor);\n    valor = NULL;\n    return 0;\n}',
+        "memory leak": '#include <stdio.h>\n#include <stdlib.h>\n\nstatic int executar(void) {\n    int *valor = malloc(sizeof(*valor));\n    if (valor == NULL) return 0;\n    *valor = 42;\n    int resultado = *valor;\n    free(valor);\n    return resultado;\n}\n\nint main(void) {\n    printf("%d\\n", executar());\n    return 0;\n}',
+        "fopen": '#include <stdio.h>\n\nint main(void) {\n    FILE *arquivo = fopen("dados.txt", "w");\n    if (arquivo == NULL) return 1;\n    printf("Arquivo aberto\\n");\n    fclose(arquivo);\n    return 0;\n}',
+        "fclose": '#include <stdio.h>\n\nint main(void) {\n    FILE *arquivo = fopen("dados.txt", "w");\n    if (arquivo == NULL) return 1;\n    fprintf(arquivo, "%d\\n", 42);\n    if (fclose(arquivo) == 0) printf("Arquivo fechado\\n");\n    return 0;\n}',
+        "fprintf": '#include <stdio.h>\n\nint main(void) {\n    FILE *arquivo = fopen("resultado.txt", "w");\n    if (arquivo == NULL) return 1;\n    fprintf(arquivo, "Resposta: %d\\n", 42);\n    fclose(arquivo);\n    printf("Gravado\\n");\n    return 0;\n}',
+        "fscanf": '#include <stdio.h>\n\nint main(void) {\n    FILE *arquivo = fopen("numeros.txt", "w");\n    if (arquivo == NULL) return 1;\n    fprintf(arquivo, "19 23\\n");\n    fclose(arquivo);\n    arquivo = fopen("numeros.txt", "r");\n    if (arquivo == NULL) return 1;\n    int a, b;\n    if (fscanf(arquivo, "%d %d", &a, &b) == 2) printf("%d\\n", a + b);\n    fclose(arquivo);\n    return 0;\n}',
+        ".h": '#include <stdio.h>\n\nint dobro(int valor);\n\nint main(void) {\n    printf("%d\\n", dobro(21));\n    return 0;\n}\n\nint dobro(int valor) {\n    return valor * 2;\n}',
+        ".c": '#include <stdio.h>\n\nint triplo(int valor);\n\nint main(void) {\n    printf("%d\\n", triplo(14));\n    return 0;\n}\n\nint triplo(int valor) {\n    return valor * 3;\n}',
+        "include guards": '#include <stdio.h>\n\n#ifndef MATEMATICA_H\n#define MATEMATICA_H\nint dobro(int valor);\n#endif\n\nint dobro(int valor) {\n    return valor * 2;\n}\n\nint main(void) {\n    printf("%d\\n", dobro(21));\n    return 0;\n}',
+        "stdio": '#include <stdio.h>\n\nint main(void) {\n    fprintf(stdout, "Saida padrao: %d\\n", 42);\n    return 0;\n}',
+        "stdlib": '#include <stdio.h>\n#include <stdlib.h>\n\nint main(void) {\n    char texto[] = "42";\n    char *fim;\n    long valor = strtol(texto, &fim, 10);\n    if (*fim == \'\\0\') printf("%ld\\n", valor);\n    return 0;\n}',
+        "string": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char texto[10];\n    strcpy(texto, "C");\n    strcat(texto, "11");\n    printf("%s: %s\\n", texto, strcmp(texto, "C11") == 0 ? "correto" : "erro");\n    return 0;\n}',
+        "bitwise": '#include <stdio.h>\n\nint main(void) {\n    unsigned valor = 21u;\n    printf("%u\\n", valor << 1);\n    return 0;\n}',
+        "máscaras": '#include <stdio.h>\n\n#define LER (1u << 0)\n#define ESCREVER (1u << 1)\n#define EXECUTAR (1u << 2)\n\nint main(void) {\n    unsigned permissoes = LER | EXECUTAR;\n    if ((permissoes & EXECUTAR) != 0u) printf("Pode executar\\n");\n    return 0;\n}',
+        "erros de sintaxe": '#include <stdio.h>\n\nint main(void) {\n    int resposta = 42;\n    printf("%d\\n", resposta);\n    return 0;\n}',
+        "erros lógicos": '#include <stdio.h>\n\nint main(void) {\n    double media = (8.0 + 10.0 + 12.0) / 3.0;\n    printf("%.2f\\n", media);\n    return 0;\n}',
+        "debug": '#include <stdio.h>\n\nint main(void) {\n    int valores[] = {10, 20, 12};\n    int total = 0;\n    for (int i = 0; i < 3; i++) {\n        total += valores[i];\n        printf("i=%d total=%d\\n", i, total);\n    }\n    return 0;\n}',
+        "gcc": '#include <stdio.h>\n\nint main(void) {\n    printf("Programa C11 compilado com avisos habilitados.\\n");\n    return 0;\n}',
+        "linking": '#include <stdio.h>\n\nint resposta(void);\n\nint main(void) {\n    printf("%d\\n", resposta());\n    return 0;\n}\n\nint resposta(void) {\n    return 42;\n}',
+        "makefile": '#include <stdio.h>\n\nint main(void) {\n    const char *comando = "gcc -std=c11 -Wall main.c -o programa";\n    printf("%s\\n", comando);\n    return 0;\n}',
+        "buffer overflow": '#include <stdio.h>\n\nint main(void) {\n    char nome[10];\n    printf("Uma palavra: ");\n    if (scanf("%9s", nome) == 1) {\n        printf("Recebido: %s\\n", nome);\n    }\n    return 0;\n}',
+        "listas": '#include <stdio.h>\n\nstruct No {\n    int valor;\n    struct No *proximo;\n};\n\nint main(void) {\n    struct No terceiro = {12, NULL};\n    struct No segundo = {20, &terceiro};\n    struct No primeiro = {10, &segundo};\n    int total = 0;\n    for (struct No *p = &primeiro; p != NULL; p = p->proximo) total += p->valor;\n    printf("%d\\n", total);\n    return 0;\n}',
+        "pilhas": '#include <stdio.h>\n\nint main(void) {\n    int pilha[3];\n    int topo = 0;\n    pilha[topo++] = 10;\n    pilha[topo++] = 42;\n    printf("Pop: %d\\n", pilha[--topo]);\n    return 0;\n}',
+        "filas": '#include <stdio.h>\n\nint main(void) {\n    int fila[3];\n    int inicio = 0, fim = 0;\n    fila[fim++] = 42;\n    fila[fim++] = 10;\n    printf("Primeiro: %d\\n", fila[inicio++]);\n    return 0;\n}',
+        "árvores": '#include <stdio.h>\n\nstruct No {\n    int valor;\n    struct No *esquerda;\n    struct No *direita;\n};\n\nvoid emOrdem(struct No *no) {\n    if (no == NULL) return;\n    emOrdem(no->esquerda);\n    printf("%d ", no->valor);\n    emOrdem(no->direita);\n}\n\nint main(void) {\n    struct No esq = {10, NULL, NULL};\n    struct No dir = {42, NULL, NULL};\n    struct No raiz = {20, &esq, &dir};\n    emOrdem(&raiz);\n    printf("\\n");\n    return 0;\n}',
+        "eficiência": '#include <stdio.h>\n\nint main(void) {\n    int valores[] = {2, 5, 8, 11, 42};\n    int pares = 0;\n    for (int i = 0; i < 5; i++) if (valores[i] % 2 == 0) pares++;\n    printf("Pares: %d\\n", pares);\n    return 0;\n}',
+        "calculadora": '#include <stdio.h>\n\nint main(void) {\n    double a = 20.0, b = 22.0;\n    char operador = \'+\';\n    if (operador == \'+\') printf("Resultado: %.2f\\n", a + b);\n    return 0;\n}',
+        "cadastro": '#include <stdio.h>\n\nstruct Pessoa { char nome[30]; int idade; };\n\nint main(void) {\n    struct Pessoa pessoa = {"Ana", 42};\n    printf("%s tem %d anos\\n", pessoa.nome, pessoa.idade);\n    return 0;\n}',
+        "agenda": '#include <stdio.h>\n#include <string.h>\n\nstruct Contato { char nome[30]; char telefone[20]; };\n\nint main(void) {\n    struct Contato contato = {"Ana", "4242-4242"};\n    if (strcmp(contato.nome, "Ana") == 0) printf("%s\\n", contato.telefone);\n    return 0;\n}',
+        "jogo terminal": '#include <stdio.h>\n\nint main(void) {\n    int alvo = 42;\n    int tentativa = 42;\n    if (tentativa == alvo) printf("Acertou\\n");\n    return 0;\n}',
+        "sistema biblioteca": '#include <stdio.h>\n\nstruct Livro { char titulo[30]; int disponivel; };\n\nint main(void) {\n    struct Livro livro = {"C na pratica", 1};\n    if (livro.disponivel) {\n        livro.disponivel = 0;\n        printf("Emprestado\\n");\n    }\n    return 0;\n}',
+        "editor texto": '#include <stdio.h>\n#include <string.h>\n\nint main(void) {\n    char texto[50] = "Aprender ";\n    if (strlen(texto) + strlen("C") + 1 <= sizeof(texto)) strcat(texto, "C");\n    printf("%s\\n", texto);\n    return 0;\n}',
+        "projeto final": '#include <stdio.h>\n\nstatic double media(double a, double b, double c) {\n    return (a + b + c) / 3.0;\n}\n\nint main(void) {\n    printf("Media: %.2f\\n", media(7.0, 8.0, 9.0));\n    return 0;\n}',
+    }
+
+    if chave in exemplos_diretos:
+        return exemplos_diretos[chave]
+
     if "scanf" in chave or "entrada" in chave or "validação" in chave:
         return '#include <stdio.h>\n\nint main() {\n    int numero;\n    printf("Digite um numero: ");\n    scanf("%d", &numero);\n    printf("Valor informado: %d\\n", numero);\n    return 0;\n}'
     if "if" in chave or "else" in chave or "ternário" in chave:
         return '#include <stdio.h>\n\nint main() {\n    int idade = 18;\n    if (idade >= 18) {\n        printf("Maior de idade\\n");\n    } else {\n        printf("Menor de idade\\n");\n    }\n    return 0;\n}'
     if "switch" in chave:
         return '#include <stdio.h>\n\nint main() {\n    int opcao = 2;\n    switch (opcao) {\n        case 1: printf("Cadastrar\\n"); break;\n        case 2: printf("Consultar\\n"); break;\n        default: printf("Opcao invalida\\n");\n    }\n    return 0;\n}'
-    if "while" in chave:
-        return '#include <stdio.h>\n\nint main() {\n    int contador = 1;\n    while (contador <= 3) {\n        printf("%d\\n", contador);\n        contador++;\n    }\n    return 0;\n}'
     if "do while" in chave:
-        return '#include <stdio.h>\n\nint main() {\n    int contador = 1;\n    do {\n        printf("%d\\n", contador);\n        contador++;\n    } while (contador <= 3);\n    return 0;\n}'
+        return '#include <stdio.h>\n\nint main(void) {\n    int contador = 1;\n    do {\n        printf("%d\\n", contador);\n        contador++;\n    } while (contador <= 3);\n    return 0;\n}'
+    if "while" in chave:
+        return '#include <stdio.h>\n\nint main(void) {\n    int contador = 1;\n    while (contador <= 3) {\n        printf("%d\\n", contador);\n        contador++;\n    }\n    return 0;\n}'
     if "for" in chave or "break" in chave or "continue" in chave:
         return '#include <stdio.h>\n\nint main() {\n    for (int i = 1; i <= 5; i++) {\n        if (i == 3) continue;\n        printf("%d\\n", i);\n    }\n    return 0;\n}'
     if "função" in chave or "parâmetro" in chave or "retorno" in chave or "protótipo" in chave:
@@ -735,53 +810,34 @@ def codigo_exemplo_para_conteudo(conteudo):
     if "bubble" in chave or "sort" in chave:
         return '#include <stdio.h>\n\nint main() {\n    int v[3] = {3, 1, 2};\n    for (int i = 0; i < 2; i++) {\n        for (int j = 0; j < 2 - i; j++) {\n            if (v[j] > v[j + 1]) {\n                int temp = v[j];\n                v[j] = v[j + 1];\n                v[j + 1] = temp;\n            }\n        }\n    }\n    printf("%d %d %d\\n", v[0], v[1], v[2]);\n    return 0;\n}'
 
-    return f'#include <stdio.h>\n\nint main() {{\n    printf("Estudo de {conteudo} em C\\\\n");\n    return 0;\n}}'
+    return f'#include <stdio.h>\n\nint main(void) {{\n    printf("Estudo de {conteudo} em C\\n");\n    return 0;\n}}'
 
 
 def regra_correcao_para_conteudo(conteudo):
+    plano_licao = obter_plano(conteudo)
+    if plano_licao:
+        return plano_licao["correcao"]
+    return {"codigo_contem": ["printf"], "saida_obrigatoria": True}
+
+
+def codigo_inicial_para_conteudo(conteudo):
     chave = conteudo.lower()
-    termos = ["printf"]
+    cabecalhos = ["#include <stdio.h>"]
 
-    if "scanf" in chave:
-        termos = ["scanf", "&", "printf"]
-    elif any(item in chave for item in ["if", "else", "ternário"]):
-        termos = ["if", "printf"]
-    elif "switch" in chave:
-        termos = ["switch", "case", "printf"]
-    elif "while" in chave:
-        termos = ["while", "printf"]
-    elif "do while" in chave:
-        termos = ["do", "while", "printf"]
-    elif "for" in chave:
-        termos = ["for", "printf"]
-    elif "break" in chave:
-        termos = ["break", "printf"]
-    elif "continue" in chave:
-        termos = ["continue", "printf"]
-    elif "função" in chave or "parâmetro" in chave or "retorno" in chave or "protótipo" in chave:
-        termos = ["(", ")", "return", "printf"]
-    elif "recurs" in chave:
-        termos = ["return", "printf"]
-    elif any(item in chave for item in ["array", "matriz", "lista", "pilha", "fila", "árvore"]):
-        termos = ["[", "]", "printf"]
-    elif any(item in chave for item in ["string", "strlen", "strcpy", "strcmp", "strcat", "fgets"]):
-        termos = ["char", "printf"]
-    elif any(item in chave for item in ["ponteiro", "memória", "operador &"]):
-        termos = ["*", "&", "printf"]
-    elif any(item in chave for item in ["malloc", "calloc", "realloc", "free", "memory leak"]):
-        termos = ["stdlib.h", "free", "printf"]
-    elif any(item in chave for item in ["struct", "typedef"]):
-        termos = ["struct", "printf"]
-    elif "union" in chave:
-        termos = ["union", "printf"]
-    elif "enum" in chave:
-        termos = ["enum", "printf"]
-    elif any(item in chave for item in ["fopen", "fclose", "fprintf", "fscanf"]):
-        termos = ["FILE", "fopen", "fclose", "printf"]
-    elif any(item in chave for item in ["bitwise", "máscara"]):
-        termos = ["&", "printf"]
+    if any(item in chave for item in ["string", "strlen", "strcpy", "strcmp", "strcat", "fgets", "agenda", "editor texto"]):
+        cabecalhos.append("#include <string.h>")
+    if any(item in chave for item in ["malloc", "calloc", "realloc", "free", "memory leak", "stdlib", "listas"]):
+        cabecalhos.append("#include <stdlib.h>")
+    if chave == "math":
+        cabecalhos.append("#include <math.h>")
 
-    return {"codigo_contem": termos, "saida_obrigatoria": True}
+    return (
+        "\n".join(cabecalhos)
+        + "\n\nint main(void) {\n"
+        + f"    /* TODO: resolva o desafio sobre {conteudo}. */\n"
+        + "    return 0;\n"
+        + "}"
+    )
 
 
 def criar_alternativas(conteudos_modulo, resposta):
@@ -802,7 +858,6 @@ def criar_alternativas(conteudos_modulo, resposta):
 
 
 def gerar_trilha_completa_c():
-    licoes = []
     proximo_id = 1
     trilha = []
 
@@ -812,19 +867,50 @@ def gerar_trilha_completa_c():
 
         for conteudo in modulo["conteudos"]:
             codigo = codigo_exemplo_para_conteudo(conteudo)
+            plano_licao = obter_plano(conteudo)
+            if plano_licao:
+                conteudo_teorico = plano_licao["teoria"]
+                pontos_chave = [
+                    plano_licao["fundamento"],
+                    f"Aplicação prática: {plano_licao['desafio']}",
+                    "Compile com avisos habilitados e teste também valores de fronteira.",
+                ]
+                erro_comum = plano_licao["cuidado"]
+                desafio_codigo = plano_licao["desafio"]
+                resposta_quiz = plano_licao["fundamento"]
+                alternativas_quiz = [
+                    resposta_quiz,
+                    f"{conteudo} elimina a necessidade de validar dados e resultados.",
+                    f"{conteudo} só pode ser usado dentro da função main.",
+                    f"O compilador corrige automaticamente qualquer uso incorreto de {conteudo}.",
+                ]
+            else:
+                conteudo_teorico = (
+                    f"{conteudo} faz parte do módulo {modulo['titulo']}. "
+                    f"Nesta lição você estuda: {topicos}."
+                )
+                pontos_chave = modulo["topicos"][:3]
+                erro_comum = "Não testar o programa com entradas diferentes."
+                desafio_codigo = f"Faça um programa em C que demonstre {conteudo} e mostre uma saída no terminal."
+                resposta_quiz = conteudo
+                alternativas_quiz = criar_alternativas(modulo["conteudos"], conteudo)
+
             modulo_licoes.append({
                 "id": proximo_id,
                 "titulo": conteudo,
-                "conteudo": (
-                    f"{conteudo} faz parte do módulo {modulo['titulo']}. "
-                    f"Nesta lição você estuda: {topicos}."
+                "conteudo": conteudo_teorico,
+                "pontos_chave": pontos_chave,
+                "erro_comum": erro_comum,
+                "explicacao_codigo": (
+                    "Observe a ordem das declarações, os tipos usados e como a saída confirma o resultado. "
+                    "O exemplo é completo, compatível com C11 e pode ser compilado como um único arquivo."
                 ),
                 "codigo": codigo,
-                "pergunta": f"Qual conteúdo é o foco desta lição do módulo {modulo['titulo']}?",
-                "alternativas": criar_alternativas(modulo["conteudos"], conteudo),
-                "resposta": conteudo,
-                "exercicio_codigo": f"Faça um programa em C que demonstre {conteudo} e mostre uma saída no terminal.",
-                "codigo_minimo": codigo,
+                "pergunta": f"Qual afirmação sobre {conteudo} está correta?",
+                "alternativas": alternativas_quiz,
+                "resposta": resposta_quiz,
+                "exercicio_codigo": desafio_codigo,
+                "codigo_minimo": codigo_inicial_para_conteudo(conteudo),
                 "correcao": regra_correcao_para_conteudo(conteudo)
             })
             proximo_id += 1
@@ -841,6 +927,9 @@ def gerar_trilha_completa_c():
 
 
 MODULOS = gerar_trilha_completa_c()
+
+if len(PLANOS_LICOES) != sum(len(modulo["licoes"]) for modulo in MODULOS):
+    raise RuntimeError("O catálogo pedagógico precisa cobrir todas as lições da trilha.")
 
 
 def conectar():
@@ -1242,6 +1331,10 @@ def executar_com_piston(codigo, entrada=""):
 
 
 def executar_compilador_online(codigo, entrada=""):
+    erro_validacao = validar_codigo_recebido(codigo)
+    if erro_validacao:
+        return {"ok": False, "build": erro_validacao, "saida": "", "origem": "Validação"}
+
     try:
         return executar_com_piston(codigo, entrada)
     except Exception as erro_api:
@@ -1363,11 +1456,37 @@ def avaliar_codigo_automaticamente(codigo, resultado_execucao, regra):
     }
 
 
+def validar_codigo_recebido(codigo):
+    if not isinstance(codigo, str) or not codigo.strip():
+        return "Escreva um programa C antes de compilar."
+    if len(codigo.encode("utf-8")) > 100_000:
+        return "O código ultrapassa o limite de 100 KB."
+    return ""
+
+
+def comando_gcc(arquivo_c, arquivo_saida):
+    return [
+        "gcc",
+        "-std=c11",
+        "-Wall",
+        "-Wextra",
+        "-pedantic",
+        arquivo_c,
+        "-o",
+        arquivo_saida,
+        "-lm",
+    ]
+
+
 def compilar_codigo_c(codigo):
     """
     Compila o código C e retorna apenas o build log.
     Parecido com a etapa Build do Code::Blocks.
     """
+    erro_validacao = validar_codigo_recebido(codigo)
+    if erro_validacao:
+        return {"ok": False, "build": erro_validacao, "saida": ""}
+
     with tempfile.TemporaryDirectory() as temp_dir:
         arquivo_c = os.path.join(temp_dir, "programa.c")
         arquivo_saida = os.path.join(temp_dir, "programa")
@@ -1377,7 +1496,7 @@ def compilar_codigo_c(codigo):
 
         try:
             compilacao = subprocess.run(
-                ["gcc", arquivo_c, "-o", arquivo_saida],
+                comando_gcc(arquivo_c, arquivo_saida),
                 capture_output=True,
                 text=True,
                 timeout=8
@@ -1421,6 +1540,10 @@ def executar_codigo_c(codigo, entrada=""):
     Compila e executa o código C.
     A entrada simula o que seria digitado no terminal quando o programa usa scanf.
     """
+    erro_validacao = validar_codigo_recebido(codigo)
+    if erro_validacao:
+        return {"ok": False, "build": erro_validacao, "saida": ""}
+
     with tempfile.TemporaryDirectory() as temp_dir:
         arquivo_c = os.path.join(temp_dir, "programa.c")
         arquivo_saida = os.path.join(temp_dir, "programa")
@@ -1430,7 +1553,7 @@ def executar_codigo_c(codigo, entrada=""):
 
         try:
             compilacao = subprocess.run(
-                ["gcc", arquivo_c, "-o", arquivo_saida],
+                comando_gcc(arquivo_c, arquivo_saida),
                 capture_output=True,
                 text=True,
                 timeout=8
@@ -2279,6 +2402,11 @@ def compilar_real(dados):
     licao_id = dados.get("licao_id")
     tipo = dados.get("tipo", "licao")
 
+    erro_validacao = validar_codigo_recebido(codigo)
+    if erro_validacao:
+        emit("build_log", {"ok": False, "texto": erro_validacao})
+        return
+
     temp_dir = tempfile.mkdtemp(prefix="ensinar_c_")
     arquivo_c = os.path.join(temp_dir, "programa.c")
     arquivo_saida = os.path.join(temp_dir, "programa")
@@ -2288,7 +2416,7 @@ def compilar_real(dados):
 
     try:
         compilacao = subprocess.run(
-            ["gcc", arquivo_c, "-o", arquivo_saida],
+            comando_gcc(arquivo_c, arquivo_saida),
             capture_output=True,
             text=True,
             timeout=8

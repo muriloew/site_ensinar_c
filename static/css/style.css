@@ -414,6 +414,63 @@ a { color: inherit; text-decoration: none; }
     align-items: center;
 }
 
+.theory-lead {
+    color: var(--text);
+    line-height: 1.75;
+}
+
+.theory-section {
+    margin: 20px 0;
+    padding: 16px 18px;
+    border-left: 3px solid var(--blue);
+    background: rgba(29,140,255,.08);
+}
+
+.theory-section h3,
+.common-mistake strong {
+    margin-top: 0;
+    color: var(--text);
+}
+
+.theory-points,
+.exercise-criteria ul {
+    margin: 10px 0 0;
+    padding-left: 20px;
+}
+
+.theory-points li,
+.exercise-criteria li {
+    margin: 8px 0;
+    line-height: 1.55;
+}
+
+.common-mistake {
+    margin: 20px 0 24px;
+    padding: 15px 18px;
+    border: 1px solid rgba(245,158,11,.4);
+    background: rgba(245,158,11,.08);
+    border-radius: 8px;
+}
+
+.common-mistake p,
+.code-explanation {
+    margin-bottom: 0;
+    line-height: 1.65;
+}
+
+.exercise-criteria {
+    margin: 14px 0 18px;
+    padding: 15px 18px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.025);
+    border-radius: 8px;
+}
+
+.exercise-criteria code {
+    color: #bfdbfe;
+    overflow-wrap: anywhere;
+}
+
 .code-editor {
     width: 100%;
     height: 230px;
