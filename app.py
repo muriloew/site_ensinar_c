@@ -12,6 +12,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime, timedelta
 from flask_socketio import SocketIO, emit
 from conteudo_pedagogico import PLANOS_LICOES, obter_plano
+from desafios_teoricos import DESAFIOS_TEORICOS_MODULO
 import time
 import signal
 import threading
@@ -1007,7 +1008,8 @@ def gerar_trilha_completa_c():
             "titulo": modulo["titulo"],
             "descricao": modulo["descricao"],
             "icone": modulo["icone"],
-            "licoes": modulo_licoes
+            "licoes": modulo_licoes,
+            "desafios_teoricos": DESAFIOS_TEORICOS_MODULO.get(modulo["id"], [])
         })
 
     return trilha

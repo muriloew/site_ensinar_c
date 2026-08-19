@@ -89,6 +89,12 @@
             <p class="small-muted">Esta lição é conceitual. Acerte o desafio teórico para concluir.</p>
             {% endif %}
         </div>
+
+        {% include "partials/desafios_modulo.html" %}
     </aside>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/desafios_teoricos.js') }}"></script>
 {% endblock %}
