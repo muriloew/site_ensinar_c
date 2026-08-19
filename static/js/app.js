@@ -1148,3 +1148,33 @@ document.addEventListener("DOMContentLoaded", () => {
         editorDiario.addEventListener("input", agendarSalvamentoAutomatico);
     }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const busca = document.getElementById("buscaModulos");
+    const resultado = document.getElementById("resultadoBusca");
+    const cards = Array.from(document.querySelectorAll(".module-card[data-search]"));
+
+    if (!busca || !cards.length) {
+        return;
+    }
+
+    const normalizarBusca = (texto) => texto
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+
+    busca.addEventListener("input", () => {
+        const termo = normalizarBusca(busca.value.trim());
+        let visiveis = 0;
+
+        cards.forEach((card) => {
+            const combina = !termo || card.dataset.search.includes(termo);
+            card.hidden = !combina;
+            if (combina) visiveis += 1;
+        });
+
+        if (resultado) {
+            resultado.textContent = termo ? `${visiveis} módulo(s) encontrado(s).` : "";
+        }
+    });
+});

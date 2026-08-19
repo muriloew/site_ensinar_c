@@ -9,9 +9,15 @@
     </div>
 </div>
 
+<div class="search-panel">
+    <label for="buscaModulos">Buscar conteúdo</label>
+    <input id="buscaModulos" type="search" placeholder="Exemplo: ponteiros, scanf, arquivos">
+    <p id="resultadoBusca" class="small-muted"></p>
+</div>
+
 <div class="module-grid wide">
     {% for modulo in modulos %}
-    <article class="module-card {% if not modulo.liberado %}locked{% endif %}">
+    <article class="module-card {% if not modulo.liberado %}locked{% endif %}" data-search="{{ modulo.busca }}">
         <div class="module-icon">{{ modulo.icone }}</div>
         <span>Módulo {{ modulo.id }}</span>
         <h3>{{ modulo.titulo }}</h3>

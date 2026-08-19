@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Simulado - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>Simulado</h1>
+        <p>Responda questões dos módulos liberados e acompanhe seu desempenho no perfil.</p>
+    </div>
+    <a class="btn btn-ghost" href="/perfil">Ver relatório</a>
+</div>
+
+{% if resultado %}
+<section class="exam-result card">
+    <div>
+        <span class="pill">Resultado</span>
+        <h2>{{ resultado.percentual }}%</h2>
+        <p>{{ resultado.acertos }} de {{ resultado.total }} resposta(s) correta(s).</p>
+    </div>
+
+    {% if resultado.percentual >= 70 %}
+        <div class="success-box">Bom desempenho. A conquista Boa Prova foi liberada.</div>
+    {% else %}
+        <div class="hint">Revise os módulos com mais erros e tente novamente depois.</div>
+    {% endif %}
+</section>
+
+<section class="exam-review">
+    {% for item in resultados %}
+    <article class="review-item {% if item.correta %}correct{% else %}wrong{% endif %}">
+        <span>{{ item.modulo }}</span>
+        <h3>{{ item.pergunta }}</h3>
+        <p>Sua resposta: <strong>{{ item.resposta_usuario }}</strong></p>
+        {% if not item.correta %}
+            <p>Resposta correta: <strong>{{ item.resposta_correta }}</strong></p>
+        {% endif %}
+    </article>
+    {% endfor %}
+</section>
+{% endif %}
+
+<form method="post" class="exam-form">
+    <div class="section-head">
+        <h2>Questões do simulado</h2>
+        <button class="btn btn-primary" type="submit">Corrigir simulado</button>
+    </div>
+
+    {% for questao in questoes %}
+    <article class="question-card">
+        <input type="hidden" name="questoes" value="{{ questao.id }}">
+        <span>{{ questao.modulo }}</span>
+        <h3>{{ loop.index }}. {{ questao.pergunta }}</h3>
+
+        <div class="answer-list">
+            {% for alternativa in questao.alternativas %}
+            <label>
+                <input type="radio" name="q_{{ questao.id }}" value="{{ alternativa }}">
+                <span>{{ alternativa }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </article>
+    {% else %}
+    <div class="card">
+        <p>Nenhuma questão disponível no momento.</p>
+    </div>
+    {% endfor %}
+
+    <button class="btn btn-primary full" type="submit">Corrigir simulado</button>
+</form>
+{% endblock %}

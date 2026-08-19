@@ -9,7 +9,7 @@ import re
 import shutil
 import unicodedata
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from flask_socketio import SocketIO, emit
 from conteudo_pedagogico import PLANOS_LICOES, obter_plano
 import time
@@ -1038,6 +1038,29 @@ def iniciar_banco():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS metas_usuario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            tipo TEXT NOT NULL,
+            alvo_licoes INTEGER DEFAULT 1,
+            alvo_desafios INTEGER DEFAULT 0,
+            atualizado_em TEXT,
+            UNIQUE(usuario_id, tipo)
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS simulados_usuario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            acertos INTEGER DEFAULT 0,
+            total INTEGER DEFAULT 0,
+            percentual INTEGER DEFAULT 0,
+            criado_em TEXT
+        )
+    """)
+
     # Migração para bancos antigos já criados antes das novas funções.
     adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "quiz_respondido", "INTEGER DEFAULT 0")
@@ -1237,6 +1260,14 @@ def criar_backup_progresso(usuario_id):
             "conquistas": linhas_para_dicts(conn.execute(
                 "SELECT * FROM conquistas_usuario WHERE usuario_id = ? ORDER BY id",
                 (usuario_id,)
+            ).fetchall()),
+            "metas": linhas_para_dicts(conn.execute(
+                "SELECT * FROM metas_usuario WHERE usuario_id = ? ORDER BY tipo",
+                (usuario_id,)
+            ).fetchall()),
+            "simulados": linhas_para_dicts(conn.execute(
+                "SELECT * FROM simulados_usuario WHERE usuario_id = ? ORDER BY id DESC",
+                (usuario_id,)
             ).fetchall())
         }
 
@@ -1267,6 +1298,219 @@ def backup_mais_recente(usuario_id):
     ).fetchone()
     conn.close()
     return backup
+
+
+def limitar_inteiro(valor, padrao, minimo=0, maximo=30):
+    try:
+        numero = int(valor)
+    except (TypeError, ValueError):
+        numero = padrao
+    return max(minimo, min(maximo, numero))
+
+
+def inicio_semana_atual():
+    hoje = date.today()
+    return hoje - timedelta(days=hoje.weekday())
+
+
+def obter_metas_usuario(usuario_id):
+    metas = {
+        "diaria": {
+            "tipo": "diaria",
+            "titulo": "Meta diária",
+            "periodo": "Hoje",
+            "alvo_licoes": 1,
+            "alvo_desafios": 1
+        },
+        "semanal": {
+            "tipo": "semanal",
+            "titulo": "Meta semanal",
+            "periodo": "Semana atual",
+            "alvo_licoes": 5,
+            "alvo_desafios": 3
+        }
+    }
+
+    conn = conectar()
+    registros = conn.execute(
+        "SELECT * FROM metas_usuario WHERE usuario_id = ?",
+        (usuario_id,)
+    ).fetchall()
+    conn.close()
+
+    for registro in registros:
+        tipo = registro["tipo"]
+        if tipo in metas:
+            metas[tipo]["alvo_licoes"] = registro["alvo_licoes"]
+            metas[tipo]["alvo_desafios"] = registro["alvo_desafios"]
+
+    return metas
+
+
+def porcentagem_meta(valor, alvo):
+    if alvo <= 0:
+        return 100 if valor > 0 else 0
+    return min(100, int((valor / alvo) * 100))
+
+
+def progresso_metas(usuario_id):
+    metas = obter_metas_usuario(usuario_id)
+    hoje = str(date.today())
+    semana = str(inicio_semana_atual())
+
+    conn = conectar()
+    licoes_hoje = conn.execute(
+        "SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND concluida = 1 AND atualizado_em = ?",
+        (usuario_id, hoje)
+    ).fetchone()["total"]
+    licoes_semana = conn.execute(
+        "SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND concluida = 1 AND atualizado_em >= ?",
+        (usuario_id, semana)
+    ).fetchone()["total"]
+    desafios_hoje = conn.execute(
+        "SELECT COUNT(*) AS total FROM desafios_diarios WHERE usuario_id = ? AND concluido = 1 AND data = ?",
+        (usuario_id, hoje)
+    ).fetchone()["total"]
+    desafios_semana = conn.execute(
+        "SELECT COUNT(*) AS total FROM desafios_diarios WHERE usuario_id = ? AND concluido = 1 AND data >= ?",
+        (usuario_id, semana)
+    ).fetchone()["total"]
+    conn.close()
+
+    realizados = {
+        "diaria": {"licoes": licoes_hoje, "desafios": desafios_hoje},
+        "semanal": {"licoes": licoes_semana, "desafios": desafios_semana}
+    }
+
+    metas_view = []
+    for tipo in ("diaria", "semanal"):
+        meta = metas[tipo]
+        feito = realizados[tipo]
+        metas_view.append({
+            **meta,
+            "feito_licoes": feito["licoes"],
+            "feito_desafios": feito["desafios"],
+            "percentual_licoes": porcentagem_meta(feito["licoes"], meta["alvo_licoes"]),
+            "percentual_desafios": porcentagem_meta(feito["desafios"], meta["alvo_desafios"])
+        })
+
+    return metas_view
+
+
+def resumo_desempenho(usuario_id):
+    conn = conectar()
+    quiz_total = conn.execute(
+        "SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND quiz_respondido = 1",
+        (usuario_id,)
+    ).fetchone()["total"]
+    quiz_corretos = conn.execute(
+        "SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND quiz_correto = 1",
+        (usuario_id,)
+    ).fetchone()["total"]
+    codigos_validados = conn.execute(
+        "SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND codigo_validado = 1",
+        (usuario_id,)
+    ).fetchone()["total"]
+    desafios_concluidos = conn.execute(
+        "SELECT COUNT(*) AS total FROM desafios_diarios WHERE usuario_id = ? AND concluido = 1",
+        (usuario_id,)
+    ).fetchone()["total"]
+    ultimas_licoes = conn.execute(
+        """
+        SELECT licao_id, modulo_id, atualizado_em, codigo_validado, feedback_codigo
+        FROM progresso
+        WHERE usuario_id = ? AND atualizado_em IS NOT NULL
+        ORDER BY atualizado_em DESC, id DESC
+        LIMIT 6
+        """,
+        (usuario_id,)
+    ).fetchall()
+    simulados = conn.execute(
+        "SELECT * FROM simulados_usuario WHERE usuario_id = ? ORDER BY id DESC LIMIT 5",
+        (usuario_id,)
+    ).fetchall()
+    conn.close()
+
+    atividades = []
+    for item in ultimas_licoes:
+        modulo, licao = encontrar_licao(item["licao_id"])
+        if licao:
+            atividades.append({
+                "modulo": modulo["titulo"],
+                "licao": licao["titulo"],
+                "data": item["atualizado_em"],
+                "codigo_validado": item["codigo_validado"],
+                "feedback": item["feedback_codigo"]
+            })
+
+    total_quiz = max(quiz_total, 1)
+    return {
+        "quiz_total": quiz_total,
+        "quiz_corretos": quiz_corretos,
+        "taxa_quiz": int((quiz_corretos / total_quiz) * 100),
+        "codigos_validados": codigos_validados,
+        "desafios_concluidos": desafios_concluidos,
+        "atividades": atividades,
+        "simulados": simulados
+    }
+
+
+def relatorio_modulos(usuario_id):
+    modulos_relatorio = []
+    for modulo in MODULOS:
+        ids = [l["id"] for l in modulo["licoes"]]
+        placeholders = ",".join("?" for _ in ids)
+        params = [usuario_id] + ids
+        conn = conectar()
+        concluidas = conn.execute(
+            f"SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND licao_id IN ({placeholders}) AND concluida = 1",
+            params
+        ).fetchone()["total"]
+        conn.close()
+
+        progresso = progresso_modulo(usuario_id, modulo)
+        modulos_relatorio.append({
+            "id": modulo["id"],
+            "titulo": modulo["titulo"],
+            "descricao": modulo["descricao"],
+            "icone": modulo["icone"],
+            "progresso": progresso,
+            "concluidas": concluidas,
+            "total": len(modulo["licoes"]),
+            "liberado": modulo_acessivel(usuario_id, modulo["id"])
+        })
+    return modulos_relatorio
+
+
+def montar_questoes_simulado(usuario_id, quantidade=10):
+    licoes = []
+    for modulo in MODULOS:
+        if modulo_acessivel(usuario_id, modulo["id"]):
+            for licao in modulo["licoes"]:
+                if licao.get("pergunta") and licao.get("alternativas") and licao.get("resposta"):
+                    licoes.append((modulo, licao))
+
+    if not licoes:
+        for modulo in MODULOS[:1]:
+            for licao in modulo["licoes"]:
+                licoes.append((modulo, licao))
+
+    if not licoes:
+        return []
+
+    deslocamento = (date.today().toordinal() + usuario_id) % len(licoes)
+    licoes = licoes[deslocamento:] + licoes[:deslocamento]
+
+    questoes = []
+    for modulo, licao in licoes[:quantidade]:
+        questoes.append({
+            "id": licao["id"],
+            "modulo": modulo["titulo"],
+            "pergunta": licao["pergunta"],
+            "alternativas": licao["alternativas"],
+            "resposta": licao["resposta"]
+        })
+    return questoes
 
 
 def montar_terminal_unificado(saida, entrada="", codigo_retorno=0):
@@ -1732,6 +1976,141 @@ def dashboard():
     )
 
 
+@app.route("/perfil")
+def perfil():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    concluidas = contar_concluidas(usuario["id"])
+    porcentagem = int((concluidas / total_licoes()) * 100)
+    desempenho = resumo_desempenho(usuario["id"])
+    metas = progresso_metas(usuario["id"])
+    modulos_relatorio = relatorio_modulos(usuario["id"])
+    backup_recente = backup_mais_recente(usuario["id"])
+
+    return render_template(
+        "perfil.html",
+        concluidas=concluidas,
+        porcentagem=porcentagem,
+        desempenho=desempenho,
+        metas=metas,
+        modulos_relatorio=modulos_relatorio,
+        backup_recente=backup_recente
+    )
+
+
+@app.route("/metas", methods=["POST"])
+def salvar_metas():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    metas = {
+        "diaria": {
+            "alvo_licoes": limitar_inteiro(request.form.get("diaria_licoes"), 1, 0, 10),
+            "alvo_desafios": limitar_inteiro(request.form.get("diaria_desafios"), 1, 0, 5)
+        },
+        "semanal": {
+            "alvo_licoes": limitar_inteiro(request.form.get("semanal_licoes"), 5, 0, 30),
+            "alvo_desafios": limitar_inteiro(request.form.get("semanal_desafios"), 3, 0, 14)
+        }
+    }
+
+    conn = conectar()
+    for tipo, valores in metas.items():
+        conn.execute(
+            """
+            INSERT INTO metas_usuario (usuario_id, tipo, alvo_licoes, alvo_desafios, atualizado_em)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(usuario_id, tipo)
+            DO UPDATE SET alvo_licoes = excluded.alvo_licoes,
+                          alvo_desafios = excluded.alvo_desafios,
+                          atualizado_em = excluded.atualizado_em
+            """,
+            (
+                usuario["id"],
+                tipo,
+                valores["alvo_licoes"],
+                valores["alvo_desafios"],
+                datetime.now().isoformat(timespec="seconds")
+            )
+        )
+    conn.commit()
+    conn.close()
+    criar_backup_progresso(usuario["id"])
+
+    return redirect(url_for("perfil"))
+
+
+@app.route("/simulado", methods=["GET", "POST"])
+def simulado():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    resultado = None
+    resultados = []
+
+    if request.method == "POST":
+        ids_questoes = []
+        for valor in request.form.getlist("questoes"):
+            try:
+                ids_questoes.append(int(valor))
+            except ValueError:
+                continue
+
+        for licao_id in ids_questoes:
+            modulo, licao = encontrar_licao(licao_id)
+            if not licao:
+                continue
+
+            resposta = request.form.get(f"q_{licao_id}", "")
+            correta = resposta == licao["resposta"]
+            resultados.append({
+                "modulo": modulo["titulo"],
+                "licao": licao["titulo"],
+                "pergunta": licao["pergunta"],
+                "resposta_usuario": resposta or "Sem resposta",
+                "resposta_correta": licao["resposta"],
+                "correta": correta
+            })
+
+        total = len(resultados)
+        acertos = sum(1 for item in resultados if item["correta"])
+        percentual = int((acertos / total) * 100) if total else 0
+        resultado = {
+            "acertos": acertos,
+            "total": total,
+            "percentual": percentual
+        }
+
+        conn = conectar()
+        conn.execute(
+            """
+            INSERT INTO simulados_usuario (usuario_id, acertos, total, percentual, criado_em)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (usuario["id"], acertos, total, percentual, datetime.now().isoformat(timespec="seconds"))
+        )
+        if percentual >= 70:
+            conn.execute(
+                "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
+                (usuario["id"], "Boa Prova", "📝")
+            )
+        conn.commit()
+        conn.close()
+        criar_backup_progresso(usuario["id"])
+
+    questoes = montar_questoes_simulado(usuario["id"])
+    return render_template(
+        "simulado.html",
+        questoes=questoes,
+        resultado=resultado,
+        resultados=resultados
+    )
+
+
 @app.route("/backup-progresso")
 def baixar_backup_progresso():
     usuario = usuario_logado()
@@ -1754,10 +2133,15 @@ def modulos():
 
     modulos_view = []
     for modulo in MODULOS:
+        texto_busca = " ".join(
+            [modulo["titulo"], modulo["descricao"]] +
+            [licao["titulo"] for licao in modulo["licoes"]]
+        )
         modulos_view.append({
             **modulo,
             "progresso": progresso_modulo(usuario["id"], modulo),
-            "liberado": modulo_liberado(usuario["id"], modulo["id"])
+            "liberado": modulo_liberado(usuario["id"], modulo["id"]),
+            "busca": normalizar_texto(texto_busca)
         })
 
     return render_template("modulos.html", modulos=modulos_view)

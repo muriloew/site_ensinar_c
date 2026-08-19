@@ -20,6 +20,12 @@ Plataforma web educativa para ensino da linguagem C.
 - Conteúdo teórico próprio em cada lição, com fundamento, pontos-chave, erro comum e exemplo compilável
 - Desafios práticos específicos para todas as 91 lições, com critérios e saídas esperadas
 - Backup automático do progresso em `instance/backups`
+- Perfil do usuário com relatório de desempenho
+- Metas diárias e semanais configuráveis
+- Simulado de prova com correção automática e histórico
+- Busca por módulos e conteúdos
+- Navegação e telas ajustadas para uso em celulares
+- Modo prática livre exposto no menu
 - Sem certificado, pois o projeto não possui licença para certificação oficial
 
 ## Como rodar localmente
@@ -292,3 +298,14 @@ python app.py
   - `-pedantic`
   - `-lm`
 - Códigos vazios ou maiores que 100 KB são rejeitados antes da compilação.
+
+
+## Versão 22 — Perfil, metas, simulado e mobile
+
+- Adicionada página de perfil com progresso geral, relatório por módulo e atividades recentes.
+- Adicionadas metas diárias e semanais para lições e desafios.
+- Adicionado simulador de prova com questões dos módulos liberados, correção automática e histórico.
+- Adicionada busca por módulos e conteúdos na página de módulos.
+- O modo prática livre foi colocado no menu lateral usando o compilador existente.
+- Melhorada a navegação em telas pequenas, com menu horizontal e ajustes no editor/terminal.
+- O backup automático agora inclui metas e resultados de simulados.

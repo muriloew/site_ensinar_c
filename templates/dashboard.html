@@ -39,7 +39,7 @@
     <div class="card"><span>⭐</span><strong>{{ usuario.xp }}</strong><p>XP total</p></div>
     <div class="card"><span>📘</span><strong>{{ concluidas }}</strong><p>Lições concluídas</p></div>
     <div class="card"><span>🏅</span><strong>{{ conquistas|length }}</strong><p>Conquistas</p></div>
-    <div class="card"><span>🎯</span><strong>Nível {{ usuario.nivel }}</strong><p>Perfil atual</p></div>
+    <a class="card stat-link" href="/perfil"><span>🎯</span><strong>Nível {{ usuario.nivel }}</strong><p>Ver perfil e metas</p></a>
 </section>
 
 <section class="content-grid">

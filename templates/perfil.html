@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Perfil - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>Perfil</h1>
+        <p>Acompanhe seu progresso, metas e desempenho no curso.</p>
+    </div>
+
+    <div class="user-pill">
+        <div class="avatar">{{ usuario.nome[0] }}</div>
+        <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Nível {{ usuario.nivel }}</span>
+        </div>
+        <b>{{ usuario.xp }} XP</b>
+    </div>
+</div>
+
+<section class="profile-summary">
+    <article class="card profile-card">
+        <div class="profile-avatar-large">{{ usuario.nome[0] }}</div>
+        <div>
+            <h2>{{ usuario.nome }}</h2>
+            <p>{{ usuario.email }}</p>
+            <div class="profile-actions">
+                <a class="btn btn-primary" href="/simulado">Fazer simulado</a>
+                <a class="btn btn-ghost" href="/backup-progresso">Baixar backup</a>
+            </div>
+        </div>
+    </article>
+
+    <article class="card progress-card">
+        <h3>Progresso geral</h3>
+        <div class="percent">{{ porcentagem }}%</div>
+        <p>{{ concluidas }} de {{ total_licoes }} lições concluídas</p>
+        <div class="bar"><span style="width: {{ porcentagem }}%"></span></div>
+        {% if backup_recente %}
+            <small>Último backup: {{ backup_recente.criado_em }}</small>
+        {% else %}
+            <small>O backup será gerado automaticamente ao salvar progresso.</small>
+        {% endif %}
+    </article>
+</section>
+
+<section class="content-grid profile-grid">
+    <div>
+        <div class="section-head">
+            <h2>Relatório de desempenho</h2>
+            <a href="/modulos">Revisar módulos</a>
+        </div>
+
+        <div class="mini-stats report-stats">
+            <div class="card"><span>✅</span><strong>{{ desempenho.taxa_quiz }}%</strong><p>acerto nos desafios teóricos</p></div>
+            <div class="card"><span>💻</span><strong>{{ desempenho.codigos_validados }}</strong><p>códigos aprovados</p></div>
+            <div class="card"><span>🎯</span><strong>{{ desempenho.desafios_concluidos }}</strong><p>desafios diários concluídos</p></div>
+            <div class="card"><span>🔥</span><strong>{{ usuario.sequencia }}</strong><p>dias de sequência</p></div>
+        </div>
+
+        <section class="module-report">
+            {% for modulo in modulos_relatorio %}
+            <article class="module-row {% if not modulo.liberado %}locked{% endif %}">
+                <div class="module-icon">{{ modulo.icone }}</div>
+                <div>
+                    <strong>Módulo {{ modulo.id }} - {{ modulo.titulo }}</strong>
+                    <p>{{ modulo.concluidas }} / {{ modulo.total }} lição(ões)</p>
+                    <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
+                </div>
+                <a class="btn btn-ghost" href="/estudar/{{ modulo.id }}">Abrir</a>
+            </article>
+            {% endfor %}
+        </section>
+    </div>
+
+    <aside class="right-panel">
+        <div class="card goals-card">
+            <h3>Metas</h3>
+            <form method="post" action="/metas" class="goals-form">
+                {% for meta in metas %}
+                <section class="goal-block">
+                    <div class="goal-title">
+                        <strong>{{ meta.titulo }}</strong>
+                        <span>{{ meta.periodo }}</span>
+                    </div>
+
+                    <label>
+                        Lições
+                        <input type="number" min="0" max="30" name="{{ meta.tipo }}_licoes" value="{{ meta.alvo_licoes }}">
+                    </label>
+                    <p>{{ meta.feito_licoes }} / {{ meta.alvo_licoes }} concluída(s)</p>
+                    <div class="bar"><span style="width: {{ meta.percentual_licoes }}%"></span></div>
+
+                    <label>
+                        Desafios
+                        <input type="number" min="0" max="14" name="{{ meta.tipo }}_desafios" value="{{ meta.alvo_desafios }}">
+                    </label>
+                    <p>{{ meta.feito_desafios }} / {{ meta.alvo_desafios }} concluído(s)</p>
+                    <div class="bar"><span style="width: {{ meta.percentual_desafios }}%"></span></div>
+                </section>
+                {% endfor %}
+
+                <button class="btn btn-primary full" type="submit">Salvar metas</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h3>Atividades recentes</h3>
+            <div class="activity-list">
+                {% for item in desempenho.atividades %}
+                <div>
+                    <strong>{{ item.licao }}</strong>
+                    <span>{{ item.modulo }} · {{ item.data }}</span>
+                </div>
+                {% else %}
+                <p class="small-muted">As próximas atividades aparecerão aqui.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>Últimos simulados</h3>
+            <div class="activity-list">
+                {% for simulado in desempenho.simulados %}
+                <div>
+                    <strong>{{ simulado.percentual }}%</strong>
+                    <span>{{ simulado.acertos }} / {{ simulado.total }} acertos · {{ simulado.criado_em }}</span>
+                </div>
+                {% else %}
+                <p class="small-muted">Faça um simulado para registrar sua evolução.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </aside>
+</section>
+{% endblock %}
