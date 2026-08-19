@@ -500,8 +500,8 @@ aplicar_conteudo_expandido()
 TRILHA_COMPLETA_C = [
     {
         "id": 1,
-        "titulo": "Introdução ao C",
-        "descricao": "Primeiros conceitos da linguagem C, estrutura de programas e processo de compilação.",
+        "titulo": "Começando a programar",
+        "descricao": "Entenda o que é um programa, como o C funciona e quais partes aparecem em um código básico.",
         "icone": "C",
         "conteudos": ["O que é C", "Estrutura básica", "Comentários", "Compilação"],
         "topicos": [
@@ -513,8 +513,8 @@ TRILHA_COMPLETA_C = [
     },
     {
         "id": 2,
-        "titulo": "printf e scanf",
-        "descricao": "Saída formatada e entrada de dados pelo teclado.",
+        "titulo": "Conversando com o usuário",
+        "descricao": "Aprenda a mostrar mensagens na tela e receber informações digitadas pela pessoa que usa o programa.",
         "icone": "io",
         "conteudos": ["printf", "scanf"],
         "topicos": [
@@ -524,8 +524,8 @@ TRILHA_COMPLETA_C = [
     },
     {
         "id": 3,
-        "titulo": "Variáveis",
-        "descricao": "Tipos, constantes, macros e escopo de variáveis.",
+        "titulo": "Guardando informações",
+        "descricao": "Aprenda a guardar números, letras e valores fixos para usar durante o programa.",
         "icone": "var",
         "conteudos": ["int", "float e double", "char", "constantes", "#define", "escopo"],
         "topicos": [
@@ -535,8 +535,8 @@ TRILHA_COMPLETA_C = [
     },
     {
         "id": 4,
-        "titulo": "Operadores",
-        "descricao": "Operações matemáticas, comparação, lógica e incremento.",
+        "titulo": "Fazendo contas e comparações",
+        "descricao": "Use o C para somar, subtrair, comparar valores e montar pequenas expressões lógicas.",
         "icone": "+-",
         "conteudos": [
             "soma", "subtração", "multiplicação", "divisão",
@@ -549,24 +549,24 @@ TRILHA_COMPLETA_C = [
     },
     {
         "id": 5,
-        "titulo": "Decisão",
-        "descricao": "Controle de fluxo com decisões simples e múltiplas.",
+        "titulo": "Tomando decisões",
+        "descricao": "Faça o programa escolher caminhos diferentes dependendo de uma condição.",
         "icone": "if",
         "conteudos": ["if", "else", "else if", "switch", "ternário"],
         "topicos": ["condições", "execução condicional", "múltiplas decisões", "switch case", "operador ternário"]
     },
     {
         "id": 6,
-        "titulo": "Repetição",
-        "descricao": "Laços de repetição e controle de execução.",
+        "titulo": "Repetindo tarefas",
+        "descricao": "Evite repetir o mesmo código várias vezes usando comandos que executam uma ação em sequência.",
         "icone": "for",
         "conteudos": ["while", "do while", "for", "break", "continue"],
         "topicos": ["loops", "repetição", "controle de execução", "interrupção de laços"]
     },
     {
         "id": 7,
-        "titulo": "Funções",
-        "descricao": "Criação de funções, parâmetros, retorno, protótipos e recursão.",
+        "titulo": "Organizando o código",
+        "descricao": "Divida o programa em partes menores para reutilizar ideias e deixar tudo mais fácil de entender.",
         "icone": "fn",
         "conteudos": ["criando função", "parâmetros", "retorno", "protótipos", "recursão"],
         "topicos": [
@@ -576,112 +576,112 @@ TRILHA_COMPLETA_C = [
     },
     {
         "id": 8,
-        "titulo": "Arrays e strings",
-        "descricao": "Vetores, matrizes e manipulação de textos em C.",
+        "titulo": "Listas e textos",
+        "descricao": "Trabalhe com vários valores de uma vez e manipule palavras, nomes e frases.",
         "icone": "[]",
         "conteudos": ["arrays", "matrizes", "strings", "strlen", "strcpy", "strcmp", "strcat", "fgets"],
         "topicos": ["vetores", "matrizes", "manipulação textual", "entrada segura", "funções da biblioteca string"]
     },
     {
         "id": 9,
-        "titulo": "Ponteiros",
-        "descricao": "Endereços de memória, desreferenciamento e ponteiros em funções e arrays.",
+        "titulo": "Como a memória funciona",
+        "descricao": "Entenda como o computador guarda dados e como o C permite acessar esses locais com ponteiros.",
         "icone": "*",
         "conteudos": ["memória", "operador &", "ponteiros + funções", "ponteiros + arrays", "ponteiro para ponteiro"],
         "topicos": ["endereços de memória", "desreferenciamento", "aritmética de ponteiros", "passagem por referência"]
     },
     {
         "id": 10,
-        "titulo": "Alocação dinâmica",
-        "descricao": "Uso da heap e gerenciamento manual de memória.",
+        "titulo": "Usando memória quando precisar",
+        "descricao": "Aprenda a reservar e liberar memória durante a execução do programa.",
         "icone": "mem",
         "conteudos": ["malloc", "calloc", "realloc", "free", "memory leak"],
         "topicos": ["alocação dinâmica", "heap", "gerenciamento de memória", "vazamento de memória"]
     },
     {
         "id": 11,
-        "titulo": "Structs",
-        "descricao": "Tipos compostos com struct, typedef, unions e enum.",
+        "titulo": "Agrupando informações",
+        "descricao": "Crie seus próprios tipos para juntar dados relacionados, como uma ficha de aluno ou produto.",
         "icone": "{}",
         "conteudos": ["structs", "typedef", "unions", "enum"],
         "topicos": ["agrupamento de dados", "tipos personalizados", "compartilhamento de memória", "conjuntos nomeados"]
     },
     {
         "id": 12,
-        "titulo": "Arquivos",
-        "descricao": "Leitura e escrita de arquivos usando a biblioteca padrão.",
+        "titulo": "Salvando dados",
+        "descricao": "Grave informações em arquivos e leia esses dados novamente quando precisar.",
         "icone": "file",
         "conteudos": ["fopen", "fclose", "fprintf", "fscanf"],
         "topicos": ["abertura de arquivos", "fechamento de arquivos", "gravação", "leitura formatada"]
     },
     {
         "id": 13,
-        "titulo": "Modularização",
-        "descricao": "Separação de código em arquivos .h e .c com proteção de inclusão.",
+        "titulo": "Dividindo o programa em partes",
+        "descricao": "Separe programas maiores em arquivos diferentes para facilitar organização e manutenção.",
         "icone": ".h",
         "conteudos": [".h", ".c", "include guards"],
         "topicos": ["cabeçalhos", "arquivos fonte", "organização de projetos", "proteção contra inclusão duplicada"]
     },
     {
         "id": 14,
-        "titulo": "Bibliotecas",
-        "descricao": "Principais bibliotecas padrão usadas em programas C.",
+        "titulo": "Usando recursos prontos",
+        "descricao": "Conheça bibliotecas que já trazem funções úteis para entrada, texto, memória e matemática.",
         "icone": "lib",
         "conteudos": ["stdio", "stdlib", "string", "math"],
         "topicos": ["entrada e saída", "utilidades gerais", "manipulação de strings", "funções matemáticas"]
     },
     {
         "id": 15,
-        "titulo": "Bits",
-        "descricao": "Operadores bitwise e criação de máscaras.",
+        "titulo": "Como o computador guarda informações",
+        "descricao": "Veja como dados podem ser manipulados em zeros e uns usando operações de baixo nível.",
         "icone": "01",
         "conteudos": ["bitwise", "máscaras"],
         "topicos": ["operações bit a bit", "AND", "OR", "XOR", "deslocamento", "máscaras de bits"]
     },
     {
         "id": 16,
-        "titulo": "Debug",
-        "descricao": "Identificação de erros de sintaxe, erros lógicos e técnicas de depuração.",
+        "titulo": "Encontrando e corrigindo erros",
+        "descricao": "Aprenda a identificar mensagens do compilador, erros de lógica e formas de investigar problemas.",
         "icone": "bug",
         "conteudos": ["erros de sintaxe", "erros lógicos", "debug"],
         "topicos": ["mensagens de erro", "teste de hipóteses", "rastreamento de valores", "correção de falhas"]
     },
     {
         "id": 17,
-        "titulo": "GCC e build",
-        "descricao": "Compilação pela linha de comando, linking e automação com Makefile.",
+        "titulo": "Transformando código em programa",
+        "descricao": "Entenda como o compilador transforma arquivos de código em um programa executável.",
         "icone": "gcc",
         "conteudos": ["gcc", "linking", "makefile"],
         "topicos": ["compilador GCC", "etapas de build", "ligação de objetos", "automação de compilação"]
     },
     {
         "id": 18,
-        "titulo": "Segurança",
-        "descricao": "Cuidados com buffer overflow e validação de entrada.",
+        "titulo": "Escrevendo programas seguros",
+        "descricao": "Aprenda cuidados para evitar falhas comuns, entradas inválidas e problemas com memória.",
         "icone": "sec",
         "conteudos": ["buffer overflow", "validação"],
         "topicos": ["limites de buffers", "entrada insegura", "validação de dados", "boas práticas"]
     },
     {
         "id": 19,
-        "titulo": "Estruturas de dados",
-        "descricao": "Listas, pilhas, filas e árvores.",
+        "titulo": "Organizando muitos dados",
+        "descricao": "Use listas, pilhas, filas e árvores para organizar informações de formas diferentes.",
         "icone": "ds",
         "conteudos": ["listas", "pilhas", "filas", "árvores"],
         "topicos": ["organização de dados", "inserção", "remoção", "percurso", "uso de ponteiros"]
     },
     {
         "id": 20,
-        "titulo": "Algoritmos",
-        "descricao": "Busca, ordenação e noções de eficiência.",
+        "titulo": "Resolvendo problemas melhor",
+        "descricao": "Aprenda formas de procurar, ordenar e comparar soluções para resolver problemas com mais eficiência.",
         "icone": "alg",
         "conteudos": ["busca linear", "bubble sort", "eficiência"],
         "topicos": ["busca sequencial", "ordenação simples", "complexidade", "comparação de desempenho"]
     },
     {
         "id": 21,
-        "titulo": "Projetos",
-        "descricao": "Projetos práticos para consolidar a linguagem C.",
+        "titulo": "Criando programas completos",
+        "descricao": "Junte o que foi aprendido para criar projetos maiores do começo ao fim.",
         "icone": "app",
         "conteudos": [
             "calculadora", "cadastro", "agenda", "jogo terminal",
@@ -690,6 +690,86 @@ TRILHA_COMPLETA_C = [
         "topicos": ["integração de conteúdos", "organização", "entrada e saída", "persistência", "projeto completo"]
     }
 ]
+
+
+AJUSTES_DIDATICOS_LICOES = {
+    "O que é C": {
+        "pratica_codigo": False,
+        "exercicio_codigo": "Esta lição é apenas para entender a ideia geral da linguagem C. Responda o desafio teórico para avançar."
+    },
+    "Estrutura básica": {
+        "pratica_codigo": False,
+        "exercicio_codigo": "Nesta etapa, observe a estrutura de um programa pronto. A prática de escrita começa depois que a saída de dados for ensinada."
+    },
+    "Comentários": {
+        "pratica_codigo": False,
+        "exercicio_codigo": "Comentários servem para leitura do código. Por enquanto, responda o desafio teórico e avance."
+    },
+    "Compilação": {
+        "pratica_codigo": False,
+        "exercicio_codigo": "Esta lição explica o caminho do código até virar programa. A prática de compilação aparece novamente mais adiante."
+    },
+    "printf": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    printf("Ola, estudante!\\n");\n    printf("Estou aprendendo C.\\n");\n    return 0;\n}',
+        "exercicio_codigo": 'Mostre exatamente a mensagem "Ola, C" usando printf.',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Use printf para mostrar a mensagem pedida. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["printf"], "saida_contem": ["Ola, C"]}
+    },
+    "scanf": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    int numero;\n    printf("Digite um numero: ");\n    scanf("%d", &numero);\n    printf("Numero: %d\\n", numero);\n    return 0;\n}',
+        "exercicio_codigo": 'Leia um número inteiro digitado pelo usuário e mostre no formato "Numero: N".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    int numero;\n    /* Use scanf e depois mostre o valor lido. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["scanf", "&numero", "printf"], "testes": [{"entrada": "42\n", "saida_contem": ["Numero: 42"]}]}
+    },
+    "int": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    int idade = 18;\n    printf("Idade: %d\\n", idade);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie uma variável int chamada idade com valor 20 e mostre "Idade: 20".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Declare a variável idade aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["int", "idade", "printf"], "saida_contem": ["Idade: 20"]}
+    },
+    "float e double": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    double nota = 8.5;\n    printf("Nota: %.1f\\n", nota);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie uma variável double chamada nota com valor 9.5 e mostre "Nota: 9.5".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Declare a variável nota aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["double", "nota", "printf"], "saida_contem": ["Nota: 9.5"]}
+    },
+    "char": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    char inicial = \'C\';\n    printf("Inicial: %c\\n", inicial);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie uma variável char chamada letra com valor C e mostre "Letra: C".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Declare a variável letra aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["char", "letra", "'C'", "printf"], "saida_contem": ["Letra: C"]}
+    },
+    "constantes": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    const int LIMITE = 100;\n    printf("Limite: %d\\n", LIMITE);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie uma constante int chamada ANO com valor 2026 e mostre "Ano: 2026".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Declare a constante ANO aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["const int", "ANO", "printf"], "saida_contem": ["Ano: 2026"]}
+    },
+    "#define": {
+        "codigo": '#include <stdio.h>\n\n#define CURSO "C"\n\nint main(void) {\n    printf("Curso: %s\\n", CURSO);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie um #define chamado ESCOLA com o texto "Ensinar C" e mostre esse texto.',
+        "codigo_minimo": '#include <stdio.h>\n\n/* Crie o #define aqui. */\n\nint main(void) {\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["#define", "ESCOLA", "printf"], "saida_contem": ["Ensinar C"]}
+    },
+    "escopo": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    int fora = 10;\n    {\n        int dentro = 20;\n        printf("Dentro: %d\\n", dentro);\n    }\n    printf("Fora: %d\\n", fora);\n    return 0;\n}',
+        "exercicio_codigo": 'Crie uma variável local chamada valor dentro da função main e mostre "Valor: 30".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Crie a variável valor aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["int valor", "printf"], "saida_contem": ["Valor: 30"]}
+    },
+    "divisão": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    double resultado = 7.0 / 2.0;\n    printf("Resultado: %.2f\\n", resultado);\n    return 0;\n}',
+        "exercicio_codigo": 'Divida 10.0 por 4.0 e mostre o resultado com duas casas decimais.',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Calcule a divisão aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["/", "%.2f", "printf"], "saida_contem": ["2.50"]}
+    },
+    "operadores lógicos": {
+        "codigo": '#include <stdio.h>\n\nint main(void) {\n    int resultado = (10 > 5) && (3 < 8);\n    printf("Resultado: %d\\n", resultado);\n    return 0;\n}',
+        "exercicio_codigo": 'Use && em uma expressão verdadeira e mostre "Resultado: 1".',
+        "codigo_minimo": '#include <stdio.h>\n\nint main(void) {\n    /* Crie a expressão lógica aqui. */\n    return 0;\n}',
+        "correcao": {"codigo_contem": ["&&", "printf"], "saida_contem": ["Resultado: 1"]}
+    }
+}
 
 
 def codigo_exemplo_para_conteudo(conteudo):
@@ -895,7 +975,7 @@ def gerar_trilha_completa_c():
                 resposta_quiz = conteudo
                 alternativas_quiz = criar_alternativas(modulo["conteudos"], conteudo)
 
-            modulo_licoes.append({
+            licao_dados = {
                 "id": proximo_id,
                 "titulo": conteudo,
                 "conteudo": conteudo_teorico,
@@ -911,8 +991,15 @@ def gerar_trilha_completa_c():
                 "resposta": resposta_quiz,
                 "exercicio_codigo": desafio_codigo,
                 "codigo_minimo": codigo_inicial_para_conteudo(conteudo),
-                "correcao": regra_correcao_para_conteudo(conteudo)
-            })
+                "correcao": regra_correcao_para_conteudo(conteudo),
+                "pratica_codigo": True
+            }
+
+            ajustes = AJUSTES_DIDATICOS_LICOES.get(conteudo)
+            if ajustes:
+                licao_dados.update(ajustes)
+
+            modulo_licoes.append(licao_dados)
             proximo_id += 1
 
         trilha.append({
@@ -2271,6 +2358,9 @@ def exercicio(licao_id):
     if not modulo_acessivel(usuario["id"], modulo["id"]):
         return redirect(url_for("modulos"))
 
+    if not licao.get("pratica_codigo", True):
+        return redirect(url_for("estudar", modulo_id=modulo["id"], licao=licao_id))
+
     conn = conectar()
     registro = conn.execute(
         "SELECT * FROM progresso WHERE usuario_id = ? AND licao_id = ?",
@@ -2493,10 +2583,17 @@ def verificar():
             "mensagem": f"Erro ao salvar resposta: {erro}"
         }), 500
 
+    if correta and not licao.get("pratica_codigo", True):
+        mensagem = "Resposta salva: correta. Agora você já pode concluir a lição."
+    elif correta:
+        mensagem = "Resposta salva: correta. Agora faça o exercício de código para concluir."
+    else:
+        mensagem = "Resposta salva: incorreta. Revise o conteúdo e tente novamente."
+
     return jsonify({
         "correta": correta,
         "resposta_salva": True,
-        "mensagem": "Resposta salva: correta. Agora faça o exercício de código para concluir." if correta else "Resposta salva: incorreta. Revise o conteúdo e tente novamente."
+        "mensagem": mensagem
     })
 
 
@@ -2607,20 +2704,23 @@ def concluir(licao_id):
         conn.close()
         return jsonify({"ok": False, "mensagem": "Responda corretamente o desafio teórico antes de concluir."})
 
-    if not registro["codigo_usuario"]:
-        conn.close()
-        return jsonify({"ok": False, "mensagem": "Faça e execute o exercício de código antes de concluir."})
+    exige_codigo = licao.get("pratica_codigo", True)
 
-    if "codigo_validado" in registro.keys() and registro["codigo_validado"] != 1:
-        mensagem = registro["feedback_codigo"] or "Execute o código e passe na correção automática antes de concluir."
-        conn.close()
-        return jsonify({"ok": False, "mensagem": mensagem})
+    if exige_codigo:
+        if not registro["codigo_usuario"]:
+            conn.close()
+            return jsonify({"ok": False, "mensagem": "Faça e execute o exercício de código antes de concluir."})
+
+        if "codigo_validado" in registro.keys() and registro["codigo_validado"] != 1:
+            mensagem = registro["feedback_codigo"] or "Execute o código e passe na correção automática antes de concluir."
+            conn.close()
+            return jsonify({"ok": False, "mensagem": mensagem})
 
     ja_concluida = registro["concluida"] == 1
 
     conn.execute(
-        "UPDATE progresso SET concluida = 1, codigo_enviado = 1, atualizado_em = ? WHERE usuario_id = ? AND licao_id = ?",
-        (str(date.today()), usuario["id"], licao_id)
+        "UPDATE progresso SET concluida = 1, codigo_enviado = ?, atualizado_em = ? WHERE usuario_id = ? AND licao_id = ?",
+        (1 if exige_codigo else 0, str(date.today()), usuario["id"], licao_id)
     )
 
     if not ja_concluida:

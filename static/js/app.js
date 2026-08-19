@@ -291,8 +291,8 @@ function limparCompilador() {
 
     if (codigo) codigo.value = "";
     if (entrada) entrada.value = "";
-    if (saida) saida.textContent = "Aguardando compilação.";
-    if (build) build.textContent = "Aguardando build.";
+    if (saida) saida.textContent = "Nenhum código foi executado ainda. Clique em Compilar para iniciar.";
+    if (build) build.textContent = "Aguardando o usuário clicar em Compilar.";
 }
 
 function carregarHistorico(codigo, entrada) {
