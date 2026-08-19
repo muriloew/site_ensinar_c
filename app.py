@@ -1957,7 +1957,7 @@ def contexto():
 def index():
     if usuario_logado():
         return redirect(url_for("dashboard"))
-    return render_template("index.html")
+    return render_template("public/index.html")
 
 
 @app.route("/cadastro", methods=["GET", "POST"])
@@ -1972,7 +1972,7 @@ def cadastro():
 
         if usuario_existente:
             conn.close()
-            return render_template("cadastro.html", erro="Este e-mail já está cadastrado. Entre na conta em vez de criar outra.")
+            return render_template("auth/cadastro.html", erro="Este e-mail já está cadastrado. Entre na conta em vez de criar outra.")
 
         senha_hash = generate_password_hash(senha)
 
@@ -1990,7 +1990,7 @@ def cadastro():
         criar_backup_progresso(novo_usuario_id)
         return redirect(url_for("dashboard"))
 
-    return render_template("cadastro.html")
+    return render_template("auth/cadastro.html")
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -2011,9 +2011,9 @@ def login():
             return redirect(url_for("dashboard"))
 
         conn.close()
-        return render_template("login.html", erro="E-mail ou senha incorretos.")
+        return render_template("auth/login.html", erro="E-mail ou senha incorretos.")
 
-    return render_template("login.html")
+    return render_template("auth/login.html")
 
 
 @app.route("/sair")
@@ -2055,7 +2055,7 @@ def dashboard():
         })
 
     return render_template(
-        "dashboard.html",
+        "app/dashboard.html",
         concluidas=concluidas,
         porcentagem=porcentagem,
         modulos=modulos_view,
@@ -2079,7 +2079,7 @@ def perfil():
     backup_recente = backup_mais_recente(usuario["id"])
 
     return render_template(
-        "perfil.html",
+        "app/perfil.html",
         concluidas=concluidas,
         porcentagem=porcentagem,
         desempenho=desempenho,
@@ -2193,7 +2193,7 @@ def simulado():
 
     questoes = montar_questoes_simulado(usuario["id"])
     return render_template(
-        "simulado.html",
+        "app/simulado.html",
         questoes=questoes,
         resultado=resultado,
         resultados=resultados
@@ -2208,7 +2208,7 @@ def baixar_backup_progresso():
 
     backup = criar_backup_progresso(usuario["id"])
     if not backup or not os.path.exists(backup["caminho"]):
-        return render_template("erro.html", mensagem="Não foi possível gerar o backup agora.")
+        return render_template("shared/erro.html", mensagem="Não foi possível gerar o backup agora.")
 
     nome_arquivo = f"backup_progresso_{usuario['id']}_{date.today()}.json"
     return send_file(backup["caminho"], as_attachment=True, download_name=nome_arquivo)
@@ -2233,7 +2233,7 @@ def modulos():
             "busca": normalizar_texto(texto_busca)
         })
 
-    return render_template("modulos.html", modulos=modulos_view)
+    return render_template("learning/modulos.html", modulos=modulos_view)
 
 
 
@@ -2261,7 +2261,7 @@ def compilador():
     conn.close()
 
     return render_template(
-        "compilador.html",
+        "compiler/compilador.html",
         codigo_inicial=codigo_inicial,
         titulo=titulo,
         historico=historico
@@ -2335,7 +2335,7 @@ def estudar(modulo_id):
     resposta_teorica = registro_licao["resposta_teorica"] if registro_licao and "resposta_teorica" in registro_licao.keys() and registro_licao["resposta_teorica"] else ""
 
     return render_template(
-        "estudar.html",
+        "learning/estudar.html",
         modulo=modulo,
         licao=licao,
         concluidas_ids=concluidas_ids,
@@ -2377,7 +2377,7 @@ def exercicio(licao_id):
     codigo_validado = registro["codigo_validado"] if registro and "codigo_validado" in registro.keys() else 0
     feedback_codigo = registro["feedback_codigo"] if registro and "feedback_codigo" in registro.keys() and registro["feedback_codigo"] else ""
     return render_template(
-        "exercicio.html",
+        "learning/exercicio.html",
         modulo=modulo,
         licao=licao,
         codigo_salvo=codigo_salvo,
@@ -2535,7 +2535,7 @@ def desafio_diario():
     codigo_validado = registro["codigo_validado"] if registro and "codigo_validado" in registro.keys() else 0
     feedback_codigo = registro["feedback_codigo"] if registro and "feedback_codigo" in registro.keys() and registro["feedback_codigo"] else ""
     return render_template(
-        "desafio_diario.html",
+        "learning/desafio_diario.html",
         desafio=desafio,
         codigo=codigo,
         saida=saida,
