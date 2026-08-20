@@ -52,49 +52,68 @@
             <p class="code-explanation">{{ licao.explicacao_codigo }}</p>
             {% endif %}
 
+            <section class="lesson-theory-challenges">
+                <div class="lesson-theory-head">
+                    <div>
+                        <h2>Desafios teóricos da lição</h2>
+                        <p>Responda as perguntas para confirmar que entendeu esta parte antes de avançar.</p>
+                    </div>
+
+                    <strong
+                        class="theory-challenge-progress"
+                        data-corretos="{{ desafios_teoricos_corretos }}"
+                        data-total="{{ total_desafios_teoricos }}"
+                        aria-live="polite"
+                        aria-label="{{ desafios_teoricos_corretos }} de {{ total_desafios_teoricos }} desafios corretos">
+                        {{ desafios_teoricos_corretos }}/{{ total_desafios_teoricos }}
+                    </strong>
+                </div>
+
+                <div class="lesson-theory-list">
+                    {% for desafio in desafios_teoricos %}
+                    <article class="theory-challenge-item {% if desafio.correta %}completed{% endif %}">
+                        <h3>{{ loop.index }}. {{ desafio.pergunta }}</h3>
+
+                        <div
+                            class="quiz"
+                            data-licao-id="{{ licao.id }}"
+                            data-desafio-id="{{ desafio.id }}"
+                            data-resposta-salva="{{ desafio.resposta_salva }}"
+                            data-correta="{% if desafio.correta %}1{% else %}0{% endif %}">
+                            {% for alt in desafio.alternativas %}
+                            <button
+                                type="button"
+                                data-resposta="{{ alt }}"
+                                aria-pressed="{% if desafio.resposta_salva == alt %}true{% else %}false{% endif %}"
+                                class="{% if desafio.resposta_salva == alt and desafio.correta %}correct{% elif desafio.resposta_salva == alt and not desafio.correta %}wrong{% endif %}">{{ alt }}</button>
+                            {% endfor %}
+                        </div>
+
+                        <p class="resultadoQuiz" role="status" aria-live="polite">
+                            {% if desafio.resposta_salva %}
+                                {% if desafio.correta %}Resposta salva: correta.{% else %}Resposta salva: incorreta.{% endif %}
+                                {{ desafio.explicacao }}
+                            {% endif %}
+                        </p>
+                    </article>
+                    {% endfor %}
+                </div>
+            </section>
+
             <div class="next-box">
                 {% if licao.pratica_codigo %}
                 <h2>Hora de praticar</h2>
                 <p>{{ licao.exercicio_codigo }}</p>
                 <a class="btn btn-primary" href="/exercicio/{{ licao.id }}">Ir para exercício de código →</a>
+                <p class="small-muted">A lição só é concluída depois de acertar todos os desafios teóricos e passar na correção do exercício.</p>
                 {% else %}
                 <h2>Revisão rápida</h2>
                 <p>{{ licao.exercicio_codigo }}</p>
                 <button class="btn btn-primary" type="button" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
+                <p class="small-muted">Esta lição é conceitual. Acerte todos os desafios teóricos para concluir.</p>
                 {% endif %}
             </div>
         </div>
     </section>
-
-    <aside class="challenge-panel">
-        <div class="card">
-            <h2>Desafio teórico</h2>
-            <p>{{ licao.pergunta }}</p>
-
-            <div class="quiz" data-licao-id="{{ licao.id }}" data-resposta-salva="{{ resposta_teorica }}" data-correta="{{ quiz_correto }}">
-                {% for alt in licao.alternativas %}
-                <button type="button" data-resposta="{{ alt }}" class="{% if resposta_teorica == alt and quiz_correto %}correct{% elif resposta_teorica == alt and not quiz_correto %}wrong{% endif %}">{{ alt }}</button>
-                {% endfor %}
-            </div>
-
-            <p id="resultadoQuiz">{% if resposta_teorica %}{% if quiz_correto %}Resposta salva: correta.{% else %}Resposta salva: incorreta.{% endif %}{% endif %}</p>
-
-            {% if licao.pratica_codigo %}
-            <a class="btn btn-primary full" href="/exercicio/{{ licao.id }}">Fazer exercício de código</a>
-
-            <p class="small-muted">A lição só é concluída depois de acertar o desafio teórico e executar um código no exercício.</p>
-            {% else %}
-            <button class="btn btn-primary full" type="button" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
-
-            <p class="small-muted">Esta lição é conceitual. Acerte o desafio teórico para concluir.</p>
-            {% endif %}
-        </div>
-
-        {% include "partials/desafios_modulo.html" %}
-    </aside>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script src="{{ url_for('static', filename='js/pages/desafios_teoricos.js') }}"></script>
 {% endblock %}

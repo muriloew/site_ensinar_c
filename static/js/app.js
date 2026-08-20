@@ -54,46 +54,37 @@ document.addEventListener("DOMContentLoaded", () => {
             verificarResposta(licaoId, resposta, botao);
         });
     });
-
-    document.querySelectorAll(".quiz").forEach((quiz) => {
-        const licaoId = Number(quiz.dataset.licaoId);
-        let respostaSalva = quiz.dataset.respostaSalva;
-        let correta = quiz.dataset.correta === "1";
-
-        if (!respostaSalva) {
-            const local = localStorage.getItem("quiz_licao_" + licaoId);
-            if (local) {
-                try {
-                    const dados = JSON.parse(local);
-                    respostaSalva = dados.resposta;
-                    correta = !!dados.correta;
-                } catch {}
-            }
-        }
-
-        if (respostaSalva) {
-            quiz.querySelectorAll("button[data-resposta]").forEach((btn) => {
-                if (btn.dataset.resposta === respostaSalva) {
-                    btn.classList.add(correta ? "correct" : "wrong");
-                }
-            });
-        }
-    });
 });
 
 async function verificarResposta(licaoId, resposta, botao) {
-    const resultado = document.getElementById("resultadoQuiz");
     const quiz = botao.closest(".quiz");
+    const resultado = quiz
+        ? quiz.closest(".theory-challenge-item")?.querySelector(".resultadoQuiz") || document.getElementById("resultadoQuiz")
+        : document.getElementById("resultadoQuiz");
+    const desafioId = quiz ? quiz.dataset.desafioId || "conceito" : "conceito";
 
-    document.querySelectorAll(".quiz button").forEach(btn => {
+    if (!quiz || !resultado) {
+        return;
+    }
+
+    const botoes = Array.from(quiz.querySelectorAll("button"));
+    botoes.forEach(btn => {
         btn.classList.remove("correct", "wrong");
+        btn.setAttribute("aria-pressed", "false");
+        btn.disabled = true;
     });
+    botao.setAttribute("aria-pressed", "true");
+    resultado.textContent = "Verificando resposta...";
 
     try {
         const retorno = await fetch("/verificar", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({licao_id: licaoId, resposta: resposta})
+            body: JSON.stringify({
+                licao_id: licaoId,
+                desafio_id: desafioId,
+                resposta: resposta
+            })
         });
 
         const dados = await retorno.json();
@@ -103,12 +94,15 @@ async function verificarResposta(licaoId, resposta, botao) {
             return;
         }
 
+        const explicacao = dados.explicacao ? ` ${dados.explicacao}` : "";
         if (dados.correta) {
             botao.classList.add("correct");
-            resultado.textContent = "Resposta salva: correta.";
+            resultado.textContent = `Resposta salva: correta.${explicacao}`;
+            quiz.closest(".theory-challenge-item")?.classList.add("completed");
         } else {
             botao.classList.add("wrong");
-            resultado.textContent = "Resposta salva: incorreta.";
+            resultado.textContent = `Resposta salva: incorreta.${explicacao}`;
+            quiz.closest(".theory-challenge-item")?.classList.remove("completed");
         }
 
         if (quiz) {
@@ -116,12 +110,19 @@ async function verificarResposta(licaoId, resposta, botao) {
             quiz.dataset.correta = dados.correta ? "1" : "0";
         }
 
-        localStorage.setItem("quiz_licao_" + licaoId, JSON.stringify({
-            resposta: resposta,
-            correta: dados.correta
-        }));
+        const progresso = document.querySelector(".theory-challenge-progress");
+        if (progresso && typeof dados.corretos !== "undefined" && typeof dados.total !== "undefined") {
+            progresso.dataset.corretos = dados.corretos;
+            progresso.dataset.total = dados.total;
+            progresso.textContent = `${dados.corretos}/${dados.total}`;
+            progresso.setAttribute("aria-label", `${dados.corretos} de ${dados.total} desafios corretos`);
+        }
     } catch (erro) {
         resultado.textContent = "Erro ao verificar resposta. Recarregue a página e tente novamente.";
+    } finally {
+        botoes.forEach(btn => {
+            btn.disabled = false;
+        });
     }
 }
 

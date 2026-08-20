@@ -1,2 +1,1 @@
-# Pasta reservada para futuras funções do back-end.
-# Neste momento, o projeto principal está concentrado em app.py.
+"""Pacote com partes separadas da logica de backend do Ensinar C."""

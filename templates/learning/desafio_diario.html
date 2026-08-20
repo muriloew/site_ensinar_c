@@ -10,10 +10,32 @@
 </div>
 
 <div class="daily-layout">
+    {% if desafio_bloqueado %}
+    <section class="card daily-card daily-locked-card">
+        <span class="daily-icon">🎯</span>
+        <h2>Desafios diários bloqueados</h2>
+        <p>Conclua o módulo 1 para liberar desafios diários. Assim o site evita mostrar exercícios com assuntos que você ainda não estudou.</p>
+
+        <div class="hint">
+            <strong>Próximo passo:</strong> termine as lições iniciais e volte aqui quando o módulo 2 estiver liberado.
+        </div>
+
+        <a class="btn btn-primary" href="/modulos">Voltar para os módulos</a>
+    </section>
+    {% else %}
     <section class="card daily-card">
         <span class="daily-icon">🎯</span>
+        <p class="daily-module-label">Módulo {{ desafio.modulo_id }} · {{ desafio.modulo_titulo }}</p>
         <h2>{{ desafio.titulo }}</h2>
         <p>{{ desafio.descricao }}</p>
+        <p class="small-muted">
+            {% if modulo_maximo_diario == 2 %}
+                Seu progresso liberou os 10 desafios do módulo 2.
+            {% else %}
+                Seu progresso liberou desafios dos módulos 2 a {{ modulo_maximo_diario }}.
+            {% endif %}
+            Há {{ total_desafios_disponiveis }} desafios disponíveis no sorteio diário.
+        </p>
 
         <div class="hint">
             <strong>Dica:</strong> {{ desafio.dica }}
@@ -41,8 +63,10 @@
             {% endif %}
         </div>
     </section>
+    {% endif %}
 </div>
 
+{% if not desafio_bloqueado %}
 <div id="buildModal" class="console-modal">
     <div class="console-window codeblocks-window">
         <div class="codeblocks-titlebar">
@@ -77,8 +101,11 @@
         </div>
     </div>
 </div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}
+{% if not desafio_bloqueado %}
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+{% endif %}
 {% endblock %}

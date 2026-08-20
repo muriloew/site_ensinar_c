@@ -1,5 +1,7 @@
 """Conteudo pedagogico especifico para as licoes da trilha de C."""
 
+import hashlib
+
 
 def plano(teoria, fundamento, cuidado, desafio, termos, saida=None, entrada=None):
     correcao = {"codigo_contem": termos, "saida_obrigatoria": True}
@@ -765,3 +767,98 @@ PLANOS_LICOES = {
 
 def obter_plano(conteudo):
     return PLANOS_LICOES.get(conteudo)
+
+
+def _ordenar_alternativas(alternativas, chave):
+    """Mantem uma ordem estavel sem deixar a resposta certa sempre no inicio."""
+    return sorted(
+        alternativas,
+        key=lambda item: hashlib.sha256(f"{chave}|{item}".encode("utf-8")).hexdigest(),
+    )
+
+
+def _alternativas_teoricas(correta, distratores):
+    alternativas = [correta]
+
+    for item in distratores:
+        if item and item != correta and item not in alternativas:
+            alternativas.append(item)
+        if len(alternativas) == 4:
+            break
+
+    opcoes_padrao = [
+        "Ignorar mensagens do compilador e testar somente no final.",
+        "Usar o recurso sem validar entradas, limites ou resultados.",
+        "Copiar a estrutura sem entender o papel de cada parte.",
+        "Trocar todos os comandos por printf para evitar erros.",
+    ]
+
+    for item in opcoes_padrao:
+        if len(alternativas) == 4:
+            break
+        if item != correta and item not in alternativas:
+            alternativas.append(item)
+
+    return alternativas[:4]
+
+
+def montar_desafios_teoricos_licao(
+    conteudo,
+    modulo,
+    plano_licao,
+    pergunta_base,
+    alternativas_base,
+    resposta_base,
+    aplicacao=None,
+    semente="",
+):
+    titulo_modulo = modulo.get("titulo", "este modulo")
+
+    if plano_licao:
+        cuidado = plano_licao["cuidado"]
+        fundamento = plano_licao["fundamento"]
+        aplicacao = aplicacao or plano_licao["desafio"]
+    else:
+        cuidado = "Testar o programa com entradas diferentes e observar as mensagens do compilador."
+        fundamento = f"{conteudo} faz parte de {titulo_modulo} e deve ser entendido antes de avancar."
+        aplicacao = aplicacao or f"Criar um exemplo pequeno que demonstre {conteudo}."
+
+    desafios = [
+        {
+            "id": "conceito",
+            "pergunta": pergunta_base,
+            "alternativas": _alternativas_teoricas(resposta_base, alternativas_base),
+            "resposta": resposta_base,
+            "explicacao": fundamento,
+        },
+        {
+            "id": "cuidado",
+            "pergunta": f"Qual cuidado ajuda ao estudar {conteudo}?",
+            "alternativas": _alternativas_teoricas(cuidado, [
+                f"{conteudo} dispensa testes quando o codigo compila.",
+                f"{conteudo} sempre funciona igual em qualquer situacao.",
+                "O compilador corrige automaticamente qualquer erro de logica.",
+            ]),
+            "resposta": cuidado,
+            "explicacao": cuidado,
+        },
+        {
+            "id": "pratica",
+            "pergunta": f"Qual pratica combina com esta licao sobre {conteudo}?",
+            "alternativas": _alternativas_teoricas(aplicacao, [
+                "Usar recursos de modulos futuros antes de entender a base.",
+                "Responder sem executar nem conferir o resultado.",
+                "Remover a funcao main para deixar o codigo menor.",
+            ]),
+            "resposta": aplicacao,
+            "explicacao": "A pratica correta reforca o conceito estudado antes de seguir para o proximo passo.",
+        },
+    ]
+
+    for desafio in desafios:
+        desafio["alternativas"] = _ordenar_alternativas(
+            desafio["alternativas"],
+            f"{semente}:{conteudo}:{desafio['id']}",
+        )
+
+    return desafios

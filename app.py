@@ -11,8 +11,14 @@ import unicodedata
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime, timedelta
 from flask_socketio import SocketIO, emit
-from conteudo_pedagogico import PLANOS_LICOES, obter_plano
-from desafios_teoricos import DESAFIOS_TEORICOS_MODULO
+from conteudo_pedagogico import PLANOS_LICOES, obter_plano, montar_desafios_teoricos_licao
+from backend.desafios_diarios import (
+    desafio_por_id as desafio_diario_por_id,
+    desafios_disponiveis_por_progresso,
+    escolher_desafio_do_dia,
+    gerar_desafios_diarios,
+)
+from backend.progresso_teorico import preparar_desafios_teoricos_view, atualizar_resposta_teorica
 import time
 import signal
 import threading
@@ -394,90 +400,6 @@ MODULOS_COMPLEMENTARES = [
                 "correcao": {"codigo_contem": ["malloc", "free", "*"], "saida_contem": ["30"]}
             }
         ]
-    }
-]
-
-
-DESAFIOS_DIARIOS = [
-    {
-        "id": "media-simples",
-        "titulo": "Desafio diário: média simples",
-        "descricao": "Declare duas notas, calcule a média e mostre o resultado na tela.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    float nota1 = 8.0;\n    float nota2 = 7.0;\n\n    // calcule a média aqui\n\n    return 0;\n}',
-        "dica": "Use uma variável media e divida a soma por 2.",
-        "correcao": {"codigo_contem": ["float", "/", "printf"], "saida_regex": [r"7[,.]5|7\.50"]}
-    },
-    {
-        "id": "soma-entrada",
-        "titulo": "Desafio diário: soma com entrada",
-        "descricao": "Leia dois números inteiros e mostre a soma deles.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int a, b;\n\n    // leia e some os valores\n\n    return 0;\n}',
-        "dica": "Use scanf duas vezes ou leia os dois valores no mesmo scanf.",
-        "correcao": {"codigo_contem": ["scanf", "+", "printf"], "testes": [{"entrada": "4\n6\n", "saida_contem": ["10"]}, {"entrada": "12\n5\n", "saida_contem": ["17"]}]}
-    },
-    {
-        "id": "par-impar",
-        "titulo": "Desafio diário: par ou ímpar",
-        "descricao": "Leia um inteiro e informe se ele é par ou ímpar.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int numero;\n\n    // leia o número e teste o resto da divisão por 2\n\n    return 0;\n}',
-        "dica": "Use numero % 2 para descobrir se o resto é zero.",
-        "correcao": {"codigo_contem": ["scanf", "%", "if"], "testes": [{"entrada": "8\n", "saida_contem": ["par"]}, {"entrada": "7\n", "saida_contem": ["impar"]}]}
-    },
-    {
-        "id": "maior-tres",
-        "titulo": "Desafio diário: maior de três",
-        "descricao": "Leia três números e mostre o maior.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int a, b, c, maior;\n\n    // leia os valores e encontre o maior\n\n    return 0;\n}',
-        "dica": "Comece assumindo que a é o maior e compare com b e c.",
-        "correcao": {"codigo_contem": ["scanf", "if", "printf"], "testes": [{"entrada": "3\n9\n4\n", "saida_contem": ["9"]}, {"entrada": "20\n5\n11\n", "saida_contem": ["20"]}]}
-    },
-    {
-        "id": "tabuada",
-        "titulo": "Desafio diário: tabuada",
-        "descricao": "Leia um número e mostre a tabuada dele de 1 a 10.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int numero;\n\n    // leia o número e use for para a tabuada\n\n    return 0;\n}',
-        "dica": "Um for de 1 até 10 resolve o desafio.",
-        "correcao": {"codigo_contem": ["scanf", "for", "*"], "testes": [{"entrada": "5\n", "saida_contem": ["5", "25", "50"]}]}
-    },
-    {
-        "id": "fatorial",
-        "titulo": "Desafio diário: fatorial",
-        "descricao": "Leia um número inteiro e mostre o fatorial dele.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int n;\n    int fatorial = 1;\n\n    // leia n e calcule o fatorial\n\n    return 0;\n}',
-        "dica": "Multiplique os valores de 1 até n.",
-        "correcao": {"codigo_contem": ["scanf", "for", "*"], "testes": [{"entrada": "5\n", "saida_contem": ["120"]}, {"entrada": "4\n", "saida_contem": ["24"]}]}
-    },
-    {
-        "id": "positivos",
-        "titulo": "Desafio diário: contador de positivos",
-        "descricao": "Leia cinco inteiros e mostre quantos são positivos.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int numero;\n    int positivos = 0;\n\n    // leia 5 números e conte os positivos\n\n    return 0;\n}',
-        "dica": "Use um for e incremente o contador quando numero > 0.",
-        "correcao": {"codigo_contem": ["scanf", "for", "if"], "testes": [{"entrada": "1\n-2\n3\n0\n5\n", "saida_contem": ["3"]}]}
-    },
-    {
-        "id": "strlen",
-        "titulo": "Desafio diário: tamanho da palavra",
-        "descricao": "Use strlen para mostrar o tamanho da palavra codigo.",
-        "codigo_inicial": '#include <stdio.h>\n#include <string.h>\n\nint main() {\n    char palavra[] = "codigo";\n\n    // mostre o tamanho da palavra\n\n    return 0;\n}',
-        "dica": "strlen(palavra) retorna 6.",
-        "correcao": {"codigo_contem": ["string.h", "strlen", "printf"], "saida_contem": ["6"]}
-    },
-    {
-        "id": "soma-vetor",
-        "titulo": "Desafio diário: soma do vetor",
-        "descricao": "Some os valores do vetor {1, 2, 3, 4} e mostre o total.",
-        "codigo_inicial": '#include <stdio.h>\n\nint main() {\n    int valores[4] = {1, 2, 3, 4};\n    int soma = 0;\n\n    // percorra o vetor e some\n\n    return 0;\n}',
-        "dica": "Percorra o vetor com for e acumule em soma.",
-        "correcao": {"codigo_contem": ["[", "]", "for", "+"], "saida_contem": ["10"]}
-    },
-    {
-        "id": "funcao-quadrado",
-        "titulo": "Desafio diário: função quadrado",
-        "descricao": "Crie uma função que receba 6 e retorne o quadrado do número.",
-        "codigo_inicial": '#include <stdio.h>\n\nint quadrado(int n) {\n    return 0;\n}\n\nint main() {\n    // mostre quadrado(6)\n\n    return 0;\n}',
-        "dica": "O quadrado de n é n * n.",
-        "correcao": {"codigo_contem": ["quadrado", "return", "*", "printf"], "saida_contem": ["36"]}
     }
 ]
 
@@ -1000,6 +922,20 @@ def gerar_trilha_completa_c():
             if ajustes:
                 licao_dados.update(ajustes)
 
+            desafios_teoricos = montar_desafios_teoricos_licao(
+                conteudo,
+                modulo,
+                plano_licao,
+                licao_dados["pergunta"],
+                licao_dados["alternativas"],
+                licao_dados["resposta"],
+                aplicacao=licao_dados["exercicio_codigo"],
+                semente=f"{modulo['id']}-{proximo_id}",
+            )
+            licao_dados["pergunta"] = desafios_teoricos[0]["pergunta"]
+            licao_dados["alternativas"] = desafios_teoricos[0]["alternativas"]
+            licao_dados["desafios_teoricos"] = desafios_teoricos
+
             modulo_licoes.append(licao_dados)
             proximo_id += 1
 
@@ -1009,13 +945,13 @@ def gerar_trilha_completa_c():
             "descricao": modulo["descricao"],
             "icone": modulo["icone"],
             "licoes": modulo_licoes,
-            "desafios_teoricos": DESAFIOS_TEORICOS_MODULO.get(modulo["id"], [])
         })
 
     return trilha
 
 
 MODULOS = gerar_trilha_completa_c()
+DESAFIOS_DIARIOS = gerar_desafios_diarios(MODULOS)
 
 if len(PLANOS_LICOES) != sum(len(modulo["licoes"]) for modulo in MODULOS):
     raise RuntimeError("O catálogo pedagógico precisa cobrir todas as lições da trilha.")
@@ -1256,6 +1192,48 @@ def modulo_acessivel(usuario_id, modulo_id):
     return registro is not None
 
 
+def licao_acessivel_para_usuario(usuario_id, licao_id, exigir_pratica=False):
+    try:
+        licao_id = int(licao_id)
+    except (TypeError, ValueError):
+        return None, None, ("Informe uma lição válida.", 400)
+
+    modulo, licao = encontrar_licao(licao_id)
+    if not licao:
+        return None, None, ("Lição não encontrada.", 404)
+
+    if not modulo_acessivel(usuario_id, modulo["id"]):
+        return None, None, ("Conclua os módulos anteriores para acessar esta lição.", 403)
+
+    if exigir_pratica and not licao.get("pratica_codigo", True):
+        return None, None, ("Esta lição possui apenas atividades teóricas.", 400)
+
+    return modulo, licao, None
+
+
+def modulo_maximo_para_desafio_diario(usuario_id):
+    modulo_maximo = 1
+
+    for modulo in MODULOS:
+        if modulo_liberado(usuario_id, modulo["id"]):
+            modulo_maximo = modulo["id"]
+        else:
+            break
+
+    return modulo_maximo
+
+
+def desafios_diarios_do_usuario(usuario_id):
+    modulo_maximo = modulo_maximo_para_desafio_diario(usuario_id)
+    desafios = desafios_disponiveis_por_progresso(DESAFIOS_DIARIOS, modulo_maximo)
+    return desafios, modulo_maximo
+
+
+def desafio_do_dia_usuario(usuario_id, data_texto=None):
+    desafios, _ = desafios_diarios_do_usuario(usuario_id)
+    return escolher_desafio_do_dia(desafios, data_texto)
+
+
 def progresso_modulo(usuario_id, modulo):
     ids = [l["id"] for l in modulo["licoes"]]
     if not ids:
@@ -1309,14 +1287,20 @@ def conceder_conquistas(usuario_id):
     conn.close()
 
 
-def desafio_por_id(desafio_id):
-    return next((desafio for desafio in DESAFIOS_DIARIOS if desafio["id"] == desafio_id), DESAFIOS_DIARIOS[0])
+def desafio_por_id(desafio_id, usuario_id=None):
+    if usuario_id:
+        desafios, _ = desafios_diarios_do_usuario(usuario_id)
+    else:
+        desafios = DESAFIOS_DIARIOS
+
+    return desafio_diario_por_id(desafios, desafio_id)
 
 
-def desafio_do_dia(data_texto=None):
-    data_base = date.fromisoformat(data_texto) if data_texto else date.today()
-    indice = data_base.toordinal() % len(DESAFIOS_DIARIOS)
-    return DESAFIOS_DIARIOS[indice]
+def desafio_do_dia(data_texto=None, usuario_id=None):
+    if usuario_id:
+        return desafio_do_dia_usuario(usuario_id, data_texto)
+
+    return escolher_desafio_do_dia(DESAFIOS_DIARIOS, data_texto)
 
 
 def linhas_para_dicts(linhas):
@@ -2333,6 +2317,7 @@ def estudar(modulo_id):
     saida_salva = registro_licao["saida_codigo"] if registro_licao and "saida_codigo" in registro_licao.keys() and registro_licao["saida_codigo"] else "A saída do compilador aparecerá aqui."
     quiz_correto = int(registro_licao["quiz_correto"]) if registro_licao and "quiz_correto" in registro_licao.keys() and registro_licao["quiz_correto"] is not None else 0
     resposta_teorica = registro_licao["resposta_teorica"] if registro_licao and "resposta_teorica" in registro_licao.keys() and registro_licao["resposta_teorica"] else ""
+    estado_teorico = preparar_desafios_teoricos_view(licao, resposta_teorica, quiz_correto)
 
     return render_template(
         "learning/estudar.html",
@@ -2342,7 +2327,11 @@ def estudar(modulo_id):
         codigo_salvo=codigo_salvo,
         saida_salva=saida_salva,
         resposta_teorica=resposta_teorica,
-        quiz_correto=quiz_correto
+        quiz_correto=quiz_correto,
+        desafios_teoricos=estado_teorico["desafios"],
+        desafios_teoricos_corretos=estado_teorico["corretos"],
+        total_desafios_teoricos=estado_teorico["total"],
+        desafios_teoricos_concluidos=estado_teorico["todos_corretos"]
     )
 
 
@@ -2396,14 +2385,19 @@ def salvar_rascunho_exercicio():
     if not usuario:
         return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
 
-    dados = request.get_json() or {}
-    licao_id = int(dados.get("licao_id"))
+    dados = request.get_json(silent=True) or {}
+    licao_id = dados.get("licao_id")
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
 
-    modulo, licao = encontrar_licao(licao_id)
-    if not licao:
-        return jsonify({"ok": False, "mensagem": "Lição não encontrada."}), 404
+    modulo, licao, erro = licao_acessivel_para_usuario(
+        usuario["id"], licao_id, exigir_pratica=True
+    )
+    if erro:
+        mensagem, status = erro
+        return jsonify({"ok": False, "mensagem": mensagem}), status
+
+    licao_id = licao["id"]
 
     conn = conectar()
     conn.execute(
@@ -2432,7 +2426,12 @@ def salvar_rascunho_desafio():
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
     hoje = str(date.today())
-    desafio = desafio_do_dia(hoje)
+    desafio = desafio_do_dia(hoje, usuario["id"])
+    if not desafio:
+        return jsonify({
+            "ok": False,
+            "mensagem": "Conclua o módulo 1 para desbloquear os desafios diários."
+        }), 403
 
     conn = conectar()
     conn.execute(
@@ -2476,14 +2475,19 @@ def api_exercicio_compilar():
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
 
-    dados = request.get_json()
-    licao_id = int(dados.get("licao_id"))
+    dados = request.get_json(silent=True) or {}
+    licao_id = dados.get("licao_id")
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
 
-    modulo, licao = encontrar_licao(licao_id)
-    if not licao:
-        return jsonify({"ok": False, "build": "Lição não encontrada.", "saida": ""}), 404
+    modulo, licao, erro = licao_acessivel_para_usuario(
+        usuario["id"], licao_id, exigir_pratica=True
+    )
+    if erro:
+        mensagem, status = erro
+        return jsonify({"ok": False, "build": mensagem, "saida": ""}), status
+
+    licao_id = licao["id"]
 
     resultado = executar_compilador_online(codigo, entrada)
     validacao = avaliar_codigo_automaticamente(codigo, resultado, licao.get("correcao"))
@@ -2520,6 +2524,23 @@ def desafio_diario():
         return redirect(url_for("login"))
 
     hoje = str(date.today())
+    desafios_disponiveis, modulo_maximo_diario = desafios_diarios_do_usuario(usuario["id"])
+
+    if not desafios_disponiveis:
+        return render_template(
+            "learning/desafio_diario.html",
+            desafio=None,
+            codigo="",
+            saida="A saída do desafio aparecerá aqui.",
+            entrada="",
+            concluido=0,
+            codigo_validado=0,
+            feedback_codigo="",
+            desafio_bloqueado=True,
+            modulo_maximo_diario=modulo_maximo_diario,
+            total_desafios_disponiveis=0
+        )
+
     conn = conectar()
     registro = conn.execute(
         "SELECT * FROM desafios_diarios WHERE usuario_id = ? AND data = ?",
@@ -2527,13 +2548,20 @@ def desafio_diario():
     ).fetchone()
     conn.close()
 
-    desafio = desafio_por_id(registro["desafio_id"]) if registro and "desafio_id" in registro.keys() and registro["desafio_id"] else desafio_do_dia(hoje)
-    codigo = registro["codigo_usuario"] if registro and registro["codigo_usuario"] else desafio["codigo_inicial"]
-    saida = registro["saida_codigo"] if registro and registro["saida_codigo"] else "A saída do desafio aparecerá aqui."
-    entrada = registro["entrada_codigo"] if registro and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
-    concluido = registro["concluido"] if registro else 0
-    codigo_validado = registro["codigo_validado"] if registro and "codigo_validado" in registro.keys() else 0
-    feedback_codigo = registro["feedback_codigo"] if registro and "feedback_codigo" in registro.keys() and registro["feedback_codigo"] else ""
+    desafio = None
+    if registro and "desafio_id" in registro.keys() and registro["desafio_id"]:
+        desafio = desafio_diario_por_id(desafios_disponiveis, registro["desafio_id"])
+
+    if not desafio:
+        desafio = escolher_desafio_do_dia(desafios_disponiveis, hoje)
+
+    registro_mesmo_desafio = registro and "desafio_id" in registro.keys() and registro["desafio_id"] == desafio["id"]
+    codigo = registro["codigo_usuario"] if registro_mesmo_desafio and registro["codigo_usuario"] else desafio["codigo_inicial"]
+    saida = registro["saida_codigo"] if registro_mesmo_desafio and registro["saida_codigo"] else "A saída do desafio aparecerá aqui."
+    entrada = registro["entrada_codigo"] if registro_mesmo_desafio and "entrada_codigo" in registro.keys() and registro["entrada_codigo"] else ""
+    concluido = registro["concluido"] if registro_mesmo_desafio else 0
+    codigo_validado = registro["codigo_validado"] if registro_mesmo_desafio and "codigo_validado" in registro.keys() else 0
+    feedback_codigo = registro["feedback_codigo"] if registro_mesmo_desafio and "feedback_codigo" in registro.keys() and registro["feedback_codigo"] else ""
     return render_template(
         "learning/desafio_diario.html",
         desafio=desafio,
@@ -2542,7 +2570,10 @@ def desafio_diario():
         entrada=entrada,
         concluido=concluido,
         codigo_validado=codigo_validado,
-        feedback_codigo=feedback_codigo
+        feedback_codigo=feedback_codigo,
+        desafio_bloqueado=False,
+        modulo_maximo_diario=modulo_maximo_diario,
+        total_desafios_disponiveis=len(desafios_disponiveis)
     )
 
 
@@ -2552,18 +2583,37 @@ def verificar():
     if not usuario:
         return jsonify({"correta": False, "mensagem": "Usuário não logado."}), 401
 
-    dados = request.get_json() or {}
-    licao_id = int(dados.get("licao_id"))
+    dados = request.get_json(silent=True) or {}
+    licao_id = dados.get("licao_id")
     resposta = str(dados.get("resposta", ""))
+    desafio_id = str(dados.get("desafio_id", "conceito"))
 
-    modulo, licao = encontrar_licao(licao_id)
-    if not licao:
-        return jsonify({"correta": False, "mensagem": "Lição não encontrada."}), 404
+    modulo, licao, erro = licao_acessivel_para_usuario(usuario["id"], licao_id)
+    if erro:
+        mensagem, status = erro
+        return jsonify({"correta": False, "mensagem": mensagem}), status
 
-    correta = resposta == licao["resposta"]
+    licao_id = licao["id"]
 
     try:
         conn = conectar()
+        registro = conn.execute(
+            "SELECT resposta_teorica, quiz_correto FROM progresso WHERE usuario_id = ? AND licao_id = ?",
+            (usuario["id"], licao_id)
+        ).fetchone()
+
+        valor_atual = registro["resposta_teorica"] if registro and "resposta_teorica" in registro.keys() and registro["resposta_teorica"] else ""
+        quiz_atual = registro["quiz_correto"] if registro and "quiz_correto" in registro.keys() and registro["quiz_correto"] is not None else 0
+        resultado_teorico = atualizar_resposta_teorica(licao, valor_atual, desafio_id, resposta, quiz_atual)
+
+        if not resultado_teorico:
+            conn.close()
+            return jsonify({"correta": False, "mensagem": "Desafio teórico não encontrado."}), 404
+
+        if resultado_teorico.get("erro"):
+            conn.close()
+            return jsonify({"correta": False, "mensagem": resultado_teorico["erro"]}), 400
+
         conn.execute(
             """
             INSERT INTO progresso (usuario_id, licao_id, modulo_id, quiz_correto, quiz_respondido, resposta_teorica, atualizado_em)
@@ -2574,7 +2624,14 @@ def verificar():
                           resposta_teorica = excluded.resposta_teorica,
                           atualizado_em = excluded.atualizado_em
             """,
-            (usuario["id"], licao_id, modulo["id"], 1 if correta else 0, resposta, str(date.today()))
+            (
+                usuario["id"],
+                licao_id,
+                modulo["id"],
+                1 if resultado_teorico["todos_corretos"] else 0,
+                resultado_teorico["resposta_json"],
+                str(date.today())
+            )
         )
         conn.commit()
         conn.close()
@@ -2585,17 +2642,24 @@ def verificar():
             "mensagem": f"Erro ao salvar resposta: {erro}"
         }), 500
 
-    if correta and not licao.get("pratica_codigo", True):
-        mensagem = "Resposta salva: correta. Agora você já pode concluir a lição."
+    correta = resultado_teorico["correta"]
+    if resultado_teorico["todos_corretos"] and not licao.get("pratica_codigo", True):
+        mensagem = "Todos os desafios teóricos estão corretos. Agora você já pode concluir a lição."
+    elif resultado_teorico["todos_corretos"]:
+        mensagem = "Todos os desafios teóricos estão corretos. Agora faça o exercício de código para concluir."
     elif correta:
-        mensagem = "Resposta salva: correta. Agora faça o exercício de código para concluir."
+        mensagem = f"Resposta salva: correta. Falta acertar {resultado_teorico['total'] - resultado_teorico['corretos']} desafio(s)."
     else:
         mensagem = "Resposta salva: incorreta. Revise o conteúdo e tente novamente."
 
     return jsonify({
         "correta": correta,
         "resposta_salva": True,
-        "mensagem": mensagem
+        "mensagem": mensagem,
+        "explicacao": resultado_teorico["explicacao"],
+        "corretos": resultado_teorico["corretos"],
+        "total": resultado_teorico["total"],
+        "todos_corretos": resultado_teorico["todos_corretos"]
     })
 
 
@@ -2605,7 +2669,7 @@ def compilar_codigo():
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
 
-    dados = request.get_json()
+    dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
 
     resultado = compilar_codigo_c(codigo)
@@ -2618,49 +2682,69 @@ def executar_codigo():
     if not usuario:
         return jsonify({"ok": False, "saida": "Usuário não logado."}), 401
 
-    dados = request.get_json()
+    dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
     licao_id = dados.get("licao_id")
     tipo = dados.get("tipo", "licao")
 
+    modulo = None
+    licao = None
+    desafio = None
+
+    if tipo == "licao":
+        modulo, licao, erro = licao_acessivel_para_usuario(
+            usuario["id"], licao_id, exigir_pratica=True
+        )
+        if erro:
+            mensagem, status = erro
+            return jsonify({"ok": False, "saida": mensagem, "build": ""}), status
+        licao_id = licao["id"]
+    elif tipo == "diario":
+        desafio = desafio_do_dia(str(date.today()), usuario["id"])
+        if not desafio:
+            return jsonify({
+                "ok": False,
+                "saida": "Conclua o módulo 1 para desbloquear os desafios diários.",
+                "build": ""
+            }), 403
+    elif tipo not in {"livre", "compilador"}:
+        return jsonify({"ok": False, "saida": "Tipo de execução inválido.", "build": ""}), 400
+
     resultado = executar_compilador_online(codigo, entrada)
 
-    if tipo == "licao" and licao_id:
-        modulo, licao = encontrar_licao(int(licao_id))
-        if modulo:
-            validacao = avaliar_codigo_automaticamente(codigo, resultado, licao.get("correcao"))
-            resultado["correcao"] = validacao
-            resultado["codigo_validado"] = 1 if validacao["ok"] else 0
-            try:
-                conn = conectar()
-                conn.execute(
-                    """
-                    INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, entrada_codigo, codigo_enviado, codigo_validado, feedback_codigo, atualizado_em)
-                    VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
-                    ON CONFLICT(usuario_id, licao_id)
-                    DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
-                                  saida_codigo = excluded.saida_codigo,
-                                  entrada_codigo = excluded.entrada_codigo,
-                                  codigo_enviado = 1,
-                                  codigo_validado = excluded.codigo_validado,
-                                  feedback_codigo = excluded.feedback_codigo,
-                                  atualizado_em = excluded.atualizado_em
-                    """,
-                    (usuario["id"], int(licao_id), modulo["id"], codigo, resultado["saida"], entrada, resultado["codigo_validado"], validacao["mensagem"], str(date.today()))
-                )
-                conn.commit()
-                conn.close()
-                criar_backup_progresso(usuario["id"])
-            except Exception as erro:
-                return jsonify({
-                    "ok": False,
-                    "saida": f"Erro ao salvar código no banco: {erro}"
-                }), 500
+    if tipo == "licao":
+        validacao = avaliar_codigo_automaticamente(codigo, resultado, licao.get("correcao"))
+        resultado["correcao"] = validacao
+        resultado["codigo_validado"] = 1 if validacao["ok"] else 0
+        try:
+            conn = conectar()
+            conn.execute(
+                """
+                INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, saida_codigo, entrada_codigo, codigo_enviado, codigo_validado, feedback_codigo, atualizado_em)
+                VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?, ?)
+                ON CONFLICT(usuario_id, licao_id)
+                DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+                              saida_codigo = excluded.saida_codigo,
+                              entrada_codigo = excluded.entrada_codigo,
+                              codigo_enviado = 1,
+                              codigo_validado = excluded.codigo_validado,
+                              feedback_codigo = excluded.feedback_codigo,
+                              atualizado_em = excluded.atualizado_em
+                """,
+                (usuario["id"], licao_id, modulo["id"], codigo, resultado.get("saida", ""), entrada, resultado["codigo_validado"], validacao["mensagem"], str(date.today()))
+            )
+            conn.commit()
+            conn.close()
+            criar_backup_progresso(usuario["id"])
+        except Exception as erro:
+            return jsonify({
+                "ok": False,
+                "saida": f"Erro ao salvar código no banco: {erro}"
+            }), 500
 
     if tipo == "diario":
         hoje = str(date.today())
-        desafio = desafio_do_dia(hoje)
         validacao = avaliar_codigo_automaticamente(codigo, resultado, desafio.get("correcao"))
         resultado["correcao"] = validacao
         resultado["codigo_validado"] = 1 if validacao["ok"] else 0
@@ -2677,7 +2761,7 @@ def executar_codigo():
                           codigo_validado = excluded.codigo_validado,
                           feedback_codigo = excluded.feedback_codigo
             """,
-            (usuario["id"], hoje, desafio["id"], codigo, resultado["saida"], entrada, resultado["codigo_validado"], validacao["mensagem"])
+            (usuario["id"], hoje, desafio["id"], codigo, resultado.get("saida", ""), entrada, resultado["codigo_validado"], validacao["mensagem"])
         )
         conn.commit()
         conn.close()
@@ -2692,9 +2776,10 @@ def concluir(licao_id):
     if not usuario:
         return jsonify({"erro": "Usuário não logado"}), 401
 
-    modulo, licao = encontrar_licao(licao_id)
-    if not licao:
-        return jsonify({"erro": "Lição não encontrada"}), 404
+    modulo, licao, erro = licao_acessivel_para_usuario(usuario["id"], licao_id)
+    if erro:
+        mensagem, status = erro
+        return jsonify({"ok": False, "mensagem": mensagem}), status
 
     conn = conectar()
     registro = conn.execute(
@@ -2704,7 +2789,7 @@ def concluir(licao_id):
 
     if not registro or registro["quiz_correto"] != 1:
         conn.close()
-        return jsonify({"ok": False, "mensagem": "Responda corretamente o desafio teórico antes de concluir."})
+        return jsonify({"ok": False, "mensagem": "Responda corretamente todos os desafios teóricos antes de concluir."})
 
     exige_codigo = licao.get("pratica_codigo", True)
 
@@ -2744,6 +2829,13 @@ def concluir_desafio_diario():
     if not usuario:
         return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
 
+    desafios_disponiveis, _ = desafios_diarios_do_usuario(usuario["id"])
+    if not desafios_disponiveis:
+        return jsonify({
+            "ok": False,
+            "mensagem": "Conclua o módulo 1 para desbloquear os desafios diários."
+        }), 403
+
     hoje = str(date.today())
     conn = conectar()
     registro = conn.execute(
@@ -2751,7 +2843,7 @@ def concluir_desafio_diario():
         (usuario["id"], hoje)
     ).fetchone()
 
-    if not registro or not registro["codigo_usuario"]:
+    if not registro or not registro["codigo_usuario"] or not desafio_diario_por_id(desafios_disponiveis, registro["desafio_id"]):
         conn.close()
         return jsonify({"ok": False, "mensagem": "Execute um código antes de concluir o desafio diário."})
 
@@ -2789,9 +2881,14 @@ PROCESSOS_TERMINAL = {}
 
 
 def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
-    modulo, licao = encontrar_licao(int(licao_id))
-    if not modulo:
-        return {"ok": False, "mensagem": "Lição não encontrada."}
+    modulo, licao, erro = licao_acessivel_para_usuario(
+        usuario_id, licao_id, exigir_pratica=True
+    )
+    if erro:
+        mensagem, _ = erro
+        return {"ok": False, "mensagem": mensagem}
+
+    licao_id = licao["id"]
 
     validacao = avaliar_codigo_automaticamente(
         codigo,
@@ -2813,7 +2910,7 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
                       feedback_codigo = excluded.feedback_codigo,
                       atualizado_em = excluded.atualizado_em
         """,
-        (usuario_id, int(licao_id), modulo["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"], str(date.today()))
+        (usuario_id, licao_id, modulo["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"], str(date.today()))
     )
     conn.commit()
     conn.close()
@@ -2823,7 +2920,13 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
 
 def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
     hoje = str(date.today())
-    desafio = desafio_do_dia(hoje)
+    desafio = desafio_do_dia(hoje, usuario_id)
+    if not desafio:
+        return {
+            "ok": False,
+            "mensagem": "Conclua o módulo 1 para desbloquear os desafios diários."
+        }
+
     validacao = avaliar_codigo_automaticamente(
         codigo,
         {"ok": True, "saida": saida, "build": "Build finished successfully."},
@@ -2956,9 +3059,30 @@ def compilar_real(dados):
     sid = request.sid
     encerrar_processo_socket(sid)
 
+    dados = dados or {}
     codigo = dados.get("codigo", "")
     licao_id = dados.get("licao_id")
     tipo = dados.get("tipo", "licao")
+
+    if tipo == "licao":
+        _, licao, erro = licao_acessivel_para_usuario(
+            usuario_id, licao_id, exigir_pratica=True
+        )
+        if erro:
+            mensagem, _ = erro
+            emit("build_log", {"ok": False, "texto": mensagem})
+            return
+        licao_id = licao["id"]
+    elif tipo == "diario":
+        if not desafio_do_dia(str(date.today()), usuario_id):
+            emit("build_log", {
+                "ok": False,
+                "texto": "Conclua o módulo 1 para desbloquear os desafios diários."
+            })
+            return
+    else:
+        emit("build_log", {"ok": False, "texto": "Tipo de execução inválido."})
+        return
 
     erro_validacao = validar_codigo_recebido(codigo)
     if erro_validacao:
@@ -3051,10 +3175,15 @@ def compilar_real(dados):
 @socketio.on("terminal_entrada")
 def terminal_entrada(dados):
     sid = request.sid
-    texto = dados.get("texto", "")
+    dados = dados or {}
+    texto = str(dados.get("texto", ""))[:10_000]
 
     proc_data = PROCESSOS_TERMINAL.get(sid)
     if not proc_data:
+        return
+
+    if len(proc_data["entrada"]) + len(texto) > 100_000:
+        emit("terminal_saida", {"texto": "\nLimite de entrada do terminal atingido.\n"})
         return
 
     proc_data["entrada"] += texto

@@ -43,16 +43,22 @@ http://127.0.0.1:5000
 
 ## Render
 
-Build Command:
+Esta versão deve ser publicada como serviço **Docker**, pois o compilador interativo precisa de Python 3.11, GCC e WebSocket. O arquivo `render.yaml` já aponta para o `Dockerfile` do projeto.
 
-```txt
-pip install -r requirements.txt
+Para enviar uma atualização ao Render:
+
+```bash
+git add .
+git commit -m "descreva a atualização"
+git push
 ```
 
-Start Command:
+Quando o Auto-Deploy estiver ativado no serviço, o Render inicia uma nova publicação após o `git push`. Não configure este projeto como serviço Python comum.
 
-```txt
-gunicorn app:app
+## Testes
+
+```bash
+python -m unittest discover -s tests -v
 ```
 
 ## Observação importante
@@ -309,3 +315,17 @@ python app.py
 - O modo prática livre foi colocado no menu lateral usando o compilador existente.
 - Melhorada a navegação em telas pequenas, com menu horizontal e ajustes no editor/terminal.
 - O backup automático agora inclui metas e resultados de simulados.
+
+
+## Versão 23 — Desafios por lição e progresso diário
+
+- Cada lição agora possui três desafios teóricos dentro da própria página de conteúdo.
+- Cada resposta é salva separadamente e a lição só é liberada quando todas estão corretas.
+- As alternativas aparecem em posições variadas, sem deixar a resposta correta sempre em primeiro lugar.
+- Progresso de versões antigas continua reconhecido.
+- O módulo 1 permanece sem exercícios de código e apresenta apenas a base conceitual.
+- Os desafios diários ficam bloqueados enquanto o aluno está no módulo 1.
+- Há 10 desafios diários para cada módulo do 2 ao 21, totalizando 200 atividades.
+- O sorteio diário usa somente módulos liberados pelo progresso do aluno.
+- O backend também bloqueia tentativas de acessar lições ou desafios avançados diretamente.
+- A lógica de desafios diários e respostas teóricas foi separada na pasta `backend`.
