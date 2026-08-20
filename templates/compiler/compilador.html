@@ -1,5 +1,6 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ titulo }} - Ensinar C{% endblock %}
+{% block head %}{% include "partials/editor_head.html" %}{% endblock %}
 
 {% block content %}
 <div class="topbar">
@@ -61,4 +62,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{% include "partials/editor_scripts.html" %}
 {% endblock %}

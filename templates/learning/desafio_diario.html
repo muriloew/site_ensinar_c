@@ -1,4 +1,5 @@
 {% extends "layouts/base.html" %}
+{% block head %}{% include "partials/editor_head.html" %}{% endblock %}
 {% block title %}Desafio diário - Ensinar C{% endblock %}
 
 {% block content %}
@@ -106,6 +107,7 @@
 
 {% block scripts %}
 {% if not desafio_bloqueado %}
+{% include "partials/editor_scripts.html" %}
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {% endif %}
 {% endblock %}

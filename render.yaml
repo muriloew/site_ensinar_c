@@ -12,3 +12,11 @@ services:
         value: local
       - key: COMPILER_RUNNER_USER
         value: compiler-runner
+      - key: COMPILER_COMPILE_TIMEOUT
+        value: "30"
+      - key: COMPILER_COMPILE_CPU
+        value: "12"
+      - key: COMPILER_RUN_TIMEOUT
+        value: "8"
+      - key: COMPILER_INTERACTIVE_TIMEOUT
+        value: "120"

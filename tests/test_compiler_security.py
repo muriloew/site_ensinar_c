@@ -47,6 +47,32 @@ class CompilerSecurityTest(unittest.TestCase):
             compilador.validar_codigo("int main(void){return 0;}", "a" * 100_001),
         )
 
+    def test_limites_de_tempo_adequados_ao_render(self):
+        self.assertGreaterEqual(compilador.TEMPO_COMPILACAO, 30)
+        self.assertGreaterEqual(compilador.TEMPO_INTERATIVO, 120)
+        self.assertGreater(compilador.MAX_EXECUTAVEL_BYTES, compilador.MAX_SAIDA_BYTES)
+
+        comando = compilador.comando_gcc("programa.c", "programa")
+        self.assertIn("-pipe", comando)
+        self.assertIn("-fdiagnostics-color=never", comando)
+
+    def test_build_log_informa_tempo_real(self):
+        sucesso = compilador._build_log({
+            "codigo": 0,
+            "texto": "",
+            "tempo_excedido": False,
+            "duracao_segundos": 1.25,
+        })
+        self.assertIn("1.25s", sucesso)
+
+        excedido = compilador._build_log({
+            "codigo": -1,
+            "texto": "",
+            "tempo_excedido": True,
+            "duracao_segundos": compilador.TEMPO_COMPILACAO,
+        })
+        self.assertIn(str(compilador.TEMPO_COMPILACAO), excedido)
+
     @unittest.skipUnless(shutil.which("gcc"), "GCC nao esta instalado neste Windows")
     def test_gcc_local_compila_executa_e_rejeita_erro(self):
         sucesso = compilador.executar_codigo_local(

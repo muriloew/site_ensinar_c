@@ -74,6 +74,10 @@ python -m unittest discover -s tests -v
 - `SECRET_KEY`: obrigatória em produção; o `render.yaml` gera uma automaticamente.
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
 - `MAX_COMPILER_JOBS`: quantidade máxima de compilações simultâneas; o padrão é 4.
+- `COMPILER_COMPILE_TIMEOUT`: tempo de parede da compilação; o padrão é 30 segundos.
+- `COMPILER_COMPILE_CPU`: CPU que o GCC pode consumir; o padrão é 12 segundos.
+- `COMPILER_RUN_TIMEOUT`: limite de execução sem interação; o padrão é 8 segundos.
+- `COMPILER_INTERACTIVE_TIMEOUT`: tempo para usar o terminal interativo; o padrão é 120 segundos.
 - `BACKUP_DIR`: pasta onde os arquivos JSON de backup são gravados.
 - `DB_PATH`: caminho do banco SQLite, quando uma unidade persistente estiver montada.
 - `PISTON_URL` e `PISTON_TOKEN`: opcionais; usados somente com `COMPILER_BACKEND=piston`.
@@ -381,3 +385,16 @@ python app.py
 - O perfil mostra estatísticas de teoria, exercícios e compilações por módulo.
 - O backup passou a incluir histórico de códigos, favoritos e revisões, com gravação atômica e retenção das 20 cópias mais recentes.
 - Cookies e WebSocket foram restringidos para produção, e o Docker não inclui banco nem backups locais na imagem.
+
+
+## Versão 26 — Editor C e correção de timeout
+
+- O tempo de compilação passou de 8 para 30 segundos para funcionar em instâncias gratuitas com CPU reduzida.
+- O limite de CPU permanece separado do tempo de parede, preservando a interrupção de compilações abusivas.
+- O Gunicorn agora permite até 75 segundos para a requisição completa de compilação e execução.
+- Cliques repetidos em Compilar são bloqueados enquanto o build atual estiver em andamento.
+- O Build log mostra a duração real da compilação.
+- Os editores usam CodeMirror armazenado localmente, com sintaxe C, linhas, pares e chaves automáticos, indentação e busca.
+- Foram adicionados autocompletar C, desfazer/refazer, formatação, comentário rápido, movimentação e duplicação de linhas.
+- `Ctrl+Enter` compila, `Ctrl+S` salva, `Ctrl+Espaço` sugere comandos e `Ctrl+/` comenta a linha.
+- A prática livre preserva o rascunho no navegador e continua sem executar nada automaticamente.

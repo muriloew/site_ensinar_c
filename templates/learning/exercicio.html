@@ -1,4 +1,5 @@
 {% extends "layouts/base.html" %}
+{% block head %}{% include "partials/editor_head.html" %}{% endblock %}
 {% block title %}Exercício - {{ licao.titulo }}{% endblock %}
 
 {% block content %}
@@ -103,5 +104,6 @@
 {% endblock %}
 
 {% block scripts %}
+{% include "partials/editor_scripts.html" %}
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {% endblock %}

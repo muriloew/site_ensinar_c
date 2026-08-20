@@ -21,10 +21,26 @@ except ImportError:  # Windows
 MAX_CODIGO_BYTES = 100_000
 MAX_ENTRADA_BYTES = 100_000
 MAX_SAIDA_BYTES = 160_000
-TEMPO_COMPILACAO = 8
-TEMPO_EXECUCAO = 5
-TEMPO_INTERATIVO = 20
-MAX_EXECUCOES_SIMULTANEAS = max(1, int(os.environ.get("MAX_COMPILER_JOBS", "4")))
+
+
+def _inteiro_ambiente(nome, padrao, minimo, maximo):
+    try:
+        valor = int(os.environ.get(nome, str(padrao)))
+    except (TypeError, ValueError):
+        valor = padrao
+    return max(minimo, min(maximo, valor))
+
+
+# O Render gratuito pode entregar apenas uma fracao de CPU. O tempo de parede
+# precisa ser maior que o limite de CPU para nao matar um GCC apenas lento.
+TEMPO_COMPILACAO = _inteiro_ambiente("COMPILER_COMPILE_TIMEOUT", 30, 10, 90)
+TEMPO_CPU_COMPILACAO = _inteiro_ambiente("COMPILER_COMPILE_CPU", 12, 5, 30)
+TEMPO_EXECUCAO = _inteiro_ambiente("COMPILER_RUN_TIMEOUT", 8, 2, 30)
+TEMPO_INTERATIVO = _inteiro_ambiente("COMPILER_INTERACTIVE_TIMEOUT", 120, 20, 300)
+MAX_EXECUTAVEL_BYTES = _inteiro_ambiente(
+    "COMPILER_MAX_EXECUTABLE_MB", 8, 1, 32
+) * 1024 * 1024
+MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 4, 1, 16)
 
 _slots_execucao = threading.BoundedSemaphore(MAX_EXECUCOES_SIMULTANEAS)
 _limite_lock = threading.Lock()
@@ -85,6 +101,8 @@ def comando_gcc(arquivo_c, arquivo_saida):
         "-Wall",
         "-Wextra",
         "-pedantic",
+        "-pipe",
+        "-fdiagnostics-color=never",
         arquivo_c,
         "-o",
         arquivo_saida,
@@ -141,17 +159,20 @@ def _com_limites(comando, modo):
         return comando
 
     if modo == "compilar":
-        cpu, memoria = 8, 512 * 1024 * 1024
+        cpu, memoria = TEMPO_CPU_COMPILACAO, 512 * 1024 * 1024
+        tamanho_arquivo = MAX_EXECUTAVEL_BYTES
     elif modo == "interativo":
         cpu, memoria = 20, 160 * 1024 * 1024
+        tamanho_arquivo = MAX_SAIDA_BYTES
     else:
-        cpu, memoria = 5, 160 * 1024 * 1024
+        cpu, memoria = TEMPO_EXECUCAO, 160 * 1024 * 1024
+        tamanho_arquivo = MAX_SAIDA_BYTES
 
     limitado = [
         prlimit,
         f"--cpu={cpu}:{cpu + 1}",
         f"--as={memoria}",
-        f"--fsize={MAX_SAIDA_BYTES}",
+        f"--fsize={tamanho_arquivo}",
         "--nproc=24",
         "--nofile=64",
         "--core=0",
@@ -217,6 +238,7 @@ def _ler_log(caminho):
 
 def _executar_processo(comando, temp_dir, modo, entrada=b"", timeout=5):
     caminho_log = os.path.join(temp_dir, f"{modo}.log")
+    inicio = time.monotonic()
     with open(caminho_log, "w+b") as log:
         proc = subprocess.Popen(
             _com_limites(comando, modo),
@@ -238,18 +260,23 @@ def _executar_processo(comando, temp_dir, modo, entrada=b"", timeout=5):
         "texto": texto,
         "tempo_excedido": excedeu_tempo,
         "saida_truncada": truncada,
+        "duracao_segundos": time.monotonic() - inicio,
     }
 
 
 def _build_log(resultado):
     texto = resultado.get("texto", "").strip()
+    duracao = resultado.get("duracao_segundos", 0)
     if resultado.get("tempo_excedido"):
-        return "Tempo de compilacao excedido."
+        return (
+            f"Tempo de compilacao excedido apos {TEMPO_COMPILACAO} segundos. "
+            "O processo foi interrompido; tente novamente em alguns instantes."
+        )
     if resultado.get("codigo") != 0:
         return "Build failed.\n\n" + (texto or "O GCC encerrou com erro.")
     if texto:
-        return "Build finished successfully, com avisos:\n\n" + texto
-    return "Build finished successfully.\n0 errors, 0 warnings."
+        return f"Build finished successfully in {duracao:.2f}s, com avisos:\n\n" + texto
+    return f"Build finished successfully in {duracao:.2f}s.\n0 errors, 0 warnings."
 
 
 def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):

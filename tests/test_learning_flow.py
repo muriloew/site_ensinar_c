@@ -141,6 +141,8 @@ class LearningFlowTest(unittest.TestCase):
 
         pratica_livre = self.client.get("/compilador").get_data(as_text=True)
         self.assertIn("clique em Compilar apenas quando quiser executar", pratica_livre)
+        self.assertIn("vendor/codemirror/lib/codemirror.min.js", pratica_livre)
+        self.assertIn("js/editor-c.js", pratica_livre)
 
         dashboard = self.client.get("/dashboard").get_data(as_text=True)
         self.assertIn("Missões de hoje", dashboard)

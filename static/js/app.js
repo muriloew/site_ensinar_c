@@ -1,4 +1,20 @@
 
+function obterCodigoDoEditor(editor) {
+    if (typeof window.obterValorEditor === "function") {
+        return window.obterValorEditor(editor);
+    }
+    return editor ? editor.value : "";
+}
+
+function definirCodigoNoEditor(editor, valor) {
+    if (typeof window.definirValorEditor === "function") {
+        window.definirValorEditor(editor, valor);
+    } else if (editor) {
+        editor.value = valor || "";
+        editor.dispatchEvent(new Event("input", {bubbles: true}));
+    }
+}
+
 function abrirConsole() {
     const modal = document.getElementById("janelaConsole");
     if (modal) {
@@ -148,7 +164,7 @@ async function compilarCodigo() {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                codigo: editor.value
+                codigo: obterCodigoDoEditor(editor)
             })
         });
 
@@ -186,7 +202,7 @@ async function executarCodigo(licaoId, tipo) {
             body: JSON.stringify({
                 licao_id: licaoId,
                 tipo: tipo,
-                codigo: editor.value,
+                codigo: obterCodigoDoEditor(editor),
                 entrada: entradaTerminal ? entradaTerminal.value : ""
             })
         });
@@ -232,7 +248,7 @@ async function concluirDesafioDiario() {
 
 function limparEditor() {
     const editor = document.getElementById("editorCodigo");
-    editor.value = "";
+    definirCodigoNoEditor(editor, "");
 }
 
 
@@ -260,6 +276,12 @@ async function executarCompiladorOnline() {
         return;
     }
 
+    const botoes = document.querySelectorAll('button[onclick*="executarCompiladorOnline"]');
+    botoes.forEach((botao) => {
+        botao.disabled = true;
+        botao.setAttribute("aria-busy", "true");
+    });
+
     abrirJanelaTerminal();
     saida.textContent = "Executando...";
     build.textContent = "Compilando...";
@@ -269,7 +291,7 @@ async function executarCompiladorOnline() {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                codigo: codigo.value,
+                codigo: obterCodigoDoEditor(codigo),
                 entrada: entrada ? entrada.value : ""
             })
         });
@@ -277,10 +299,17 @@ async function executarCompiladorOnline() {
         const dados = await retorno.json();
 
         build.textContent = (dados.build || "Build finalizado.") + (dados.origem ? "\n\nOrigem: " + dados.origem : "");
-        saida.textContent = dados.saida || "Programa executado sem saída.";
+        saida.textContent = dados.ok
+            ? dados.saida || "Programa executado sem saída."
+            : dados.saida || "A compilação não foi concluída. Consulte o Build log.";
     } catch (erro) {
         build.textContent = "Erro de conexão.";
         saida.textContent = "Não foi possível executar o compilador agora.";
+    } finally {
+        botoes.forEach((botao) => {
+            botao.disabled = false;
+            botao.removeAttribute("aria-busy");
+        });
     }
 }
 
@@ -290,7 +319,7 @@ function limparCompilador() {
     const saida = document.getElementById("saidaCompilador");
     const build = document.getElementById("buildCompilador");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (entrada) entrada.value = "";
     if (saida) saida.textContent = "Nenhum código foi executado ainda. Clique em Compilar para iniciar.";
     if (build) build.textContent = "Aguardando o usuário clicar em Compilar.";
@@ -300,7 +329,7 @@ function carregarHistorico(codigo, entrada) {
     const editor = document.getElementById("codigoCompilador");
     const input = document.getElementById("entradaCompilador");
 
-    if (editor) editor.value = codigo || "";
+    if (editor) definirCodigoNoEditor(editor, codigo || "");
     if (input) input.value = entrada || "";
 }
 
@@ -362,7 +391,7 @@ async function executarExercicioComEntrada() {
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
                 licao_id: exercicioAtualId,
-                codigo: codigo.value,
+                codigo: obterCodigoDoEditor(codigo),
                 entrada: entrada ? entrada.value : ""
             })
         });
@@ -390,7 +419,7 @@ function limparExercicio() {
     const saida = document.getElementById("saidaExercicio");
     const build = document.getElementById("buildExercicio");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (entrada) entrada.value = "";
     if (saida) saida.textContent = "Aguardando compilação.";
     if (build) build.textContent = "Aguardando build.";
@@ -446,7 +475,7 @@ async function executarExercicioComEntrada() {
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
                 licao_id: exercicioAtualIdV14 || exercicioAtualId,
-                codigo: codigo.value,
+                codigo: obterCodigoDoEditor(codigo),
                 entrada: entrada ? entrada.value : ""
             })
         });
@@ -472,7 +501,7 @@ function limparExercicio() {
     const saida = document.getElementById("saidaExercicio");
     const build = document.getElementById("buildExercicio");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (entrada) entrada.value = "";
     if (saida) saida.textContent = "Digite a entrada abaixo, se precisar, e clique em Compilar.";
     if (build) build.textContent = "Aguardando build.";
@@ -512,7 +541,7 @@ async function prepararTerminalCodeblocks(licaoId) {
     const btn = document.getElementById("btnEnviarEntrada");
 
     exercicioTerminalAtual = licaoId;
-    codigoTerminalAtual = codigo ? codigo.value : "";
+    codigoTerminalAtual = obterCodigoDoEditor(codigo);
 
     if (build) build.textContent = "Compilando...";
     if (prompt) prompt.textContent = "Compilando...";
@@ -621,7 +650,7 @@ function limparExercicio() {
     const prompt = document.getElementById("terminalPrompt");
     const preview = document.getElementById("entradaDigitadaPreview");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (entrada) {
         entrada.value = "";
         entrada.style.display = "inline-block";
@@ -673,7 +702,7 @@ async function prepararTerminalCodeblocks(licaoId) {
     const btn = document.getElementById("btnEnviarEntrada");
 
     exercicioTerminalAtual = licaoId;
-    codigoTerminalAtual = codigo ? codigo.value : "";
+    codigoTerminalAtual = obterCodigoDoEditor(codigo);
 
     const textoPrompt = detectarPromptNoCliente(codigoTerminalAtual);
 
@@ -791,7 +820,7 @@ function abrirTerminalSimulado(licaoId) {
     const btn = document.getElementById("btnEnviarEntrada");
 
     licaoSimuladaAtual = licaoId;
-    codigoSimuladoAtual = codigo ? codigo.value : "";
+    codigoSimuladoAtual = obterCodigoDoEditor(codigo);
 
     const prompt = detectarPromptNoClienteV17(codigoSimuladoAtual);
 
@@ -920,7 +949,7 @@ function limparExercicio() {
     const build = document.getElementById("buildExercicio");
     const tela = document.getElementById("terminalTela");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (build) build.textContent = "Aguardando build.";
     if (tela) tela.textContent = "Aguardando compilação.";
 }
@@ -929,6 +958,14 @@ function limparExercicio() {
 // Versão 18: compilador real com WebSocket + stdin/stdout.
 let socketTerminal = null;
 let terminalFinalizado = true;
+
+function definirCompilacaoRealEmAndamento(ocupado) {
+    document.querySelectorAll('button[onclick*="compilarReal"]').forEach((botao) => {
+        botao.disabled = ocupado;
+        if (ocupado) botao.setAttribute("aria-busy", "true");
+        else botao.removeAttribute("aria-busy");
+    });
+}
 
 function atualizarFeedbackCorrecao(correcao) {
     const feedback = document.getElementById("feedbackCorrecao");
@@ -949,6 +986,7 @@ function iniciarSocketTerminal() {
     socketTerminal = io();
 
     socketTerminal.on("build_log", (dados) => {
+        definirCompilacaoRealEmAndamento(false);
         const build = document.getElementById("buildExercicio");
         if (build) build.textContent = dados.texto || "";
 
@@ -984,6 +1022,14 @@ function iniciarSocketTerminal() {
         atualizarFeedbackCorrecao(dados);
     });
 
+    socketTerminal.on("connect_error", () => {
+        definirCompilacaoRealEmAndamento(false);
+        atualizarFeedbackCorrecao({
+            ok: false,
+            mensagem: "Não foi possível conectar ao compilador agora."
+        });
+    });
+
     return socketTerminal;
 }
 
@@ -995,6 +1041,7 @@ function compilarReal(licaoId, tipo = "licao") {
     const feedback = document.getElementById("feedbackCorrecao");
 
     terminalFinalizado = false;
+    definirCompilacaoRealEmAndamento(true);
 
     if (saida) saida.textContent = "";
     if (input) {
@@ -1008,12 +1055,22 @@ function compilarReal(licaoId, tipo = "licao") {
         feedback.classList.remove("success", "warning");
     }
 
-    const socket = iniciarSocketTerminal();
+    let socket;
+    try {
+        socket = iniciarSocketTerminal();
+    } catch (erro) {
+        definirCompilacaoRealEmAndamento(false);
+        atualizarFeedbackCorrecao({
+            ok: false,
+            mensagem: "O terminal interativo não carregou. Recarregue a página e tente novamente."
+        });
+        return;
+    }
 
     socket.emit("compilar_real", {
         licao_id: licaoId,
         tipo: tipo,
-        codigo: codigo ? codigo.value : ""
+        codigo: obterCodigoDoEditor(codigo)
     });
 }
 
@@ -1075,7 +1132,7 @@ function limparTerminalReal() {
     const build = document.getElementById("buildExercicio");
     const feedback = document.getElementById("feedbackCorrecao");
 
-    if (codigo) codigo.value = "";
+    if (codigo) definirCodigoNoEditor(codigo, "");
     if (saida) saida.textContent = "";
     if (input) {
         input.value = "";
@@ -1113,7 +1170,7 @@ async function salvarRascunhoAtual() {
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     licao_id: Number(editorExercicio.dataset.licaoId),
-                    codigo: editorExercicio.value,
+                    codigo: obterCodigoDoEditor(editorExercicio),
                     entrada: entrada ? entrada.value : ""
                 })
             });
@@ -1127,7 +1184,7 @@ async function salvarRascunhoAtual() {
                 method: "POST",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
-                    codigo: editorDiario.value,
+                    codigo: obterCodigoDoEditor(editorDiario),
                     entrada: entrada ? entrada.value : ""
                 })
             });
