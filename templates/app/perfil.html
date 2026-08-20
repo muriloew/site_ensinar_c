@@ -111,7 +111,12 @@
                 <div class="module-icon">{{ modulo.icone }}</div>
                 <div>
                     <strong>Módulo {{ modulo.id }} - {{ modulo.titulo }}</strong>
-                    <p>{{ modulo.concluidas }} / {{ modulo.total }} lição(ões)</p>
+                    <p>{{ modulo.concluidas }} / {{ modulo.total }} lição(ões) · {{ modulo.teorias_dominadas }} teorias dominadas</p>
+                    <div class="module-detail-stats">
+                        <span>{{ modulo.praticas_aprovadas }}/{{ modulo.praticas_total }} práticas</span>
+                        <span>{{ modulo.tentativas_codigo }} execuções</span>
+                        <span>{{ modulo.favoritos }} favoritos</span>
+                    </div>
                     <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
                 </div>
                 <a class="btn btn-ghost" href="/estudar/{{ modulo.id }}">Abrir</a>

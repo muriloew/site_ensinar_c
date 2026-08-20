@@ -1,0 +1,40 @@
+{% extends "layouts/base.html" %}
+{% block title %}Favoritos - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <span class="page-kicker">Sua coleção de estudo</span>
+        <h1>Conteúdos favoritos</h1>
+        <p>Retome rapidamente as lições que você marcou para consultar novamente.</p>
+    </div>
+    <a class="btn btn-primary" href="/revisao">Revisar agora</a>
+</div>
+
+<section class="saved-lessons-grid">
+    {% for item in favoritos %}
+    <article class="saved-lesson-card">
+        <div>
+            <span>Módulo {{ item.modulo.id }}</span>
+            <h2>{{ item.licao.titulo }}</h2>
+            <p>{{ item.modulo.titulo }}</p>
+        </div>
+        <div class="saved-lesson-actions">
+            {% if item.liberado %}
+            <a class="btn btn-primary" href="/estudar/{{ item.modulo.id }}?licao={{ item.licao.id }}">Abrir lição</a>
+            {% endif %}
+            <form method="post" action="/favoritos/{{ item.licao.id }}">
+                <input type="hidden" name="destino" value="/favoritos">
+                <button class="favorite-button active" type="submit" title="Remover dos favoritos" aria-label="Remover dos favoritos">★</button>
+            </form>
+        </div>
+    </article>
+    {% else %}
+    <div class="empty-study-state">
+        <strong>Nenhuma lição favorita ainda</strong>
+        <p>Use a estrela no topo de uma lição para guardá-la aqui.</p>
+        <a class="btn btn-primary" href="/modulos">Explorar módulos</a>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

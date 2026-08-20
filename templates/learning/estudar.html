@@ -17,8 +17,21 @@
 
     <section class="lesson-content">
         <div class="lesson-top">
-            <h1>{{ licao.titulo }}</h1>
-            <span>Módulo {{ modulo.id }} - {{ modulo.titulo }}</span>
+            <div>
+                <h1>{{ licao.titulo }}</h1>
+                <span>Módulo {{ modulo.id }} - {{ modulo.titulo }}</span>
+            </div>
+            <form method="post" action="/favoritos/{{ licao.id }}">
+                <input type="hidden" name="destino" value="/estudar/{{ modulo.id }}?licao={{ licao.id }}">
+                <button
+                    class="favorite-button {% if favorita %}active{% endif %}"
+                    type="submit"
+                    title="{% if favorita %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}"
+                    aria-label="{% if favorita %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}"
+                    aria-pressed="{% if favorita %}true{% else %}false{% endif %}">
+                    {% if favorita %}★{% else %}☆{% endif %}
+                </button>
+            </form>
         </div>
 
         <div class="card">

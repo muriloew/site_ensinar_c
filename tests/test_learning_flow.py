@@ -32,6 +32,8 @@ class LearningFlowTest(unittest.TestCase):
         for tabela in (
             "recompensas_diarias",
             "atividades_estudo",
+            "revisoes_usuario",
+            "favoritos_usuario",
             "progresso",
             "desafios_diarios",
             "conquistas_usuario",
@@ -101,6 +103,25 @@ class LearningFlowTest(unittest.TestCase):
         self.assertGreater(len(set(posicoes_corretas)), 1)
         self.assertTrue(any(posicao != 0 for posicao in posicoes_corretas))
 
+    def test_licoes_com_entrada_usam_casos_ocultos(self):
+        for conteudo, testes_extras in self.site.TESTES_EXTRAS_CORRECAO.items():
+            with self.subTest(conteudo=conteudo):
+                regra = self.site.regra_correcao_para_conteudo(conteudo)
+                self.assertGreaterEqual(len(regra.get("testes", [])), 2)
+                self.assertTrue(all(teste in regra["testes"] for teste in testes_extras))
+
+        falhas = self.site.validar_saida(
+            "Positivo\n",
+            {"saida_nao_contem": ["Positivo"], "saida_obrigatoria": False},
+        )
+        self.assertTrue(falhas)
+        self.assertFalse(
+            self.site.validar_saida(
+                "",
+                {"saida_nao_contem": ["Positivo"], "saida_obrigatoria": False},
+            )
+        )
+
     def test_paginas_principais_renderizam(self):
         for rota in (
             "/dashboard",
@@ -108,6 +129,9 @@ class LearningFlowTest(unittest.TestCase):
             "/simulado",
             "/modulos",
             "/compilador",
+            "/historico-codigos",
+            "/favoritos",
+            "/revisao",
             "/estudar/1",
             "/desafio-diario",
         ):
@@ -282,6 +306,120 @@ class LearningFlowTest(unittest.TestCase):
 
         self.assertEqual(usuario_reiniciado["sequencia"], 1)
         self.assertEqual(usuario_reiniciado["melhor_sequencia"], 3)
+
+    def test_rascunho_alterado_perde_aprovacao_anterior(self):
+        modulo = self.site.MODULOS[1]
+        licao = modulo["licoes"][0]
+        conn = self.site.conectar()
+        conn.execute(
+            """
+            INSERT INTO progresso
+                (usuario_id, licao_id, modulo_id, codigo_usuario, entrada_codigo,
+                 saida_codigo, codigo_enviado, codigo_validado, feedback_codigo)
+            VALUES (?, ?, ?, ?, ?, ?, 1, 1, ?)
+            """,
+            (1, licao["id"], modulo["id"], "codigo aprovado", "", "saida", "Aprovado"),
+        )
+        conn.commit()
+        conn.close()
+
+        resposta = self.client.post(
+            "/api/exercicio/salvar-rascunho",
+            json={"licao_id": licao["id"], "codigo": "codigo alterado", "entrada": ""},
+        )
+        self.assertEqual(resposta.status_code, 200, resposta.get_data(as_text=True))
+
+        conn = self.site.conectar()
+        registro = conn.execute(
+            "SELECT * FROM progresso WHERE usuario_id = 1 AND licao_id = ?",
+            (licao["id"],),
+        ).fetchone()
+        conn.close()
+        self.assertEqual(registro["codigo_validado"], 0)
+        self.assertEqual(registro["codigo_enviado"], 0)
+        self.assertIsNone(registro["feedback_codigo"])
+        self.assertIsNone(registro["saida_codigo"])
+
+    def test_comentario_nao_satisfaz_correcao_e_erro_nao_aprova(self):
+        falhas = self.site.validar_regras_estaticas(
+            "int main(void) { /* scanf */ return 0; }",
+            {"codigo_contem": ["scanf"]},
+        )
+        self.assertTrue(falhas)
+
+        modulo = self.site.MODULOS[1]
+        licao = modulo["licoes"][0]
+        conn = self.site.conectar()
+        conn.execute(
+            "INSERT INTO progresso (usuario_id, licao_id, modulo_id) VALUES (?, ?, ?)",
+            (1, licao["id"], modulo["id"]),
+        )
+        conn.commit()
+        conn.close()
+
+        resultado = self.site.salvar_codigo_execucao(
+            1,
+            licao["id"],
+            licao["codigo"],
+            "",
+            "saida esperada",
+            execucao_ok=False,
+        )
+        self.assertFalse(resultado["ok"])
+
+        conn = self.site.conectar()
+        validado = conn.execute(
+            "SELECT codigo_validado FROM progresso WHERE usuario_id = 1 AND licao_id = ?",
+            (licao["id"],),
+        ).fetchone()["codigo_validado"]
+        conn.close()
+        self.assertEqual(validado, 0)
+
+    def test_favoritos_revisao_e_historico(self):
+        licao = self.site.MODULOS[0]["licoes"][0]
+        favorito = self.client.post(
+            f"/favoritos/{licao['id']}",
+            data={"destino": "/favoritos"},
+        )
+        self.assertEqual(favorito.status_code, 302)
+        self.assertIn(licao["titulo"], self.client.get("/favoritos").get_data(as_text=True))
+
+        conn = self.site.conectar()
+        conn.execute(
+            """
+            INSERT INTO progresso
+                (usuario_id, licao_id, modulo_id, concluida, quiz_correto, atualizado_em)
+            VALUES (?, ?, 1, 1, 1, ?)
+            """,
+            (1, licao["id"], "2026-08-19"),
+        )
+        conn.execute(
+            """
+            INSERT INTO revisoes_usuario
+                (usuario_id, licao_id, nivel, proxima_revisao, acertos, erros)
+            VALUES (?, ?, 0, ?, 0, 0)
+            """,
+            (1, licao["id"], str(self.site.date.today())),
+        )
+        self.site.registrar_historico_codigo(
+            conn, 1, "int main(void){return 0;}", "", "Process returned 0.",
+            "Build finished successfully.", contexto="livre", aprovado=True,
+            origem="Teste",
+        )
+        conn.commit()
+        conn.close()
+
+        revisao = self.client.get("/revisao").get_data(as_text=True)
+        self.assertIn(licao["pergunta"], revisao)
+        resposta = self.client.post(
+            f"/revisao/{licao['id']}",
+            data={"resposta": licao["resposta"]},
+        )
+        self.assertEqual(resposta.status_code, 302)
+
+        historico = self.client.get("/historico-codigos").get_data(as_text=True)
+        self.assertIn("int main(void){return 0;}", historico)
+        self.assertIn("Aprovado", historico)
 
 
 if __name__ == "__main__":

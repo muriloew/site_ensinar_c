@@ -928,7 +928,7 @@ function limparExercicio() {
 
 // Versão 18: compilador real com WebSocket + stdin/stdout.
 let socketTerminal = null;
-let terminalFinalizado = false;
+let terminalFinalizado = true;
 
 function atualizarFeedbackCorrecao(correcao) {
     const feedback = document.getElementById("feedbackCorrecao");
@@ -1028,6 +1028,10 @@ function abrirTerminalReal() {
 }
 
 function fecharTerminalReal() {
+    if (!terminalFinalizado && socketTerminal) {
+        socketTerminal.emit("terminal_cancelar");
+        terminalFinalizado = true;
+    }
     const modal = document.getElementById("terminalModalExercicio");
     if (modal) modal.classList.remove("ativo");
 }
@@ -1061,6 +1065,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function limparTerminalReal() {
+    if (!terminalFinalizado && socketTerminal) {
+        socketTerminal.emit("terminal_cancelar");
+        terminalFinalizado = true;
+    }
     const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
     const saida = document.getElementById("terminalSaidaReal");
     const input = document.getElementById("terminalInputReal");

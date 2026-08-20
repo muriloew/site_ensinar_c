@@ -71,7 +71,10 @@
 
         <div class="streak-footer">
             <span>Proteções: <strong>{{ usuario.protecoes_sequencia }}</strong></span>
-            <a href="/desafio-diario">Desafio diário</a>
+            <div>
+                <a href="/revisao">{{ revisoes_pendentes }} revisões</a>
+                <a href="/desafio-diario">Desafio diário</a>
+            </div>
         </div>
     </article>
 </section>

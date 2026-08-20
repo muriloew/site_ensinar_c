@@ -4,3 +4,11 @@ services:
     env: docker
     plan: free
     dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: COMPILER_BACKEND
+        value: local
+      - key: COMPILER_RUNNER_USER
+        value: compiler-runner

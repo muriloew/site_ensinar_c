@@ -1,0 +1,54 @@
+{% extends "layouts/base.html" %}
+{% block title %}Histórico de códigos - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <span class="page-kicker">Até 100 execuções recentes</span>
+        <h1>Histórico de códigos</h1>
+        <p>Compare tentativas, recupere soluções e acompanhe sua evolução.</p>
+    </div>
+    <div class="history-summary"><strong>{{ aprovados }}/{{ total }}</strong><span>execuções aprovadas</span></div>
+</div>
+
+<nav class="history-filters" aria-label="Filtrar histórico">
+    <a class="{% if contexto == 'todos' %}active{% endif %}" href="/historico-codigos">Todos</a>
+    <a class="{% if contexto == 'licao' %}active{% endif %}" href="/historico-codigos?contexto=licao">Lições</a>
+    <a class="{% if contexto == 'diario' %}active{% endif %}" href="/historico-codigos?contexto=diario">Diários</a>
+    <a class="{% if contexto == 'livre' %}active{% endif %}" href="/historico-codigos?contexto=livre">Prática livre</a>
+</nav>
+
+<section class="code-history-list">
+    {% for item in itens %}
+    <details class="code-history-item {% if item.registro.aprovado %}approved{% else %}failed{% endif %}">
+        <summary>
+            <div>
+                <span>{{ item.modulo }}</span>
+                <strong>{{ item.titulo }}</strong>
+            </div>
+            <div class="history-result">
+                <span>{% if item.registro.aprovado %}Aprovado{% else %}Não aprovado{% endif %}</span>
+                <time>{{ item.registro.criado_em }}</time>
+            </div>
+        </summary>
+        <div class="history-detail-grid">
+            <section>
+                <h3>Código</h3>
+                <pre><code>{{ item.registro.codigo }}</code></pre>
+            </section>
+            <section>
+                <h3>Resultado</h3>
+                <pre>{{ item.registro.saida or item.registro.build_log or 'Sem saída registrada.' }}</pre>
+                <small>{{ item.registro.origem or 'Compilador' }}</small>
+            </section>
+        </div>
+    </details>
+    {% else %}
+    <div class="empty-study-state">
+        <strong>Nenhuma execução neste filtro</strong>
+        <p>Seus próximos códigos aparecerão aqui depois de clicar em Compilar.</p>
+        <a class="btn btn-primary" href="/compilador">Abrir prática livre</a>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}

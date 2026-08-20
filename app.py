@@ -1,12 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file
 import sqlite3
 import os
-import subprocess
-import tempfile
-import requests
 import json
 import re
 import shutil
+import secrets
 import unicodedata
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime, timedelta
@@ -19,6 +17,7 @@ from backend.desafios_diarios import (
     gerar_desafios_diarios,
 )
 from backend.progresso_teorico import preparar_desafios_teoricos_view, atualizar_resposta_teorica
+from backend import compilador as compilador_seguro
 from backend.gamificacao import (
     calendario_atividade,
     estado_nivel,
@@ -29,7 +28,6 @@ from backend.gamificacao import (
     sincronizar_conquistas,
 )
 import time
-import signal
 import threading
 import select
 
@@ -39,8 +37,21 @@ except ImportError:
     pty = None
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "chave-dev-ensinar-c")
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode="threading")
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+app.config.update(
+    MAX_CONTENT_LENGTH=256 * 1024,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")),
+)
+
+socketio_opcoes = {"async_mode": "threading"}
+origens_socket = os.environ.get("SOCKETIO_CORS_ORIGINS", "").strip()
+if origens_socket:
+    socketio_opcoes["cors_allowed_origins"] = [
+        origem.strip() for origem in origens_socket.split(",") if origem.strip()
+    ]
+socketio = SocketIO(app, **socketio_opcoes)
 
 DB_PATH = os.environ.get("DB_PATH", "instance/ensinar_c.db")
 
@@ -825,10 +836,74 @@ def codigo_exemplo_para_conteudo(conteudo):
     return f'#include <stdio.h>\n\nint main(void) {{\n    printf("Estudo de {conteudo} em C\\n");\n    return 0;\n}}'
 
 
+TESTES_EXTRAS_CORRECAO = {
+    "scanf": [
+        {"entrada": "20 22\n", "saida_contem": ["Soma: 42"]},
+    ],
+    "divisão": [
+        {"entrada": "9 4\n", "saida_contem": ["Resultado: 2.25"]},
+        {
+            "entrada": "9 0\n",
+            "saida_obrigatoria": True,
+            "saida_nao_contem": ["inf", "nan"],
+        },
+    ],
+    "if": [
+        {
+            "entrada": "-3\n",
+            "saida_obrigatoria": False,
+            "saida_nao_contem": ["Positivo"],
+        },
+    ],
+    "else": [
+        {"entrada": "18\n", "saida_contem": ["Maior de idade"]},
+    ],
+    "else if": [
+        {"entrada": "9\n", "saida_regex": [r"\bA\b"]},
+        {"entrada": "5\n", "saida_regex": [r"\bC\b"]},
+    ],
+    "switch": [
+        {"entrada": "1\n", "saida_contem": ["Cadastrar"]},
+        {"entrada": "3\n", "saida_contem": ["Sair"]},
+        {"entrada": "9\n", "saida_contem": ["invalida"]},
+    ],
+    "fgets": [
+        {"entrada": "Joao da Silva\n", "saida_contem": ["Ola, Joao da Silva"]},
+    ],
+    "stdio": [
+        {"entrada": "-4\n", "saida_contem": ["-8"]},
+    ],
+    "buffer overflow": [
+        {"entrada": "123456789abcdef\n", "saida_contem": ["123456789"]},
+    ],
+    "validação": [
+        {"entrada": "150\n", "saida_contem": ["Entrada invalida"]},
+        {"entrada": "-1\n", "saida_contem": ["Entrada invalida"]},
+    ],
+    "calculadora": [
+        {"entrada": "10 - 3\n", "saida_contem": ["Resultado: 7.00"]},
+    ],
+    "cadastro": [
+        {"entrada": "Bia 18\n", "saida_contem": ["Bia tem 18 anos"]},
+    ],
+    "jogo terminal": [
+        {"entrada": "42\n", "saida_contem": ["Acertou"]},
+    ],
+    "projeto final": [
+        {"entrada": "6 6 9\n", "saida_contem": ["Media: 7.00"]},
+    ],
+}
+
+
 def regra_correcao_para_conteudo(conteudo):
     plano_licao = obter_plano(conteudo)
     if plano_licao:
-        return plano_licao["correcao"]
+        regra = dict(plano_licao["correcao"])
+        testes_base = [dict(teste) for teste in regra.get("testes", [])]
+        testes_extras = [dict(teste) for teste in TESTES_EXTRAS_CORRECAO.get(conteudo, [])]
+        if testes_base or testes_extras:
+            regra["testes"] = testes_base + testes_extras
+        return regra
     return {"codigo_contem": ["printf"], "saida_obrigatoria": True}
 
 
@@ -1126,6 +1201,30 @@ def iniciar_banco():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS favoritos_usuario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            licao_id INTEGER NOT NULL,
+            criado_em TEXT NOT NULL,
+            UNIQUE(usuario_id, licao_id)
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS revisoes_usuario (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            licao_id INTEGER NOT NULL,
+            nivel INTEGER DEFAULT 0,
+            proxima_revisao TEXT NOT NULL,
+            ultima_revisao TEXT,
+            acertos INTEGER DEFAULT 0,
+            erros INTEGER DEFAULT 0,
+            UNIQUE(usuario_id, licao_id)
+        )
+    """)
+
     # Migração para bancos antigos já criados antes das novas funções.
     adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "quiz_respondido", "INTEGER DEFAULT 0")
@@ -1152,6 +1251,11 @@ def iniciar_banco():
     adicionar_coluna(conn, "conquistas_usuario", "descricao", "TEXT")
     adicionar_coluna(conn, "conquistas_usuario", "raridade", "TEXT DEFAULT 'comum'")
     adicionar_coluna(conn, "conquistas_usuario", "desbloqueada_em", "TEXT")
+    adicionar_coluna(conn, "compilador_historico", "contexto", "TEXT DEFAULT 'livre'")
+    adicionar_coluna(conn, "compilador_historico", "licao_id", "INTEGER")
+    adicionar_coluna(conn, "compilador_historico", "modulo_id", "INTEGER")
+    adicionar_coluna(conn, "compilador_historico", "aprovado", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "compilador_historico", "origem", "TEXT")
 
     conn.execute("""
         UPDATE usuarios
@@ -1169,6 +1273,18 @@ def iniciar_banco():
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_progresso_usuario_modulo
         ON progresso(usuario_id, modulo_id, concluida)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_historico_usuario_data
+        ON compilador_historico(usuario_id, id DESC)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_favoritos_usuario
+        ON favoritos_usuario(usuario_id, licao_id)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_revisoes_usuario_data
+        ON revisoes_usuario(usuario_id, proxima_revisao)
     """)
 
     # Quem já concluiu lição em versão antiga recebe permissão de rever e continuar.
@@ -1398,6 +1514,7 @@ def linhas_para_dicts(linhas):
 
 
 def criar_backup_progresso(usuario_id):
+    conn = None
     try:
         conn = conectar()
         usuario = conn.execute(
@@ -1443,25 +1560,60 @@ def criar_backup_progresso(usuario_id):
             "recompensas_diarias": linhas_para_dicts(conn.execute(
                 "SELECT * FROM recompensas_diarias WHERE usuario_id = ? ORDER BY data DESC, id DESC",
                 (usuario_id,)
+            ).fetchall()),
+            "historico_codigos": linhas_para_dicts(conn.execute(
+                "SELECT * FROM compilador_historico WHERE usuario_id = ? ORDER BY id DESC LIMIT 100",
+                (usuario_id,)
+            ).fetchall()),
+            "favoritos": linhas_para_dicts(conn.execute(
+                "SELECT * FROM favoritos_usuario WHERE usuario_id = ? ORDER BY id DESC",
+                (usuario_id,)
+            ).fetchall()),
+            "revisoes": linhas_para_dicts(conn.execute(
+                "SELECT * FROM revisoes_usuario WHERE usuario_id = ? ORDER BY proxima_revisao",
+                (usuario_id,)
             ).fetchall())
         }
 
-        pasta_backup = os.path.join(os.path.dirname(DB_PATH) or ".", "backups")
+        pasta_backup = os.environ.get("BACKUP_DIR") or os.path.join(
+            os.path.dirname(DB_PATH) or ".", "backups"
+        )
         os.makedirs(pasta_backup, exist_ok=True)
         caminho = os.path.join(pasta_backup, f"progresso_usuario_{usuario_id}.json")
+        caminho_temporario = f"{caminho}.{os.getpid()}.{threading.get_ident()}.tmp"
 
-        with open(caminho, "w", encoding="utf-8") as arquivo:
+        with open(caminho_temporario, "w", encoding="utf-8") as arquivo:
             json.dump(dados, arquivo, ensure_ascii=False, indent=2)
+            arquivo.flush()
+            os.fsync(arquivo.fileno())
+        os.replace(caminho_temporario, caminho)
 
         dados_json = json.dumps(dados, ensure_ascii=False)
         conn.execute(
             "INSERT INTO backups_progresso (usuario_id, caminho, dados_json, criado_em) VALUES (?, ?, ?, ?)",
             (usuario_id, caminho, dados_json, dados["gerado_em"])
         )
+        conn.execute(
+            """
+            DELETE FROM backups_progresso
+            WHERE usuario_id = ? AND id NOT IN (
+                SELECT id FROM backups_progresso
+                WHERE usuario_id = ? ORDER BY id DESC LIMIT 20
+            )
+            """,
+            (usuario_id, usuario_id),
+        )
         conn.commit()
         conn.close()
+        conn = None
         return {"caminho": caminho, "criado_em": dados["gerado_em"]}
     except Exception:
+        if conn is not None:
+            try:
+                conn.rollback()
+                conn.close()
+            except Exception:
+                pass
         return None
 
 
@@ -1631,19 +1783,49 @@ def resumo_desempenho(usuario_id):
 
 
 def relatorio_modulos(usuario_id):
+    conn = conectar()
+    progresso_usuario = {
+        linha["licao_id"]: linha
+        for linha in conn.execute(
+            "SELECT * FROM progresso WHERE usuario_id = ?",
+            (usuario_id,),
+        ).fetchall()
+    }
+    favoritos = {
+        linha["licao_id"]
+        for linha in conn.execute(
+            "SELECT licao_id FROM favoritos_usuario WHERE usuario_id = ?",
+            (usuario_id,),
+        ).fetchall()
+    }
+    tentativas_por_modulo = {
+        linha["modulo_id"]: linha
+        for linha in conn.execute(
+            """
+            SELECT modulo_id, COUNT(*) AS tentativas,
+                   SUM(CASE WHEN aprovado = 1 THEN 1 ELSE 0 END) AS aprovadas
+            FROM compilador_historico
+            WHERE usuario_id = ? AND modulo_id IS NOT NULL
+            GROUP BY modulo_id
+            """,
+            (usuario_id,),
+        ).fetchall()
+    }
+    conn.close()
+
     modulos_relatorio = []
     for modulo in MODULOS:
-        ids = [l["id"] for l in modulo["licoes"]]
-        placeholders = ",".join("?" for _ in ids)
-        params = [usuario_id] + ids
-        conn = conectar()
-        concluidas = conn.execute(
-            f"SELECT COUNT(*) AS total FROM progresso WHERE usuario_id = ? AND licao_id IN ({placeholders}) AND concluida = 1",
-            params
-        ).fetchone()["total"]
-        conn.close()
-
-        progresso = progresso_modulo(usuario_id, modulo)
+        registros = [
+            progresso_usuario[licao["id"]]
+            for licao in modulo["licoes"]
+            if licao["id"] in progresso_usuario
+        ]
+        concluidas = sum(1 for item in registros if item["concluida"] == 1)
+        teorias_dominadas = sum(1 for item in registros if item["quiz_correto"] == 1)
+        praticas_total = sum(1 for licao in modulo["licoes"] if licao.get("pratica_codigo", True))
+        praticas_aprovadas = sum(1 for item in registros if item["codigo_validado"] == 1)
+        tentativas = tentativas_por_modulo.get(modulo["id"])
+        progresso = int((concluidas / len(modulo["licoes"])) * 100) if modulo["licoes"] else 0
         modulos_relatorio.append({
             "id": modulo["id"],
             "titulo": modulo["titulo"],
@@ -1652,7 +1834,14 @@ def relatorio_modulos(usuario_id):
             "progresso": progresso,
             "concluidas": concluidas,
             "total": len(modulo["licoes"]),
-            "liberado": modulo_acessivel(usuario_id, modulo["id"])
+            "liberado": modulo_acessivel(usuario_id, modulo["id"]),
+            "iniciadas": len(registros),
+            "teorias_dominadas": teorias_dominadas,
+            "praticas_aprovadas": praticas_aprovadas,
+            "praticas_total": praticas_total,
+            "tentativas_codigo": tentativas["tentativas"] if tentativas else 0,
+            "aprovacoes_codigo": tentativas["aprovadas"] if tentativas else 0,
+            "favoritos": sum(1 for licao in modulo["licoes"] if licao["id"] in favoritos),
         })
     return modulos_relatorio
 
@@ -1706,73 +1895,11 @@ def detectar_prompt_entrada(codigo):
 
 
 def executar_com_piston(codigo, entrada=""):
-    url = "https://emkc.org/api/v2/piston/execute"
-
-    payload = {
-        "language": "c",
-        "version": "10.2.0",
-        "files": [{"name": "main.c", "content": codigo}],
-        "stdin": entrada or "",
-        "args": [],
-        "compile_timeout": 10000,
-        "run_timeout": 5000,
-        "compile_memory_limit": -1,
-        "run_memory_limit": -1
-    }
-
-    resposta = requests.post(url, json=payload, timeout=15)
-    resposta.raise_for_status()
-    dados = resposta.json()
-
-    compile_out = dados.get("compile", {}) or {}
-    run_out = dados.get("run", {}) or {}
-
-    build_log = ""
-    if compile_out.get("stdout"):
-        build_log += compile_out.get("stdout", "")
-    if compile_out.get("stderr"):
-        build_log += compile_out.get("stderr", "")
-
-    saida = ""
-    if run_out.get("stdout"):
-        saida += run_out.get("stdout", "")
-    if run_out.get("stderr"):
-        saida += "\nErros:\n" + run_out.get("stderr", "")
-
-    if not build_log.strip():
-        build_log = "Build finished successfully.\n0 errors, 0 warnings."
-
-    if not saida.strip():
-        saida = "Programa executado sem saída na tela."
-
-    return {
-        "ok": run_out.get("code", 0) == 0,
-        "build": build_log,
-        "saida": montar_terminal_unificado(saida, entrada, run_out.get("code", 0)),
-        "origem": "Piston API"
-    }
+    return compilador_seguro.executar_piston(codigo, entrada)
 
 
 def executar_compilador_online(codigo, entrada=""):
-    erro_validacao = validar_codigo_recebido(codigo)
-    if erro_validacao:
-        return {"ok": False, "build": erro_validacao, "saida": "", "origem": "Validação"}
-
-    try:
-        return executar_com_piston(codigo, entrada)
-    except Exception as erro_api:
-        resultado_local = executar_codigo_c(codigo, entrada)
-
-        if "GCC não está disponível" in resultado_local.get("saida", "") or "GCC não está disponível" in resultado_local.get("build", ""):
-            return {
-                "ok": False,
-                "build": "Não foi possível usar o compilador online.\n\nAPI externa indisponível ou bloqueada:\n" + str(erro_api),
-                "saida": "O código foi salvo, mas não foi possível executar agora.\n\nTente novamente mais tarde ou rode localmente no Code::Blocks.",
-                "origem": "Erro"
-            }
-
-        resultado_local["origem"] = "GCC local"
-        return resultado_local
+    return compilador_seguro.executar_codigo(codigo, entrada)
 
 
 def normalizar_texto(texto):
@@ -1796,9 +1923,65 @@ def limpar_saida_para_correcao(saida):
     return "\n".join(linhas).strip()
 
 
+def remover_comentarios_c(codigo):
+    """Remove comentarios sem apagar textos e caracteres literais."""
+    resultado = []
+    indice = 0
+    estado = "codigo"
+    escape = False
+
+    while indice < len(codigo or ""):
+        atual = codigo[indice]
+        proximo = codigo[indice + 1] if indice + 1 < len(codigo) else ""
+
+        if estado == "linha":
+            if atual == "\n":
+                resultado.append(atual)
+                estado = "codigo"
+            indice += 1
+            continue
+
+        if estado == "bloco":
+            if atual == "*" and proximo == "/":
+                estado = "codigo"
+                indice += 2
+                continue
+            if atual == "\n":
+                resultado.append(atual)
+            indice += 1
+            continue
+
+        if estado in {"texto", "caractere"}:
+            resultado.append(atual)
+            if escape:
+                escape = False
+            elif atual == "\\":
+                escape = True
+            elif (estado == "texto" and atual == '"') or (estado == "caractere" and atual == "'"):
+                estado = "codigo"
+            indice += 1
+            continue
+
+        if atual == "/" and proximo == "/":
+            estado = "linha"
+            indice += 2
+        elif atual == "/" and proximo == "*":
+            estado = "bloco"
+            indice += 2
+        else:
+            resultado.append(atual)
+            if atual == '"':
+                estado = "texto"
+            elif atual == "'":
+                estado = "caractere"
+            indice += 1
+
+    return "".join(resultado)
+
+
 def validar_regras_estaticas(codigo, regra):
     falhas = []
-    codigo_normalizado = normalizar_texto(codigo)
+    codigo_normalizado = normalizar_texto(remover_comentarios_c(codigo))
 
     for termo in regra.get("codigo_contem", []):
         if normalizar_texto(termo) not in codigo_normalizado:
@@ -1826,6 +2009,10 @@ def validar_saida(saida, regra):
     for termo in regra.get("saida_contem", []):
         if normalizar_texto(termo) not in saida_normalizada:
             falhas.append(f"A saída precisa conter: {termo}.")
+
+    for termo in regra.get("saida_nao_contem", []):
+        if normalizar_texto(termo) in saida_normalizada:
+            falhas.append(f"A saída não pode conter: {termo}.")
 
     for expressao in regra.get("saida_regex", []):
         if not re.search(expressao, saida_normalizada, re.I):
@@ -1860,8 +2047,9 @@ def avaliar_codigo_automaticamente(codigo, resultado_execucao, regra):
 
             regra_saida_teste = {
                 "saida_contem": teste.get("saida_contem", []),
+                "saida_nao_contem": teste.get("saida_nao_contem", []),
                 "saida_regex": teste.get("saida_regex", []),
-                "saida_obrigatoria": True
+                "saida_obrigatoria": teste.get("saida_obrigatoria", True)
             }
             falhas.extend(validar_saida(resultado_teste.get("saida", ""), regra_saida_teste))
     else:
@@ -1879,156 +2067,20 @@ def avaliar_codigo_automaticamente(codigo, resultado_execucao, regra):
     }
 
 
-def validar_codigo_recebido(codigo):
-    if not isinstance(codigo, str) or not codigo.strip():
-        return "Escreva um programa C antes de compilar."
-    if len(codigo.encode("utf-8")) > 100_000:
-        return "O código ultrapassa o limite de 100 KB."
-    return ""
+def validar_codigo_recebido(codigo, entrada=None):
+    return compilador_seguro.validar_codigo(codigo, entrada)
 
 
 def comando_gcc(arquivo_c, arquivo_saida):
-    return [
-        "gcc",
-        "-std=c11",
-        "-Wall",
-        "-Wextra",
-        "-pedantic",
-        arquivo_c,
-        "-o",
-        arquivo_saida,
-        "-lm",
-    ]
+    return compilador_seguro.comando_gcc(arquivo_c, arquivo_saida)
 
 
 def compilar_codigo_c(codigo):
-    """
-    Compila o código C e retorna apenas o build log.
-    Parecido com a etapa Build do Code::Blocks.
-    """
-    erro_validacao = validar_codigo_recebido(codigo)
-    if erro_validacao:
-        return {"ok": False, "build": erro_validacao, "saida": ""}
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        arquivo_c = os.path.join(temp_dir, "programa.c")
-        arquivo_saida = os.path.join(temp_dir, "programa")
-
-        with open(arquivo_c, "w", encoding="utf-8") as f:
-            f.write(codigo)
-
-        try:
-            compilacao = subprocess.run(
-                comando_gcc(arquivo_c, arquivo_saida),
-                capture_output=True,
-                text=True,
-                timeout=8
-            )
-
-            if compilacao.returncode != 0:
-                return {
-                    "ok": False,
-                    "build": "Build failed.\n\n" + compilacao.stderr,
-                    "saida": ""
-                }
-
-            return {
-                "ok": True,
-                "build": "Build finished successfully.\n0 errors, 0 warnings.",
-                "saida": ""
-            }
-
-        except FileNotFoundError:
-            return {
-                "ok": False,
-                "build": "Não foi possível compilar: GCC não está disponível no servidor.\n\nNo Render gratuito, normalmente o ambiente não vem preparado para compilar C. Para produção, use uma API externa de compilação ou configure um ambiente com GCC.",
-                "saida": ""
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "ok": False,
-                "build": "Tempo de compilação excedido.",
-                "saida": ""
-            }
-        except Exception as erro:
-            return {
-                "ok": False,
-                "build": f"Erro ao compilar: {erro}",
-                "saida": ""
-            }
+    return compilador_seguro.compilar_codigo(codigo)
 
 
 def executar_codigo_c(codigo, entrada=""):
-    """
-    Compila e executa o código C.
-    A entrada simula o que seria digitado no terminal quando o programa usa scanf.
-    """
-    erro_validacao = validar_codigo_recebido(codigo)
-    if erro_validacao:
-        return {"ok": False, "build": erro_validacao, "saida": ""}
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        arquivo_c = os.path.join(temp_dir, "programa.c")
-        arquivo_saida = os.path.join(temp_dir, "programa")
-
-        with open(arquivo_c, "w", encoding="utf-8") as f:
-            f.write(codigo)
-
-        try:
-            compilacao = subprocess.run(
-                comando_gcc(arquivo_c, arquivo_saida),
-                capture_output=True,
-                text=True,
-                timeout=8
-            )
-
-            if compilacao.returncode != 0:
-                return {
-                    "ok": False,
-                    "build": "Build failed.\n\n" + compilacao.stderr,
-                    "saida": ""
-                }
-
-            execucao = subprocess.run(
-                [arquivo_saida],
-                capture_output=True,
-                text=True,
-                timeout=5,
-                input=entrada
-            )
-
-            saida = execucao.stdout
-
-            if execucao.stderr:
-                saida += "\nErros:\n" + execucao.stderr
-
-            if not saida.strip():
-                saida = f"Process returned {execucao.returncode}.\nO programa executou, mas não mostrou nenhuma saída."
-
-            return {
-                "ok": execucao.returncode == 0,
-                "build": "Build finished successfully.\n0 errors, 0 warnings.",
-                "saida": saida + f"\n\nProcess returned {execucao.returncode}."
-            }
-
-        except FileNotFoundError:
-            return {
-                "ok": False,
-                "build": "Não foi possível compilar: GCC não está disponível no servidor.",
-                "saida": "O código foi salvo, mas o servidor não possui GCC para executar.\n\nPara ter compilação real online, será necessário configurar GCC no Render ou usar uma API externa segura de compilação.\n\nA entrada do terminal ficará salva para quando a execução estiver disponível."
-            }
-        except subprocess.TimeoutExpired:
-            return {
-                "ok": False,
-                "build": "Build/Run interrompido por tempo excedido.",
-                "saida": "Tempo de execução excedido.\nVerifique se há loop infinito ou se faltou entrada para scanf."
-            }
-        except Exception as erro:
-            return {
-                "ok": False,
-                "build": "Erro durante build/run.",
-                "saida": f"Erro ao executar o código: {erro}"
-            }
+    return compilador_seguro.executar_codigo_local(codigo, entrada)
 
 
 @app.context_processor
@@ -2122,6 +2174,7 @@ def dashboard():
     porcentagem = int((concluidas / total_licoes()) * 100)
     conceder_conquistas(usuario["id"])
     desafios_disponiveis, _ = desafios_diarios_do_usuario(usuario["id"])
+    sincronizar_revisoes_usuario(usuario["id"])
 
     conn = conectar()
     conquistas = conn.execute(
@@ -2138,6 +2191,13 @@ def dashboard():
     ).fetchone()
     missoes = obter_missoes_diarias(conn, usuario["id"], bool(desafios_disponiveis))
     calendario = calendario_atividade(conn, usuario["id"])
+    revisoes_pendentes = conn.execute(
+        """
+        SELECT COUNT(*) AS total FROM revisoes_usuario
+        WHERE usuario_id = ? AND proxima_revisao <= ?
+        """,
+        (usuario["id"], date.today().isoformat()),
+    ).fetchone()["total"]
     conn.close()
 
     modulos_view = []
@@ -2173,6 +2233,7 @@ def dashboard():
         modulos_destaque=modulos_destaque,
         recompensa_mensagem=request.args.get("recompensa", ""),
         aviso_mensagem=request.args.get("aviso", ""),
+        revisoes_pendentes=revisoes_pendentes,
     )
 
 
@@ -2236,6 +2297,205 @@ def perfil():
         liga=liga_por_xp(usuario["xp"]),
         nivel_jogo=estado_nivel(usuario["xp"]),
     )
+
+
+def licoes_favoritas_usuario(usuario_id):
+    conn = conectar()
+    ids = {
+        linha["licao_id"]
+        for linha in conn.execute(
+            "SELECT licao_id FROM favoritos_usuario WHERE usuario_id = ?",
+            (usuario_id,),
+        ).fetchall()
+    }
+    conn.close()
+    return ids
+
+
+@app.route("/favoritos")
+def pagina_favoritos():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    conn = conectar()
+    registros = conn.execute(
+        "SELECT * FROM favoritos_usuario WHERE usuario_id = ? ORDER BY id DESC",
+        (usuario["id"],),
+    ).fetchall()
+    conn.close()
+
+    favoritos = []
+    for registro in registros:
+        modulo, licao = encontrar_licao(registro["licao_id"])
+        if modulo and licao:
+            favoritos.append({
+                "modulo": modulo,
+                "licao": licao,
+                "criado_em": registro["criado_em"],
+                "liberado": modulo_acessivel(usuario["id"], modulo["id"]),
+            })
+    return render_template("learning/favoritos.html", favoritos=favoritos)
+
+
+@app.route("/favoritos/<int:licao_id>", methods=["POST"])
+def alternar_favorito(licao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+    modulo, licao = encontrar_licao(licao_id)
+    if not modulo or not licao or not modulo_acessivel(usuario["id"], modulo["id"]):
+        return redirect(url_for("modulos"))
+
+    conn = conectar()
+    existente = conn.execute(
+        "SELECT id FROM favoritos_usuario WHERE usuario_id = ? AND licao_id = ?",
+        (usuario["id"], licao_id),
+    ).fetchone()
+    if existente:
+        conn.execute("DELETE FROM favoritos_usuario WHERE id = ?", (existente["id"],))
+    else:
+        conn.execute(
+            "INSERT INTO favoritos_usuario (usuario_id, licao_id, criado_em) VALUES (?, ?, ?)",
+            (usuario["id"], licao_id, datetime.now().isoformat(timespec="seconds")),
+        )
+    conn.commit()
+    conn.close()
+    criar_backup_progresso(usuario["id"])
+
+    destino = request.form.get("destino", "")
+    if not destino.startswith("/") or destino.startswith("//"):
+        destino = url_for("pagina_favoritos")
+    return redirect(destino)
+
+
+INTERVALOS_REVISAO = (1, 3, 7, 14, 30, 60)
+
+
+def sincronizar_revisoes_usuario(usuario_id):
+    conn = conectar()
+    concluidas = conn.execute(
+        """
+        SELECT licao_id, atualizado_em FROM progresso
+        WHERE usuario_id = ? AND concluida = 1
+        """,
+        (usuario_id,),
+    ).fetchall()
+    for registro in concluidas:
+        try:
+            base = date.fromisoformat(str(registro["atualizado_em"] or "")[:10])
+        except ValueError:
+            base = date.today()
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO revisoes_usuario
+                (usuario_id, licao_id, nivel, proxima_revisao, acertos, erros)
+            VALUES (?, ?, 0, ?, 0, 0)
+            """,
+            (usuario_id, registro["licao_id"], (base + timedelta(days=1)).isoformat()),
+        )
+    conn.commit()
+    conn.close()
+
+
+@app.route("/revisao")
+def revisao():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+    sincronizar_revisoes_usuario(usuario["id"])
+
+    hoje = date.today().isoformat()
+    conn = conectar()
+    pendentes = conn.execute(
+        """
+        SELECT * FROM revisoes_usuario
+        WHERE usuario_id = ? AND proxima_revisao <= ?
+        ORDER BY proxima_revisao, id LIMIT 10
+        """,
+        (usuario["id"], hoje),
+    ).fetchall()
+    proximas = conn.execute(
+        """
+        SELECT * FROM revisoes_usuario
+        WHERE usuario_id = ? AND proxima_revisao > ?
+        ORDER BY proxima_revisao LIMIT 6
+        """,
+        (usuario["id"], hoje),
+    ).fetchall()
+    conn.close()
+
+    def montar_item(registro):
+        modulo, licao = encontrar_licao(registro["licao_id"])
+        return {"registro": registro, "modulo": modulo, "licao": licao}
+
+    pendentes_view = [montar_item(item) for item in pendentes]
+    proximas_view = [montar_item(item) for item in proximas]
+    return render_template(
+        "learning/revisao.html",
+        pendentes=pendentes_view,
+        proximas=proximas_view,
+        mensagem=request.args.get("mensagem", ""),
+        resultado=request.args.get("resultado", ""),
+    )
+
+
+@app.route("/revisao/<int:licao_id>", methods=["POST"])
+def responder_revisao(licao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+    modulo, licao = encontrar_licao(licao_id)
+    if not modulo or not licao:
+        return redirect(url_for("revisao"))
+
+    conn = conectar()
+    registro = conn.execute(
+        """
+        SELECT r.* FROM revisoes_usuario r
+        JOIN progresso p ON p.usuario_id = r.usuario_id AND p.licao_id = r.licao_id
+        WHERE r.usuario_id = ? AND r.licao_id = ? AND p.concluida = 1
+        """,
+        (usuario["id"], licao_id),
+    ).fetchone()
+    if not registro:
+        conn.close()
+        return redirect(url_for("revisao"))
+
+    correta = request.form.get("resposta", "") == licao["resposta"]
+    nivel_atual = int(registro["nivel"] or 0)
+    novo_nivel = min(len(INTERVALOS_REVISAO) - 1, nivel_atual + 1) if correta else 0
+    intervalo = INTERVALOS_REVISAO[novo_nivel]
+    proxima = (date.today() + timedelta(days=intervalo)).isoformat()
+    conn.execute(
+        """
+        UPDATE revisoes_usuario
+        SET nivel = ?, proxima_revisao = ?, ultima_revisao = ?,
+            acertos = acertos + ?, erros = erros + ?
+        WHERE usuario_id = ? AND licao_id = ?
+        """,
+        (
+            novo_nivel,
+            proxima,
+            datetime.now().isoformat(timespec="seconds"),
+            1 if correta else 0,
+            0 if correta else 1,
+            usuario["id"],
+            licao_id,
+        ),
+    )
+    if correta:
+        registrar_atividade(conn, usuario["id"], quizzes=1)
+    conn.commit()
+    conn.close()
+    criar_backup_progresso(usuario["id"])
+
+    mensagem = (
+        f"Resposta correta. Próxima revisão em {intervalo} dia(s)."
+        if correta
+        else "Resposta incorreta. Revise a explicação e tente novamente amanhã."
+    )
+    return redirect(url_for("revisao", mensagem=mensagem, resultado="correto" if correta else "incorreto"))
 
 
 @app.route("/metas", methods=["POST"])
@@ -2391,6 +2651,52 @@ def modulos():
     )
 
 
+def registrar_historico_codigo(
+    conn,
+    usuario_id,
+    codigo,
+    entrada,
+    saida,
+    build_log,
+    contexto="livre",
+    licao_id=None,
+    modulo_id=None,
+    aprovado=False,
+    origem="",
+):
+    conn.execute(
+        """
+        INSERT INTO compilador_historico
+            (usuario_id, codigo, entrada, saida, build_log, criado_em,
+             contexto, licao_id, modulo_id, aprovado, origem)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            usuario_id,
+            codigo,
+            entrada,
+            saida,
+            build_log,
+            datetime.now().isoformat(timespec="seconds"),
+            contexto,
+            licao_id,
+            modulo_id,
+            1 if aprovado else 0,
+            origem,
+        ),
+    )
+    conn.execute(
+        """
+        DELETE FROM compilador_historico
+        WHERE usuario_id = ? AND id NOT IN (
+            SELECT id FROM compilador_historico
+            WHERE usuario_id = ? ORDER BY id DESC LIMIT 100
+        )
+        """,
+        (usuario_id, usuario_id),
+    )
+
+
 
 @app.route("/compilador")
 def compilador():
@@ -2423,11 +2729,70 @@ def compilador():
     )
 
 
+@app.route("/historico-codigos")
+def historico_codigos():
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    contexto = request.args.get("contexto", "todos")
+    contextos = {"todos", "livre", "licao", "diario"}
+    if contexto not in contextos:
+        contexto = "todos"
+
+    conn = conectar()
+    if contexto == "todos":
+        registros = conn.execute(
+            "SELECT * FROM compilador_historico WHERE usuario_id = ? ORDER BY id DESC LIMIT 100",
+            (usuario["id"],),
+        ).fetchall()
+    else:
+        registros = conn.execute(
+            """
+            SELECT * FROM compilador_historico
+            WHERE usuario_id = ? AND contexto = ? ORDER BY id DESC LIMIT 100
+            """,
+            (usuario["id"], contexto),
+        ).fetchall()
+    resumo = conn.execute(
+        """
+        SELECT COUNT(*) AS total,
+               SUM(CASE WHEN aprovado = 1 THEN 1 ELSE 0 END) AS aprovados
+        FROM compilador_historico WHERE usuario_id = ?
+        """,
+        (usuario["id"],),
+    ).fetchone()
+    conn.close()
+
+    itens = []
+    for registro in registros:
+        modulo, licao = encontrar_licao(registro["licao_id"]) if registro["licao_id"] else (None, None)
+        itens.append({
+            "registro": registro,
+            "titulo": licao["titulo"] if licao else "Prática livre",
+            "modulo": modulo["titulo"] if modulo else "Laboratório",
+        })
+
+    return render_template(
+        "compiler/historico.html",
+        itens=itens,
+        contexto=contexto,
+        total=resumo["total"] or 0,
+        aprovados=resumo["aprovados"] or 0,
+    )
+
+
 @app.route("/api/compilador/executar", methods=["POST"])
 def api_compilador_executar():
     usuario = usuario_logado()
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+    if not compilador_seguro.permitir_execucao(usuario["id"]):
+        return jsonify({
+            "ok": False,
+            "build": "Muitas compilações em pouco tempo. Aguarde um minuto.",
+            "saida": "",
+        }), 429
 
     dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
@@ -2436,12 +2801,16 @@ def api_compilador_executar():
     resultado = executar_compilador_online(codigo, entrada)
 
     conn = conectar()
-    conn.execute(
-        """
-        INSERT INTO compilador_historico (usuario_id, codigo, entrada, saida, build_log, criado_em)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (usuario["id"], codigo, entrada, resultado.get("saida", ""), resultado.get("build", ""), str(date.today()))
+    registrar_historico_codigo(
+        conn,
+        usuario["id"],
+        codigo,
+        entrada,
+        resultado.get("saida", ""),
+        resultado.get("build", ""),
+        contexto="livre",
+        aprovado=resultado.get("ok", False),
+        origem=resultado.get("origem", ""),
     )
     if resultado.get("ok"):
         registrar_atividade(conn, usuario["id"])
@@ -2481,6 +2850,14 @@ def estudar(modulo_id):
         (usuario["id"], licao["id"])
     ).fetchone()
 
+    favoritos_ids = {
+        linha["licao_id"]
+        for linha in conn.execute(
+            "SELECT licao_id FROM favoritos_usuario WHERE usuario_id = ?",
+            (usuario["id"],),
+        ).fetchall()
+    }
+
     conn.close()
 
     concluidas_ids = [r["licao_id"] for r in registros if r["concluida"] == 1]
@@ -2504,7 +2881,9 @@ def estudar(modulo_id):
         desafios_teoricos=estado_teorico["desafios"],
         desafios_teoricos_corretos=estado_teorico["corretos"],
         total_desafios_teoricos=estado_teorico["total"],
-        desafios_teoricos_concluidos=estado_teorico["todos_corretos"]
+        desafios_teoricos_concluidos=estado_teorico["todos_corretos"],
+        favoritos_ids=favoritos_ids,
+        favorita=licao["id"] in favoritos_ids,
     )
 
 
@@ -2578,7 +2957,23 @@ def salvar_rascunho_exercicio():
         INSERT INTO progresso (usuario_id, licao_id, modulo_id, codigo_usuario, entrada_codigo, atualizado_em)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(usuario_id, licao_id)
-        DO UPDATE SET codigo_usuario = excluded.codigo_usuario,
+        DO UPDATE SET codigo_validado = CASE
+                          WHEN COALESCE(progresso.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(progresso.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                          THEN progresso.codigo_validado ELSE 0 END,
+                      codigo_enviado = CASE
+                          WHEN COALESCE(progresso.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(progresso.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                          THEN progresso.codigo_enviado ELSE 0 END,
+                      feedback_codigo = CASE
+                          WHEN COALESCE(progresso.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(progresso.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                          THEN progresso.feedback_codigo ELSE NULL END,
+                      saida_codigo = CASE
+                          WHEN COALESCE(progresso.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(progresso.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                          THEN progresso.saida_codigo ELSE NULL END,
+                      codigo_usuario = excluded.codigo_usuario,
                       entrada_codigo = excluded.entrada_codigo,
                       atualizado_em = excluded.atualizado_em
         """,
@@ -2612,7 +3007,22 @@ def salvar_rascunho_desafio():
         INSERT INTO desafios_diarios (usuario_id, data, desafio_id, codigo_usuario, entrada_codigo, concluido)
         VALUES (?, ?, ?, ?, ?, 0)
         ON CONFLICT(usuario_id, data)
-        DO UPDATE SET desafio_id = excluded.desafio_id,
+        DO UPDATE SET codigo_validado = CASE
+                          WHEN COALESCE(desafios_diarios.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(desafios_diarios.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                           AND COALESCE(desafios_diarios.desafio_id, '') = COALESCE(excluded.desafio_id, '')
+                          THEN desafios_diarios.codigo_validado ELSE 0 END,
+                      feedback_codigo = CASE
+                          WHEN COALESCE(desafios_diarios.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(desafios_diarios.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                           AND COALESCE(desafios_diarios.desafio_id, '') = COALESCE(excluded.desafio_id, '')
+                          THEN desafios_diarios.feedback_codigo ELSE NULL END,
+                      saida_codigo = CASE
+                          WHEN COALESCE(desafios_diarios.codigo_usuario, '') = COALESCE(excluded.codigo_usuario, '')
+                           AND COALESCE(desafios_diarios.entrada_codigo, '') = COALESCE(excluded.entrada_codigo, '')
+                           AND COALESCE(desafios_diarios.desafio_id, '') = COALESCE(excluded.desafio_id, '')
+                          THEN desafios_diarios.saida_codigo ELSE NULL END,
+                      desafio_id = excluded.desafio_id,
                       codigo_usuario = excluded.codigo_usuario,
                       entrada_codigo = excluded.entrada_codigo
         """,
@@ -2628,6 +3038,8 @@ def api_exercicio_preparar_terminal():
     usuario = usuario_logado()
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "prompt": ""}), 401
+    if not compilador_seguro.permitir_execucao(usuario["id"]):
+        return jsonify({"ok": False, "build": "Aguarde antes de compilar novamente.", "prompt": ""}), 429
 
     dados = request.get_json()
     codigo = dados.get("codigo", "")
@@ -2647,6 +3059,8 @@ def api_exercicio_compilar():
     usuario = usuario_logado()
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+    if not compilador_seguro.permitir_execucao(usuario["id"]):
+        return jsonify({"ok": False, "build": "Aguarde antes de compilar novamente.", "saida": ""}), 429
 
     dados = request.get_json(silent=True) or {}
     licao_id = dados.get("licao_id")
@@ -2682,6 +3096,19 @@ def api_exercicio_compilar():
                       atualizado_em = excluded.atualizado_em
         """,
         (usuario["id"], licao_id, modulo["id"], codigo, resultado.get("saida", ""), entrada, resultado["codigo_validado"], validacao["mensagem"], str(date.today()))
+    )
+    registrar_historico_codigo(
+        conn,
+        usuario["id"],
+        codigo,
+        entrada,
+        resultado.get("saida", ""),
+        resultado.get("build", ""),
+        contexto="licao",
+        licao_id=licao_id,
+        modulo_id=modulo["id"],
+        aprovado=validacao["ok"],
+        origem=resultado.get("origem", ""),
     )
     conn.commit()
     conn.close()
@@ -2849,6 +3276,8 @@ def compilar_codigo():
     usuario = usuario_logado()
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
+    if not compilador_seguro.permitir_execucao(usuario["id"]):
+        return jsonify({"ok": False, "build": "Aguarde antes de compilar novamente.", "saida": ""}), 429
 
     dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
@@ -2862,6 +3291,8 @@ def executar_codigo():
     usuario = usuario_logado()
     if not usuario:
         return jsonify({"ok": False, "saida": "Usuário não logado."}), 401
+    if not compilador_seguro.permitir_execucao(usuario["id"]):
+        return jsonify({"ok": False, "build": "Aguarde antes de compilar novamente.", "saida": ""}), 429
 
     dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
@@ -2915,6 +3346,12 @@ def executar_codigo():
                 """,
                 (usuario["id"], licao_id, modulo["id"], codigo, resultado.get("saida", ""), entrada, resultado["codigo_validado"], validacao["mensagem"], str(date.today()))
             )
+            registrar_historico_codigo(
+                conn, usuario["id"], codigo, entrada,
+                resultado.get("saida", ""), resultado.get("build", ""),
+                contexto="licao", licao_id=licao_id, modulo_id=modulo["id"],
+                aprovado=validacao["ok"], origem=resultado.get("origem", ""),
+            )
             conn.commit()
             conn.close()
             criar_backup_progresso(usuario["id"])
@@ -2944,9 +3381,27 @@ def executar_codigo():
             """,
             (usuario["id"], hoje, desafio["id"], codigo, resultado.get("saida", ""), entrada, resultado["codigo_validado"], validacao["mensagem"])
         )
+        registrar_historico_codigo(
+            conn, usuario["id"], codigo, entrada,
+            resultado.get("saida", ""), resultado.get("build", ""),
+            contexto="diario", licao_id=desafio.get("licao_id"),
+            modulo_id=desafio.get("modulo_id"), aprovado=validacao["ok"],
+            origem=resultado.get("origem", ""),
+        )
         conn.commit()
         conn.close()
         criar_backup_progresso(usuario["id"])
+
+    if tipo in {"livre", "compilador"}:
+        conn = conectar()
+        registrar_historico_codigo(
+            conn, usuario["id"], codigo, entrada,
+            resultado.get("saida", ""), resultado.get("build", ""),
+            contexto="livre", aprovado=resultado.get("ok", False),
+            origem=resultado.get("origem", ""),
+        )
+        conn.commit()
+        conn.close()
 
     return jsonify(resultado)
 
@@ -2994,6 +3449,14 @@ def concluir(licao_id):
     if not ja_concluida:
         conn.execute("UPDATE usuarios SET xp = xp + 50 WHERE id = ?", (usuario["id"],))
         registrar_atividade(conn, usuario["id"], licoes=1, xp_ganho=50)
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO revisoes_usuario
+                (usuario_id, licao_id, nivel, proxima_revisao, acertos, erros)
+            VALUES (?, ?, 0, ?, 0, 0)
+            """,
+            (usuario["id"], licao_id, (date.today() + timedelta(days=1)).isoformat()),
+        )
 
     conn.commit()
     conn.close()
@@ -3058,9 +3521,11 @@ def concluir_desafio_diario():
 # -------------------------------
 
 PROCESSOS_TERMINAL = {}
+TERMINAL_POR_USUARIO = {}
+PROCESSOS_TERMINAL_LOCK = threading.RLock()
 
 
-def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
+def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida, execucao_ok=True):
     modulo, licao, erro = licao_acessivel_para_usuario(
         usuario_id, licao_id, exigir_pratica=True
     )
@@ -3072,7 +3537,7 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
 
     validacao = avaliar_codigo_automaticamente(
         codigo,
-        {"ok": True, "saida": saida, "build": "Build finished successfully."},
+        {"ok": bool(execucao_ok), "saida": saida, "build": "Build finished successfully."},
         licao.get("correcao")
     )
 
@@ -3092,6 +3557,12 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
         """,
         (usuario_id, licao_id, modulo["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"], str(date.today()))
     )
+    registrar_historico_codigo(
+        conn, usuario_id, codigo, entrada, saida,
+        "Terminal interativo compilado com GCC.",
+        contexto="licao", licao_id=licao_id, modulo_id=modulo["id"],
+        aprovado=validacao["ok"], origem="GCC interativo protegido",
+    )
     if validacao["ok"]:
         registrar_atividade(conn, usuario_id)
     conn.commit()
@@ -3100,7 +3571,7 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
     return validacao
 
 
-def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
+def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida, execucao_ok=True):
     hoje = str(date.today())
     desafio = desafio_do_dia(hoje, usuario_id)
     if not desafio:
@@ -3111,7 +3582,7 @@ def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
 
     validacao = avaliar_codigo_automaticamente(
         codigo,
-        {"ok": True, "saida": saida, "build": "Build finished successfully."},
+        {"ok": bool(execucao_ok), "saida": saida, "build": "Build finished successfully."},
         desafio.get("correcao")
     )
 
@@ -3130,6 +3601,13 @@ def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
         """,
         (usuario_id, hoje, desafio["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"])
     )
+    registrar_historico_codigo(
+        conn, usuario_id, codigo, entrada, saida,
+        "Terminal interativo compilado com GCC.",
+        contexto="diario", licao_id=desafio.get("licao_id"),
+        modulo_id=desafio.get("modulo_id"), aprovado=validacao["ok"],
+        origem="GCC interativo protegido",
+    )
     if validacao["ok"]:
         registrar_atividade(conn, usuario_id)
     conn.commit()
@@ -3139,7 +3617,12 @@ def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
 
 
 def encerrar_processo_socket(sid):
-    dados = PROCESSOS_TERMINAL.pop(sid, None)
+    with PROCESSOS_TERMINAL_LOCK:
+        dados = PROCESSOS_TERMINAL.pop(sid, None)
+        if dados:
+            usuario_id = dados.get("usuario_id")
+            if TERMINAL_POR_USUARIO.get(usuario_id) == sid:
+                TERMINAL_POR_USUARIO.pop(usuario_id, None)
     if not dados:
         return
 
@@ -3147,11 +3630,7 @@ def encerrar_processo_socket(sid):
     fd = dados.get("fd")
     temp_dir = dados.get("temp_dir")
 
-    try:
-        if proc and proc.poll() is None:
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-    except Exception:
-        pass
+    compilador_seguro.encerrar_processo(proc)
 
     try:
         if fd:
@@ -3165,29 +3644,48 @@ def encerrar_processo_socket(sid):
     except Exception:
         pass
 
+    if dados.get("slot_adquirido"):
+        dados["slot_adquirido"] = False
+        compilador_seguro.liberar_slot()
+
 
 def leitor_terminal(sid):
-    dados = PROCESSOS_TERMINAL.get(sid)
+    with PROCESSOS_TERMINAL_LOCK:
+        dados = PROCESSOS_TERMINAL.get(sid)
     if not dados:
         return
 
     proc = dados["proc"]
     fd = dados["fd"]
     saida_total = ""
-
     inicio = time.time()
-    limite_segundos = 20
+    motivo_interrupcao = ""
+    limite_segundos = compilador_seguro.TEMPO_INTERATIVO
+    total_bytes = 0
+
+    def consumir_saida(bloco):
+        nonlocal saida_total, total_bytes, motivo_interrupcao
+        restante = compilador_seguro.MAX_SAIDA_BYTES - total_bytes
+        if restante <= 0:
+            motivo_interrupcao = "Limite de saída excedido."
+            return False
+        trecho = bloco[:restante]
+        total_bytes += len(trecho)
+        texto = trecho.decode("utf-8", errors="replace")
+        saida_total += texto
+        socketio.emit("terminal_saida", {"texto": texto}, to=sid)
+        if len(bloco) > restante:
+            motivo_interrupcao = "Limite de saída excedido."
+            return False
+        return True
 
     while True:
         if time.time() - inicio > limite_segundos:
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-            except Exception:
-                pass
-            socketio.emit("terminal_saida", {"texto": "\n\nTempo limite excedido.\n"}, to=sid)
-            break
-
-        if proc.poll() is not None:
+            motivo_interrupcao = "Tempo limite excedido."
+            compilador_seguro.encerrar_processo(proc)
+            aviso = "\n\nTempo limite excedido.\n"
+            saida_total += aviso
+            socketio.emit("terminal_saida", {"texto": aviso}, to=sid)
             break
 
         try:
@@ -3195,22 +3693,51 @@ def leitor_terminal(sid):
             if fd in pronto:
                 dados_lidos = os.read(fd, 4096)
                 if not dados_lidos:
+                    if proc.poll() is not None:
+                        break
+                elif not consumir_saida(dados_lidos):
+                    compilador_seguro.encerrar_processo(proc)
+                    aviso = "\n\nSaída interrompida: limite atingido.\n"
+                    saida_total += aviso
+                    socketio.emit("terminal_saida", {"texto": aviso}, to=sid)
                     break
-
-                texto = dados_lidos.decode("utf-8", errors="replace")
-                saida_total += texto
-                socketio.emit("terminal_saida", {"texto": texto}, to=sid)
         except OSError:
+            if proc.poll() is None:
+                motivo_interrupcao = "Erro na leitura do terminal."
+                compilador_seguro.encerrar_processo(proc)
             break
         except Exception as erro:
             socketio.emit("terminal_saida", {"texto": f"\nErro no terminal: {erro}\n"}, to=sid)
+            motivo_interrupcao = "Erro na leitura do terminal."
+            break
+
+        if proc.poll() is not None:
+            # O processo pode terminar antes de a tarefa leitora iniciar. Drene o PTY.
+            while True:
+                try:
+                    pronto, _, _ = select.select([fd], [], [], 0)
+                    if fd not in pronto:
+                        break
+                    bloco = os.read(fd, 4096)
+                    if not bloco or not consumir_saida(bloco):
+                        break
+                except OSError:
+                    break
             break
 
     codigo_saida = proc.poll()
     if codigo_saida is None:
-        codigo_saida = proc.wait()
+        compilador_seguro.encerrar_processo(proc)
+        codigo_saida = proc.poll()
+    if codigo_saida is None:
+        codigo_saida = -1
 
-    fim = "\n\nProcess returned 0 (0x0)\nPress any key to continue.\n" if codigo_saida == 0 else f"\n\nProcess returned {codigo_saida}\nPress any key to continue.\n"
+    execucao_ok = codigo_saida == 0 and not motivo_interrupcao
+    fim = (
+        "\n\nProcess returned 0 (0x0)\n"
+        if execucao_ok
+        else f"\n\nProcess returned {codigo_saida}\n"
+    )
     saida_total += fim
     socketio.emit("terminal_saida", {"texto": fim}, to=sid)
     socketio.emit("terminal_finalizado", {"codigo": codigo_saida}, to=sid)
@@ -3221,16 +3748,30 @@ def leitor_terminal(sid):
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
 
-    validacao = None
-    if usuario_id and tipo == "diario":
-        validacao = salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida_total)
-    elif usuario_id and licao_id:
-        validacao = salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida_total)
+    if dados.get("slot_adquirido"):
+        dados["slot_adquirido"] = False
+        compilador_seguro.liberar_slot()
 
-    if validacao:
-        socketio.emit("correcao_resultado", validacao, to=sid)
+    try:
+        validacao = None
+        if usuario_id and tipo == "diario":
+            validacao = salvar_desafio_diario_execucao(
+                usuario_id, codigo, entrada, saida_total, execucao_ok
+            )
+        elif usuario_id and licao_id:
+            validacao = salvar_codigo_execucao(
+                usuario_id, licao_id, codigo, entrada, saida_total, execucao_ok
+            )
 
-    encerrar_processo_socket(sid)
+        if validacao:
+            socketio.emit("correcao_resultado", validacao, to=sid)
+    except Exception:
+        socketio.emit("correcao_resultado", {
+            "ok": False,
+            "mensagem": "A execução terminou, mas não foi possível salvar a correção."
+        }, to=sid)
+    finally:
+        encerrar_processo_socket(sid)
 
 
 @socketio.on("compilar_real")
@@ -3242,6 +3783,13 @@ def compilar_real(dados):
 
     sid = request.sid
     encerrar_processo_socket(sid)
+
+    if not compilador_seguro.permitir_execucao(usuario_id):
+        emit("build_log", {
+            "ok": False,
+            "texto": "Muitas compilações em pouco tempo. Aguarde um minuto."
+        })
+        return
 
     dados = dados or {}
     codigo = dados.get("codigo", "")
@@ -3273,87 +3821,99 @@ def compilar_real(dados):
         emit("build_log", {"ok": False, "texto": erro_validacao})
         return
 
-    temp_dir = tempfile.mkdtemp(prefix="ensinar_c_")
-    arquivo_c = os.path.join(temp_dir, "programa.c")
-    arquivo_saida = os.path.join(temp_dir, "programa")
+    if pty is None or os.name == "nt":
+        emit("build_log", {
+            "ok": False,
+            "texto": "Terminal interativo real disponível no ambiente Linux/Docker. Para Windows local, use o Dockerfile do projeto ou publique no Render."
+        })
+        return
 
-    with open(arquivo_c, "w", encoding="utf-8") as f:
-        f.write(codigo)
+    with PROCESSOS_TERMINAL_LOCK:
+        sid_existente = TERMINAL_POR_USUARIO.get(usuario_id)
+        if sid_existente and sid_existente != sid:
+            emit("build_log", {
+                "ok": False,
+                "texto": "Já existe um terminal em execução nesta conta. Feche a outra aba ou aguarde o término."
+            })
+            return
+
+    if not compilador_seguro.adquirir_slot():
+        emit("build_log", {
+            "ok": False,
+            "texto": "Todos os terminais estão ocupados. Aguarde alguns segundos."
+        })
+        return
+
+    with PROCESSOS_TERMINAL_LOCK:
+        TERMINAL_POR_USUARIO[usuario_id] = sid
+
+    slot_reserva = True
+    temp_dir = None
+    master_fd = None
+    slave_fd = None
 
     try:
-        compilacao = subprocess.run(
-            comando_gcc(arquivo_c, arquivo_saida),
-            capture_output=True,
-            text=True,
-            timeout=8
-        )
-
-        if compilacao.returncode != 0:
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            emit("build_log", {
-                "ok": False,
-                "texto": "Build failed.\n\n" + compilacao.stderr
-            })
+        preparacao = compilador_seguro.preparar_terminal(codigo)
+        if not preparacao.get("ok"):
+            emit("build_log", {"ok": False, "texto": preparacao.get("build", "Falha ao compilar.")})
             return
 
-        if pty is None or os.name == "nt":
-            shutil.rmtree(temp_dir, ignore_errors=True)
-            emit("build_log", {
-                "ok": False,
-                "texto": "Terminal interativo real disponível no ambiente Linux/Docker. Para Windows local, use o Dockerfile do projeto ou publique no Render."
-            })
-            return
+        temp_dir = preparacao["temp_dir"]
+        arquivo_saida = preparacao["executavel"]
 
         emit("build_log", {
             "ok": True,
-            "texto": "Build finished successfully.\n0 errors, 0 warnings."
+            "texto": preparacao.get("build", "Build finished successfully.")
         })
 
         master_fd, slave_fd = pty.openpty()
-
-        proc = subprocess.Popen(
-            [arquivo_saida],
-            stdin=slave_fd,
-            stdout=slave_fd,
-            stderr=slave_fd,
-            text=False,
-            close_fds=True,
-            preexec_fn=os.setsid
-        )
+        proc = compilador_seguro.iniciar_terminal(arquivo_saida, temp_dir, slave_fd)
 
         os.close(slave_fd)
+        slave_fd = None
 
-        PROCESSOS_TERMINAL[sid] = {
-            "proc": proc,
-            "fd": master_fd,
-            "temp_dir": temp_dir,
-            "usuario_id": usuario_id,
-            "licao_id": licao_id,
-            "tipo": tipo,
-            "codigo": codigo,
-            "entrada": ""
-        }
+        with PROCESSOS_TERMINAL_LOCK:
+            PROCESSOS_TERMINAL[sid] = {
+                "proc": proc,
+                "fd": master_fd,
+                "temp_dir": temp_dir,
+                "usuario_id": usuario_id,
+                "licao_id": licao_id,
+                "tipo": tipo,
+                "codigo": codigo,
+                "entrada": "",
+                "slot_adquirido": True,
+            }
+
+        slot_reserva = False
+        master_fd = None
+        temp_dir = None
 
         socketio.start_background_task(leitor_terminal, sid)
 
-    except FileNotFoundError:
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        emit("build_log", {
-            "ok": False,
-            "texto": "GCC não está instalado no servidor. Use o Dockerfile desta versão para publicar com GCC."
-        })
-    except subprocess.TimeoutExpired:
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        emit("build_log", {
-            "ok": False,
-            "texto": "Tempo de compilação excedido."
-        })
     except Exception as erro:
-        shutil.rmtree(temp_dir, ignore_errors=True)
         emit("build_log", {
             "ok": False,
             "texto": f"Erro ao compilar: {erro}"
         })
+    finally:
+        if slave_fd is not None:
+            try:
+                os.close(slave_fd)
+            except OSError:
+                pass
+        if master_fd is not None:
+            try:
+                os.close(master_fd)
+            except OSError:
+                pass
+        if temp_dir:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        if slot_reserva:
+            with PROCESSOS_TERMINAL_LOCK:
+                if TERMINAL_POR_USUARIO.get(usuario_id) == sid:
+                    TERMINAL_POR_USUARIO.pop(usuario_id, None)
+            compilador_seguro.liberar_slot()
 
 
 @socketio.on("terminal_entrada")
@@ -3362,11 +3922,13 @@ def terminal_entrada(dados):
     dados = dados or {}
     texto = str(dados.get("texto", ""))[:10_000]
 
-    proc_data = PROCESSOS_TERMINAL.get(sid)
+    with PROCESSOS_TERMINAL_LOCK:
+        proc_data = PROCESSOS_TERMINAL.get(sid)
     if not proc_data:
         return
 
-    if len(proc_data["entrada"]) + len(texto) > 100_000:
+    tamanho_entrada = len(proc_data["entrada"].encode("utf-8")) + len(texto.encode("utf-8"))
+    if tamanho_entrada > compilador_seguro.MAX_ENTRADA_BYTES:
         emit("terminal_saida", {"texto": "\nLimite de entrada do terminal atingido.\n"})
         return
 
@@ -3376,6 +3938,12 @@ def terminal_entrada(dados):
         os.write(proc_data["fd"], texto.encode("utf-8"))
     except Exception:
         pass
+
+
+@socketio.on("terminal_cancelar")
+def cancelar_terminal():
+    encerrar_processo_socket(request.sid)
+    emit("terminal_finalizado", {"codigo": -1})
 
 
 @socketio.on("disconnect")

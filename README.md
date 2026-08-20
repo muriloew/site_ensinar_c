@@ -28,6 +28,10 @@ Plataforma web educativa para ensino da linguagem C.
 - Metas diárias e semanais configuráveis
 - Simulado de prova com correção automática e histórico
 - Busca por módulos e conteúdos
+- Favoritos para guardar lições importantes
+- Revisão espaçada das lições concluídas
+- Histórico das 100 execuções de código mais recentes
+- Estatísticas detalhadas de teoria, prática e tentativas por módulo
 - Navegação e telas ajustadas para uso em celulares
 - Modo prática livre exposto no menu
 - Sem certificado, pois o projeto não possui licença para certificação oficial
@@ -65,9 +69,29 @@ Quando o Auto-Deploy estiver ativado no serviço, o Render inicia uma nova publi
 python -m unittest discover -s tests -v
 ```
 
-## Observação importante
+## Variáveis de ambiente
 
-O compilador usa `gcc` no servidor. Se o ambiente não tiver GCC instalado, o site mostrará uma mensagem explicando que o compilador não está disponível. Para produção, o ideal é usar uma API externa segura de compilação ou configurar um ambiente isolado.
+- `SECRET_KEY`: obrigatória em produção; o `render.yaml` gera uma automaticamente.
+- `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
+- `MAX_COMPILER_JOBS`: quantidade máxima de compilações simultâneas; o padrão é 4.
+- `BACKUP_DIR`: pasta onde os arquivos JSON de backup são gravados.
+- `DB_PATH`: caminho do banco SQLite, quando uma unidade persistente estiver montada.
+- `PISTON_URL` e `PISTON_TOKEN`: opcionais; usados somente com `COMPILER_BACKEND=piston`.
+
+## Persistência no Render
+
+O plano gratuito do Render possui sistema de arquivos efêmero. O SQLite e os arquivos de backup podem ser perdidos quando o serviço reinicia ou é publicado novamente. O botão **Baixar backup** no perfil cria uma cópia portátil, mas a solução permanente exige uma unidade persistente ou a migração do banco para um serviço externo.
+
+Ao usar um Persistent Disk, monte-o em `/var/data` e configure:
+
+```txt
+DB_PATH=/var/data/ensinar_c.db
+BACKUP_DIR=/var/data/backups
+```
+
+## Segurança do compilador
+
+O executor local aplica limites de tempo, memória, processos, arquivos, saída e concorrência. No Linux, cada programa perde privilégios e roda com o usuário `compiler-runner`, sem acesso aos arquivos privados da aplicação. Ainda assim, uma plataforma pública que execute código arbitrário deve preferir um serviço executor separado, com isolamento por container e rede.
 
 
 ## Alterações da versão 4
@@ -345,3 +369,15 @@ python app.py
 - As conquistas foram ampliadas para lições, módulos, desafios, simulados, XP e sequência.
 - O backup automático inclui o histórico de atividades e as recompensas diárias.
 - Respostas teóricas já acertadas não podem ser repetidas para aumentar artificialmente o progresso das missões.
+
+
+## Versão 25 — Segurança, revisão e histórico
+
+- O compilador foi separado em `backend/compilador.py` e recebeu limites de CPU, memória, processos, arquivos, saída, tempo e concorrência.
+- O processo interativo agora registra corretamente sucesso, falha e cancelamento, sem aprovar uma execução com erro.
+- Alterar um rascunho invalida a aprovação anterior; nada é compilado antes do clique do aluno.
+- A correção automática usa casos ocultos adicionais em atividades com entrada e decisões.
+- Foram adicionados favoritos, revisão espaçada e histórico completo de códigos.
+- O perfil mostra estatísticas de teoria, exercícios e compilações por módulo.
+- O backup passou a incluir histórico de códigos, favoritos e revisões, com gravação atômica e retenção das 20 cópias mais recentes.
+- Cookies e WebSocket foram restringidos para produção, e o Docker não inclui banco nem backups locais na imagem.

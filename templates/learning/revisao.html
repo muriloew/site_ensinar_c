@@ -1,0 +1,62 @@
+{% extends "layouts/base.html" %}
+{% block title %}Revisão - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <span class="page-kicker">Memória de longo prazo</span>
+        <h1>Revisão espaçada</h1>
+        <p>As lições retornam no momento certo para reforçar o que você aprendeu.</p>
+    </div>
+    <div class="review-counter"><strong>{{ pendentes|length }}</strong><span>pendentes hoje</span></div>
+</div>
+
+{% if mensagem %}
+<div class="game-notice {% if resultado == 'correto' %}success{% else %}warning{% endif %}" role="status">{{ mensagem }}</div>
+{% endif %}
+
+<section class="spaced-review-layout">
+    <div class="review-queue">
+        {% for item in pendentes %}
+        <form class="review-challenge-card" method="post" action="/revisao/{{ item.licao.id }}">
+            <span>Módulo {{ item.modulo.id }} · {{ item.modulo.titulo }}</span>
+            <h2>{{ item.licao.titulo }}</h2>
+            <p class="review-question">{{ item.licao.pergunta }}</p>
+            <div class="review-options">
+                {% for alternativa in item.licao.alternativas %}
+                <label>
+                    <input type="radio" name="resposta" value="{{ alternativa }}" required>
+                    <span>{{ alternativa }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            <div class="review-card-actions">
+                <a class="btn btn-ghost" href="/estudar/{{ item.modulo.id }}?licao={{ item.licao.id }}">Rever conteúdo</a>
+                <button class="btn btn-primary" type="submit">Responder</button>
+            </div>
+        </form>
+        {% else %}
+        <div class="empty-study-state">
+            <strong>Revisões em dia</strong>
+            <p>Continue a jornada. As próximas lições aparecerão aqui na data planejada.</p>
+            <a class="btn btn-primary" href="/modulos">Continuar jornada</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <aside class="upcoming-review-panel">
+        <h2>Próximas revisões</h2>
+        {% for item in proximas %}
+        <div class="upcoming-review-row">
+            <div>
+                <strong>{{ item.licao.titulo }}</strong>
+                <span>Módulo {{ item.modulo.id }}</span>
+            </div>
+            <time>{{ item.registro.proxima_revisao }}</time>
+        </div>
+        {% else %}
+        <p class="small-muted">Conclua uma lição para iniciar seu calendário.</p>
+        {% endfor %}
+    </aside>
+</section>
+{% endblock %}

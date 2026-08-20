@@ -4,3 +4,6 @@ __pycache__/
 venv/
 .venv/
 *.exe
+instance/backups/
+instance/*.db
+*.tmp
