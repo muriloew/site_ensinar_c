@@ -1,36 +1,81 @@
 {% extends "layouts/base.html" %}
-{% block title %}Módulos - Ensinar C{% endblock %}
+{% block title %}Jornada - Ensinar C{% endblock %}
 
 {% block content %}
-<div class="topbar">
+<div class="topbar journey-topbar">
     <div>
-        <h1>Módulos</h1>
-        <p>Siga uma trilha estruturada e avance no aprendizado da linguagem C.</p>
+        <span class="page-kicker">21 fases progressivas</span>
+        <h1>Sua jornada em C</h1>
+        <p>Avance uma fase por vez e transforme cada módulo em prática.</p>
+    </div>
+
+    <div class="journey-level">
+        <span>Nível {{ nivel_jogo.nivel }}</span>
+        <strong>{{ nivel_jogo.xp_atual }}/{{ nivel_jogo.xp_alvo }} XP</strong>
+        <div class="bar"><span style="width: {{ nivel_jogo.percentual }}%"></span></div>
     </div>
 </div>
 
-<div class="search-panel">
-    <label for="buscaModulos">Buscar conteúdo</label>
+<section class="journey-resume">
+    <div>
+        <span class="page-kicker">Ponto atual</span>
+        {% if proxima_licao.concluido %}
+            <h2>Jornada concluída</h2>
+            <p>Todos os módulos estão disponíveis para revisão.</p>
+        {% else %}
+            <h2>{{ proxima_licao.licao }}</h2>
+            <p>Módulo {{ proxima_licao.modulo_id }} · {{ proxima_licao.modulo }}</p>
+        {% endif %}
+    </div>
+    <a class="btn btn-primary" href="/estudar/{{ proxima_licao.modulo_id }}?licao={{ proxima_licao.licao_id }}">
+        {% if proxima_licao.concluido %}Revisar última fase{% else %}Continuar jornada{% endif %}
+    </a>
+</section>
+
+<div class="search-panel journey-search">
+    <label for="buscaModulos">Buscar fase ou conteúdo</label>
     <input id="buscaModulos" type="search" placeholder="Exemplo: ponteiros, scanf, arquivos">
-    <p id="resultadoBusca" class="small-muted"></p>
+    <p id="resultadoBusca" class="small-muted" aria-live="polite"></p>
 </div>
 
-<div class="module-grid wide">
+<section class="learning-path" aria-label="Trilha de módulos">
     {% for modulo in modulos %}
-    <article class="module-card {% if not modulo.liberado %}locked{% endif %}" data-search="{{ modulo.busca }}">
-        <div class="module-icon">{{ modulo.icone }}</div>
-        <span>Módulo {{ modulo.id }}</span>
-        <h3>{{ modulo.titulo }}</h3>
-        <p>{{ modulo.descricao }}</p>
-        <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
-        <small>{{ modulo.progresso }}%</small>
+    <article class="journey-step {{ modulo.estado }}" data-search="{{ modulo.busca }}">
+        <div class="journey-rail" aria-hidden="true">
+            <div class="journey-node">
+                {% if modulo.estado == 'concluido' %}OK{% elif modulo.estado == 'bloqueado' %}--{% else %}{{ modulo.id }}{% endif %}
+            </div>
+        </div>
 
-        {% if modulo.liberado %}
-            <a class="btn btn-primary" href="/estudar/{{ modulo.id }}">Estudar</a>
-        {% else %}
-            <button class="btn btn-disabled">🔒 Bloqueado</button>
-        {% endif %}
+        <div class="journey-stage">
+            <div class="journey-stage-head">
+                <div>
+                    <span>Fase {{ modulo.id }}</span>
+                    <h2>{{ modulo.titulo }}</h2>
+                </div>
+                <span class="module-state-label">
+                    {% if modulo.estado == 'concluido' %}Concluída{% elif modulo.estado == 'atual' %}Disponível{% else %}Bloqueada{% endif %}
+                </span>
+            </div>
+
+            <p>{{ modulo.descricao }}</p>
+
+            <div class="stage-meta">
+                <span>{{ modulo.licoes|length }} lições</span>
+                <span>{{ modulo.estrelas }}/3 estrelas</span>
+                <span>{{ modulo.progresso }}%</span>
+            </div>
+            <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
+
+            {% if modulo.liberado %}
+                <a class="btn {% if modulo.estado == 'atual' %}btn-primary{% else %}btn-ghost{% endif %}" href="/estudar/{{ modulo.id }}">
+                    {% if modulo.estado == 'concluido' %}Revisar fase{% else %}Entrar na fase{% endif %}
+                </a>
+            {% else %}
+                <button class="btn btn-disabled" type="button" disabled>Conclua a fase anterior</button>
+            {% endif %}
+        </div>
     </article>
     {% endfor %}
-</div>
+</section>
 {% endblock %}

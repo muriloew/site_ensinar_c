@@ -30,10 +30,15 @@ class LearningFlowTest(unittest.TestCase):
     def setUp(self):
         conn = self.site.conectar()
         for tabela in (
+            "recompensas_diarias",
+            "atividades_estudo",
             "progresso",
             "desafios_diarios",
             "conquistas_usuario",
             "backups_progresso",
+            "metas_usuario",
+            "simulados_usuario",
+            "compilador_historico",
             "usuarios",
         ):
             conn.execute(f"DELETE FROM {tabela}")
@@ -58,7 +63,11 @@ class LearningFlowTest(unittest.TestCase):
                     "resposta": desafio["resposta"],
                 },
             )
-            self.assertEqual(resposta.status_code, 200)
+            self.assertEqual(
+                resposta.status_code,
+                200,
+                resposta.get_data(as_text=True),
+            )
             ultimo_resultado = resposta.get_json()
             self.assertTrue(ultimo_resultado["correta"])
         return ultimo_resultado
@@ -108,6 +117,14 @@ class LearningFlowTest(unittest.TestCase):
 
         pratica_livre = self.client.get("/compilador").get_data(as_text=True)
         self.assertIn("clique em Compilar apenas quando quiser executar", pratica_livre)
+
+        dashboard = self.client.get("/dashboard").get_data(as_text=True)
+        self.assertIn("Missões de hoje", dashboard)
+        self.assertIn("Próxima missão", dashboard)
+
+        jornada = self.client.get("/modulos").get_data(as_text=True)
+        self.assertIn("Sua jornada em C", jornada)
+        self.assertEqual(jornada.count('class="journey-step'), 21)
 
     def test_fluxo_do_modulo_inicial_ate_desafios_diarios(self):
         pagina_licao = self.client.get("/estudar/1")
@@ -185,6 +202,86 @@ class LearningFlowTest(unittest.TestCase):
         )
         self.assertTrue(estado_antigo["todos_corretos"])
         self.assertEqual(estado_antigo["corretos"], 3)
+
+    def test_missao_diaria_paga_recompensa_uma_vez(self):
+        licao = self.site.MODULOS[0]["licoes"][0]
+        self.responder_licao(licao)
+
+        primeiro = licao["desafios_teoricos"][0]
+        resposta_errada = next(
+            alternativa for alternativa in primeiro["alternativas"]
+            if alternativa != primeiro["resposta"]
+        )
+        self.client.post(
+            "/verificar",
+            json={
+                "licao_id": licao["id"],
+                "desafio_id": primeiro["id"],
+                "resposta": resposta_errada,
+            },
+        )
+        self.client.post(
+            "/verificar",
+            json={
+                "licao_id": licao["id"],
+                "desafio_id": primeiro["id"],
+                "resposta": primeiro["resposta"],
+            },
+        )
+
+        conn = self.site.conectar()
+        atividade = conn.execute(
+            "SELECT * FROM atividades_estudo WHERE usuario_id = 1"
+        ).fetchone()
+        usuario = conn.execute("SELECT * FROM usuarios WHERE id = 1").fetchone()
+        conn.close()
+
+        self.assertEqual(atividade["quizzes"], 3)
+        self.assertEqual(usuario["sequencia"], 1)
+
+        primeira = self.client.post("/missoes/aquecimento/resgatar")
+        self.assertEqual(primeira.status_code, 302)
+
+        conn = self.site.conectar()
+        xp_primeiro = conn.execute(
+            "SELECT xp FROM usuarios WHERE id = 1"
+        ).fetchone()["xp"]
+        recompensas = conn.execute(
+            "SELECT COUNT(*) AS total FROM recompensas_diarias WHERE usuario_id = 1"
+        ).fetchone()["total"]
+        conn.close()
+        self.assertEqual(xp_primeiro, 10)
+        self.assertEqual(recompensas, 1)
+
+        segunda = self.client.post("/missoes/aquecimento/resgatar")
+        self.assertEqual(segunda.status_code, 302)
+        conn = self.site.conectar()
+        xp_segundo = conn.execute(
+            "SELECT xp FROM usuarios WHERE id = 1"
+        ).fetchone()["xp"]
+        conn.close()
+        self.assertEqual(xp_segundo, 10)
+
+    def test_sequencia_usa_protecao_e_depois_reinicia(self):
+        conn = self.site.conectar()
+        self.site.registrar_atividade(conn, 1, data_atividade="2026-08-01")
+        self.site.registrar_atividade(conn, 1, data_atividade="2026-08-02")
+        self.site.registrar_atividade(conn, 1, data_atividade="2026-08-04")
+        usuario_protegido = conn.execute(
+            "SELECT * FROM usuarios WHERE id = 1"
+        ).fetchone()
+        self.assertEqual(usuario_protegido["sequencia"], 3)
+        self.assertEqual(usuario_protegido["protecoes_sequencia"], 0)
+
+        self.site.registrar_atividade(conn, 1, data_atividade="2026-08-06")
+        usuario_reiniciado = conn.execute(
+            "SELECT * FROM usuarios WHERE id = 1"
+        ).fetchone()
+        conn.commit()
+        conn.close()
+
+        self.assertEqual(usuario_reiniciado["sequencia"], 1)
+        self.assertEqual(usuario_reiniciado["melhor_sequencia"], 3)
 
 
 if __name__ == "__main__":

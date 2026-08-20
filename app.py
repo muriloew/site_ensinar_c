@@ -19,6 +19,15 @@ from backend.desafios_diarios import (
     gerar_desafios_diarios,
 )
 from backend.progresso_teorico import preparar_desafios_teoricos_view, atualizar_resposta_teorica
+from backend.gamificacao import (
+    calendario_atividade,
+    estado_nivel,
+    liga_por_xp,
+    obter_missoes_diarias,
+    registrar_atividade,
+    resgatar_missao,
+    sincronizar_conquistas,
+)
 import time
 import signal
 import threading
@@ -989,8 +998,11 @@ def iniciar_banco():
             senha TEXT NOT NULL,
             xp INTEGER DEFAULT 0,
             nivel INTEGER DEFAULT 1,
-            sequencia INTEGER DEFAULT 1,
-            ultimo_acesso TEXT
+            sequencia INTEGER DEFAULT 0,
+            ultimo_acesso TEXT,
+            melhor_sequencia INTEGER DEFAULT 0,
+            ultima_atividade TEXT,
+            protecoes_sequencia INTEGER DEFAULT 1
         )
     """)
 
@@ -1021,6 +1033,9 @@ def iniciar_banco():
             usuario_id INTEGER NOT NULL,
             nome TEXT NOT NULL,
             icone TEXT NOT NULL,
+            descricao TEXT,
+            raridade TEXT DEFAULT 'comum',
+            desbloqueada_em TEXT,
             UNIQUE(usuario_id, nome)
         )
     """)
@@ -1086,6 +1101,31 @@ def iniciar_banco():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS atividades_estudo (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            quizzes INTEGER DEFAULT 0,
+            licoes INTEGER DEFAULT 0,
+            desafios INTEGER DEFAULT 0,
+            xp_ganho INTEGER DEFAULT 0,
+            UNIQUE(usuario_id, data)
+        )
+    """)
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS recompensas_diarias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL,
+            data TEXT NOT NULL,
+            missao_id TEXT NOT NULL,
+            xp INTEGER DEFAULT 0,
+            recebida_em TEXT,
+            UNIQUE(usuario_id, data, missao_id)
+        )
+    """)
+
     # Migração para bancos antigos já criados antes das novas funções.
     adicionar_coluna(conn, "progresso", "quiz_correto", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "progresso", "quiz_respondido", "INTEGER DEFAULT 0")
@@ -1102,10 +1142,34 @@ def iniciar_banco():
     adicionar_coluna(conn, "usuarios", "nivel", "INTEGER DEFAULT 1")
     adicionar_coluna(conn, "usuarios", "sequencia", "INTEGER DEFAULT 1")
     adicionar_coluna(conn, "usuarios", "ultimo_acesso", "TEXT")
+    adicionar_coluna(conn, "usuarios", "melhor_sequencia", "INTEGER DEFAULT 0")
+    adicionar_coluna(conn, "usuarios", "ultima_atividade", "TEXT")
+    adicionar_coluna(conn, "usuarios", "protecoes_sequencia", "INTEGER DEFAULT 1")
     adicionar_coluna(conn, "desafios_diarios", "desafio_id", "TEXT")
     adicionar_coluna(conn, "desafios_diarios", "entrada_codigo", "TEXT")
     adicionar_coluna(conn, "desafios_diarios", "codigo_validado", "INTEGER DEFAULT 0")
     adicionar_coluna(conn, "desafios_diarios", "feedback_codigo", "TEXT")
+    adicionar_coluna(conn, "conquistas_usuario", "descricao", "TEXT")
+    adicionar_coluna(conn, "conquistas_usuario", "raridade", "TEXT DEFAULT 'comum'")
+    adicionar_coluna(conn, "conquistas_usuario", "desbloqueada_em", "TEXT")
+
+    conn.execute("""
+        UPDATE usuarios
+        SET melhor_sequencia = MAX(COALESCE(melhor_sequencia, 0), COALESCE(sequencia, 0))
+    """)
+
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_atividades_usuario_data
+        ON atividades_estudo(usuario_id, data)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_recompensas_usuario_data
+        ON recompensas_diarias(usuario_id, data)
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_progresso_usuario_modulo
+        ON progresso(usuario_id, modulo_id, concluida)
+    """)
 
     # Quem já concluiu lição em versão antiga recebe permissão de rever e continuar.
     conn.execute("""
@@ -1113,6 +1177,8 @@ def iniciar_banco():
         SET quiz_correto = 1
         WHERE concluida = 1 AND (quiz_correto IS NULL OR quiz_correto = 0)
     """)
+
+    conn.execute("PRAGMA optimize")
 
     conn.commit()
     conn.close()
@@ -1262,29 +1328,53 @@ def atualizar_nivel(usuario_id):
 
 
 def conceder_conquistas(usuario_id):
-    concluidas = contar_concluidas(usuario_id)
     conn = conectar()
-
-    if concluidas >= 1:
-        conn.execute(
-            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario_id, "Primeiros Passos", "🚀")
-        )
-
-    if concluidas >= 3:
-        conn.execute(
-            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario_id, "Foco Total", "🔥")
-        )
-
-    if concluidas >= total_licoes():
-        conn.execute(
-            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario_id, "Trilha Inicial", "🏆")
-        )
-
+    novas = sincronizar_conquistas(
+        conn,
+        usuario_id,
+        total_licoes(),
+        len(MODULOS[0]["licoes"]),
+    )
     conn.commit()
     conn.close()
+    return novas
+
+
+def proxima_licao_usuario(usuario_id):
+    conn = conectar()
+    concluidas = {
+        linha["licao_id"]
+        for linha in conn.execute(
+            "SELECT licao_id FROM progresso WHERE usuario_id = ? AND concluida = 1",
+            (usuario_id,),
+        ).fetchall()
+    }
+    conn.close()
+
+    for modulo in MODULOS:
+        if not modulo_liberado(usuario_id, modulo["id"]):
+            break
+        for licao in modulo["licoes"]:
+            if licao["id"] not in concluidas:
+                return {
+                    "modulo_id": modulo["id"],
+                    "modulo": modulo["titulo"],
+                    "licao_id": licao["id"],
+                    "licao": licao["titulo"],
+                    "progresso": progresso_modulo(usuario_id, modulo),
+                    "concluido": False,
+                }
+
+    ultimo_modulo = MODULOS[-1]
+    ultima_licao = ultimo_modulo["licoes"][-1]
+    return {
+        "modulo_id": ultimo_modulo["id"],
+        "modulo": ultimo_modulo["titulo"],
+        "licao_id": ultima_licao["id"],
+        "licao": ultima_licao["titulo"],
+        "progresso": 100,
+        "concluido": True,
+    }
 
 
 def desafio_por_id(desafio_id, usuario_id=None):
@@ -1311,7 +1401,11 @@ def criar_backup_progresso(usuario_id):
     try:
         conn = conectar()
         usuario = conn.execute(
-            "SELECT id, nome, email, xp, nivel, sequencia, ultimo_acesso FROM usuarios WHERE id = ?",
+            """
+            SELECT id, nome, email, xp, nivel, sequencia, melhor_sequencia,
+                   ultima_atividade, protecoes_sequencia, ultimo_acesso
+            FROM usuarios WHERE id = ?
+            """,
             (usuario_id,)
         ).fetchone()
 
@@ -1340,6 +1434,14 @@ def criar_backup_progresso(usuario_id):
             ).fetchall()),
             "simulados": linhas_para_dicts(conn.execute(
                 "SELECT * FROM simulados_usuario WHERE usuario_id = ? ORDER BY id DESC",
+                (usuario_id,)
+            ).fetchall()),
+            "atividades_estudo": linhas_para_dicts(conn.execute(
+                "SELECT * FROM atividades_estudo WHERE usuario_id = ? ORDER BY data DESC",
+                (usuario_id,)
+            ).fetchall()),
+            "recompensas_diarias": linhas_para_dicts(conn.execute(
+                "SELECT * FROM recompensas_diarias WHERE usuario_id = ? ORDER BY data DESC, id DESC",
                 (usuario_id,)
             ).fetchall())
         }
@@ -1961,7 +2063,11 @@ def cadastro():
         senha_hash = generate_password_hash(senha)
 
         cur = conn.execute(
-            "INSERT INTO usuarios (nome, email, senha, ultimo_acesso) VALUES (?, ?, ?, ?)",
+            """
+            INSERT INTO usuarios
+                (nome, email, senha, sequencia, melhor_sequencia, protecoes_sequencia, ultimo_acesso)
+            VALUES (?, ?, ?, 0, 0, 1, ?)
+            """,
             (nome, email, senha_hash, str(date.today()))
         )
         conn.commit()
@@ -2014,10 +2120,12 @@ def dashboard():
 
     concluidas = contar_concluidas(usuario["id"])
     porcentagem = int((concluidas / total_licoes()) * 100)
+    conceder_conquistas(usuario["id"])
+    desafios_disponiveis, _ = desafios_diarios_do_usuario(usuario["id"])
 
     conn = conectar()
     conquistas = conn.execute(
-        "SELECT * FROM conquistas_usuario WHERE usuario_id = ?",
+        "SELECT * FROM conquistas_usuario WHERE usuario_id = ? ORDER BY id DESC",
         (usuario["id"],)
     ).fetchall()
 
@@ -2028,15 +2136,26 @@ def dashboard():
         "SELECT * FROM backups_progresso WHERE usuario_id = ? ORDER BY id DESC LIMIT 1",
         (usuario["id"],)
     ).fetchone()
+    missoes = obter_missoes_diarias(conn, usuario["id"], bool(desafios_disponiveis))
+    calendario = calendario_atividade(conn, usuario["id"])
     conn.close()
 
     modulos_view = []
     for modulo in MODULOS:
+        progresso = progresso_modulo(usuario["id"], modulo)
+        liberado = modulo_liberado(usuario["id"], modulo["id"])
         modulos_view.append({
             **modulo,
-            "progresso": progresso_modulo(usuario["id"], modulo),
-            "liberado": modulo_liberado(usuario["id"], modulo["id"])
+            "progresso": progresso,
+            "liberado": liberado,
+            "estrelas": 3 if progresso == 100 else 2 if progresso >= 67 else 1 if progresso > 0 else 0,
+            "estado": "concluido" if progresso == 100 else "atual" if liberado else "bloqueado",
         })
+
+    proxima_licao = proxima_licao_usuario(usuario["id"])
+    indice_atual = max(0, proxima_licao["modulo_id"] - 1)
+    inicio_destaques = max(0, indice_atual - 1)
+    modulos_destaque = modulos_view[inicio_destaques:inicio_destaques + 3]
 
     return render_template(
         "app/dashboard.html",
@@ -2045,8 +2164,42 @@ def dashboard():
         modulos=modulos_view,
         conquistas=conquistas,
         ranking=ranking,
-        backup_recente=backup_recente
+        backup_recente=backup_recente,
+        missoes=missoes,
+        calendario=calendario,
+        nivel_jogo=estado_nivel(usuario["xp"]),
+        liga=liga_por_xp(usuario["xp"]),
+        proxima_licao=proxima_licao,
+        modulos_destaque=modulos_destaque,
+        recompensa_mensagem=request.args.get("recompensa", ""),
+        aviso_mensagem=request.args.get("aviso", ""),
     )
+
+
+@app.route("/missoes/<missao_id>/resgatar", methods=["POST"])
+def resgatar_recompensa_diaria(missao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return redirect(url_for("login"))
+
+    desafios_disponiveis, _ = desafios_diarios_do_usuario(usuario["id"])
+    conn = conectar()
+    resultado = resgatar_missao(
+        conn,
+        usuario["id"],
+        missao_id,
+        bool(desafios_disponiveis),
+    )
+    conn.commit()
+    conn.close()
+
+    if resultado["ok"]:
+        atualizar_nivel(usuario["id"])
+        conceder_conquistas(usuario["id"])
+        criar_backup_progresso(usuario["id"])
+        return redirect(url_for("dashboard", recompensa=resultado["mensagem"]))
+
+    return redirect(url_for("dashboard", aviso=resultado["mensagem"]))
 
 
 @app.route("/perfil")
@@ -2061,6 +2214,14 @@ def perfil():
     metas = progresso_metas(usuario["id"])
     modulos_relatorio = relatorio_modulos(usuario["id"])
     backup_recente = backup_mais_recente(usuario["id"])
+    conceder_conquistas(usuario["id"])
+    conn = conectar()
+    conquistas = conn.execute(
+        "SELECT * FROM conquistas_usuario WHERE usuario_id = ? ORDER BY id DESC",
+        (usuario["id"],),
+    ).fetchall()
+    calendario = calendario_atividade(conn, usuario["id"])
+    conn.close()
 
     return render_template(
         "app/perfil.html",
@@ -2069,7 +2230,11 @@ def perfil():
         desempenho=desempenho,
         metas=metas,
         modulos_relatorio=modulos_relatorio,
-        backup_recente=backup_recente
+        backup_recente=backup_recente,
+        conquistas=conquistas,
+        calendario=calendario,
+        liga=liga_por_xp(usuario["xp"]),
+        nivel_jogo=estado_nivel(usuario["xp"]),
     )
 
 
@@ -2166,13 +2331,10 @@ def simulado():
             """,
             (usuario["id"], acertos, total, percentual, datetime.now().isoformat(timespec="seconds"))
         )
-        if percentual >= 70:
-            conn.execute(
-                "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-                (usuario["id"], "Boa Prova", "📝")
-            )
+        registrar_atividade(conn, usuario["id"])
         conn.commit()
         conn.close()
+        conceder_conquistas(usuario["id"])
         criar_backup_progresso(usuario["id"])
 
     questoes = montar_questoes_simulado(usuario["id"])
@@ -2210,14 +2372,23 @@ def modulos():
             [modulo["titulo"], modulo["descricao"]] +
             [licao["titulo"] for licao in modulo["licoes"]]
         )
+        progresso = progresso_modulo(usuario["id"], modulo)
+        liberado = modulo_liberado(usuario["id"], modulo["id"])
         modulos_view.append({
             **modulo,
-            "progresso": progresso_modulo(usuario["id"], modulo),
-            "liberado": modulo_liberado(usuario["id"], modulo["id"]),
-            "busca": normalizar_texto(texto_busca)
+            "progresso": progresso,
+            "liberado": liberado,
+            "busca": normalizar_texto(texto_busca),
+            "estrelas": 3 if progresso == 100 else 2 if progresso >= 67 else 1 if progresso > 0 else 0,
+            "estado": "concluido" if progresso == 100 else "atual" if liberado else "bloqueado",
         })
 
-    return render_template("learning/modulos.html", modulos=modulos_view)
+    return render_template(
+        "learning/modulos.html",
+        modulos=modulos_view,
+        proxima_licao=proxima_licao_usuario(usuario["id"]),
+        nivel_jogo=estado_nivel(usuario["xp"]),
+    )
 
 
 
@@ -2258,7 +2429,7 @@ def api_compilador_executar():
     if not usuario:
         return jsonify({"ok": False, "build": "Usuário não logado.", "saida": ""}), 401
 
-    dados = request.get_json()
+    dados = request.get_json(silent=True) or {}
     codigo = dados.get("codigo", "")
     entrada = dados.get("entrada", "")
 
@@ -2272,6 +2443,8 @@ def api_compilador_executar():
         """,
         (usuario["id"], codigo, entrada, resultado.get("saida", ""), resultado.get("build", ""), str(date.today()))
     )
+    if resultado.get("ok"):
+        registrar_atividade(conn, usuario["id"])
     conn.commit()
     conn.close()
 
@@ -2595,6 +2768,7 @@ def verificar():
 
     licao_id = licao["id"]
 
+    conn = None
     try:
         conn = conectar()
         registro = conn.execute(
@@ -2633,10 +2807,17 @@ def verificar():
                 str(date.today())
             )
         )
+        if resultado_teorico["novo_acerto"]:
+            registrar_atividade(conn, usuario["id"], quizzes=1)
         conn.commit()
         conn.close()
+        if resultado_teorico["novo_acerto"]:
+            conceder_conquistas(usuario["id"])
         criar_backup_progresso(usuario["id"])
     except Exception as erro:
+        if conn is not None:
+            conn.rollback()
+            conn.close()
         return jsonify({
             "correta": False,
             "mensagem": f"Erro ao salvar resposta: {erro}"
@@ -2812,6 +2993,7 @@ def concluir(licao_id):
 
     if not ja_concluida:
         conn.execute("UPDATE usuarios SET xp = xp + 50 WHERE id = ?", (usuario["id"],))
+        registrar_atividade(conn, usuario["id"], licoes=1, xp_ganho=50)
 
     conn.commit()
     conn.close()
@@ -2858,15 +3040,13 @@ def concluir_desafio_diario():
             (usuario["id"], hoje)
         )
         conn.execute("UPDATE usuarios SET xp = xp + 30 WHERE id = ?", (usuario["id"],))
-        conn.execute(
-            "INSERT OR IGNORE INTO conquistas_usuario (usuario_id, nome, icone) VALUES (?, ?, ?)",
-            (usuario["id"], "Desafio Diário", "🎯")
-        )
+        registrar_atividade(conn, usuario["id"], desafios=1, xp_ganho=30)
 
     conn.commit()
     conn.close()
 
     atualizar_nivel(usuario["id"])
+    conceder_conquistas(usuario["id"])
     criar_backup_progresso(usuario["id"])
 
     return jsonify({"ok": True, "mensagem": "Desafio diário concluído! +30 XP"})
@@ -2912,6 +3092,8 @@ def salvar_codigo_execucao(usuario_id, licao_id, codigo, entrada, saida):
         """,
         (usuario_id, licao_id, modulo["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"], str(date.today()))
     )
+    if validacao["ok"]:
+        registrar_atividade(conn, usuario_id)
     conn.commit()
     conn.close()
     criar_backup_progresso(usuario_id)
@@ -2948,6 +3130,8 @@ def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida):
         """,
         (usuario_id, hoje, desafio["id"], codigo, saida, entrada, 1 if validacao["ok"] else 0, validacao["mensagem"])
     )
+    if validacao["ok"]:
+        registrar_atividade(conn, usuario_id)
     conn.commit()
     conn.close()
     criar_backup_progresso(usuario_id)

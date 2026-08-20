@@ -8,6 +8,10 @@ Plataforma web educativa para ensino da linguagem C.
 - Login com conta salva
 - Progresso salvo em SQLite
 - XP, nível, ranking e conquistas
+- Missões diárias com recompensas de XP
+- Sequência real de estudos, recorde e proteção de sequência
+- Ligas, níveis e coleção de conquistas com raridades
+- Jornada visual com 21 fases, estrelas e indicação da próxima lição
 - Módulos bloqueados e desbloqueados
 - Desafio diário com código
 - Exercício de código no final de cada lição
@@ -329,3 +333,15 @@ python app.py
 - O sorteio diário usa somente módulos liberados pelo progresso do aluno.
 - O backend também bloqueia tentativas de acessar lições ou desafios avançados diretamente.
 - A lógica de desafios diários e respostas teóricas foi separada na pasta `backend`.
+
+
+## Versão 24 — Jornada gamificada
+
+- O painel agora destaca a próxima missão e as fases próximas do aluno.
+- Foram adicionadas três missões renovadas diariamente, com progresso e recompensa de XP resgatável uma única vez.
+- A sequência de estudos passou a usar dias reais, guardar o recorde e oferecer proteção para uma ausência.
+- A página de módulos foi transformada em uma jornada de 21 fases com bloqueios, estrelas e busca.
+- O perfil agora reúne calendário de atividade, nível, liga e coleção de conquistas por raridade.
+- As conquistas foram ampliadas para lições, módulos, desafios, simulados, XP e sequência.
+- O backup automático inclui o histórico de atividades e as recompensas diárias.
+- Respostas teóricas já acertadas não podem ser repetidas para aumentar artificialmente o progresso das missões.

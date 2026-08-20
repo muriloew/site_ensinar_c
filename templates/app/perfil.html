@@ -12,7 +12,7 @@
         <div class="avatar">{{ usuario.nome[0] }}</div>
         <div>
             <strong>{{ usuario.nome }}</strong>
-            <span>Nível {{ usuario.nivel }}</span>
+            <span>{{ liga.nome }} · Nível {{ usuario.nivel }}</span>
         </div>
         <b>{{ usuario.xp }} XP</b>
     </div>
@@ -42,6 +42,53 @@
             <small>O backup será gerado automaticamente ao salvar progresso.</small>
         {% endif %}
     </article>
+</section>
+
+<section class="profile-game-strip">
+    <div class="profile-level-block">
+        <span class="page-kicker">Progresso do nível</span>
+        <strong>Nível {{ nivel_jogo.nivel }}</strong>
+        <div class="bar"><span style="width: {{ nivel_jogo.percentual }}%"></span></div>
+        <small>{{ nivel_jogo.xp_atual }}/{{ nivel_jogo.xp_alvo }} XP</small>
+    </div>
+    <div class="profile-streak-block">
+        <div>
+            <span class="page-kicker">Sequência</span>
+            <strong>{{ usuario.sequencia }} dias · recorde {{ usuario.melhor_sequencia }}</strong>
+        </div>
+        <div class="week-strip compact" aria-label="Atividade nos últimos sete dias">
+            {% for dia in calendario %}
+            <div class="week-day {% if dia.ativo %}active{% endif %} {% if dia.hoje %}today{% endif %}">
+                <span>{{ dia.nome }}</span>
+                <b>{{ dia.dia }}</b>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="achievement-collection-section">
+    <div class="section-head">
+        <div>
+            <span class="page-kicker">Coleção do aluno</span>
+            <h2>Conquistas</h2>
+        </div>
+        <span>{{ conquistas|length }} desbloqueadas</span>
+    </div>
+    <div class="achievement-grid">
+        {% for conquista in conquistas %}
+        <article class="achievement-tile {{ conquista.raridade or 'comum' }}">
+            <span>{{ conquista.icone }}</span>
+            <div>
+                <strong>{{ conquista.nome }}</strong>
+                <p>{{ conquista.descricao or 'Conquista da jornada.' }}</p>
+                <small>{{ conquista.raridade or 'comum' }}</small>
+            </div>
+        </article>
+        {% else %}
+        <p class="small-muted">Conclua a primeira lição para abrir sua coleção.</p>
+        {% endfor %}
+    </div>
 </section>
 
 <section class="content-grid profile-grid">

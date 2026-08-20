@@ -17,7 +17,7 @@
 
 body {
     margin: 0;
-    background: radial-gradient(circle at top, #102547, var(--bg) 45%);
+    background: var(--bg);
     color: var(--text);
     font-family: Arial, Helvetica, sans-serif;
 }
@@ -71,7 +71,7 @@ a { color: inherit; text-decoration: none; }
 
 .btn-primary {
     border: none;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
+    background: var(--blue);
     box-shadow: 0 10px 24px rgba(29, 140, 255, .25);
 }
 
@@ -128,7 +128,7 @@ a { color: inherit; text-decoration: none; }
 .card {
     background: rgba(17,31,51,.82);
     border: 1px solid var(--border);
-    border-radius: 18px;
+    border-radius: 8px;
     box-shadow: var(--shadow);
 }
 
@@ -263,7 +263,7 @@ a { color: inherit; text-decoration: none; }
 .avatar {
     width: 42px;
     height: 42px;
-    background: linear-gradient(135deg, var(--blue), var(--purple));
+    background: var(--blue);
     border-radius: 50%;
     display: grid;
     place-items: center;
@@ -291,7 +291,7 @@ a { color: inherit; text-decoration: none; }
 .bar span {
     display: block;
     height: 100%;
-    background: linear-gradient(90deg, var(--green), var(--blue));
+    background: var(--green);
 }
 
 .mini-stats {
@@ -326,7 +326,7 @@ a { color: inherit; text-decoration: none; }
     background: rgba(17,31,51,.82);
     border: 1px solid var(--border);
     padding: 22px;
-    border-radius: 18px;
+    border-radius: 8px;
 }
 
 .module-card.locked {
@@ -1710,5 +1710,605 @@ a { color: inherit; text-decoration: none; }
     .public-nav nav {
         flex-wrap: wrap;
         gap: 10px;
+    }
+}
+
+/* Jornada e gamificacao */
+.page-kicker {
+    display: block;
+    margin-bottom: 7px;
+    color: #7dd3fc;
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.game-topbar h1,
+.journey-topbar h1 {
+    margin-top: 0;
+}
+
+.game-notice {
+    margin-bottom: 18px;
+    padding: 13px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.game-notice.success {
+    border-color: rgba(34,197,94,.55);
+    background: rgba(34,197,94,.12);
+}
+
+.game-notice.warning {
+    border-color: rgba(245,158,11,.55);
+    background: rgba(245,158,11,.12);
+}
+
+.game-overview {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(360px, .85fr);
+    gap: 18px;
+    margin-bottom: 28px;
+}
+
+.continue-card,
+.game-streak-card,
+.mission-card,
+.journey-resume,
+.journey-stage,
+.profile-game-strip,
+.achievement-collection-section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(17,31,51,.82);
+}
+
+.continue-card {
+    min-height: 250px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    border-left: 4px solid var(--blue);
+}
+
+.continue-copy {
+    min-width: 0;
+}
+
+.continue-copy h2 {
+    margin: 0 0 8px;
+    font-size: 31px;
+}
+
+.continue-copy > p {
+    margin: 0 0 20px;
+    color: var(--muted);
+}
+
+.mission-progress-line {
+    width: min(420px, 100%);
+    margin: 18px 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.level-orbit {
+    flex: 0 0 132px;
+    width: 132px;
+    height: 132px;
+    display: grid;
+    place-content: center;
+    text-align: center;
+    border: 8px solid rgba(29,140,255,.28);
+    outline: 2px solid var(--blue);
+    border-radius: 50%;
+    background: #0a1728;
+}
+
+.level-orbit strong {
+    font-size: 38px;
+    line-height: 1;
+}
+
+.level-orbit span,
+.level-orbit small {
+    margin-top: 5px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.game-streak-card {
+    padding: 24px;
+    border-top: 4px solid var(--yellow);
+}
+
+.streak-heading,
+.streak-footer,
+.mission-title-row,
+.module-card-top,
+.journey-stage-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.streak-heading strong {
+    display: block;
+    font-size: 30px;
+}
+
+.streak-record,
+.mission-count,
+.module-state-label,
+.mission-state {
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.week-strip {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(34px, 1fr));
+    gap: 7px;
+    margin: 24px 0;
+}
+
+.week-day {
+    min-width: 0;
+    padding: 9px 4px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: #0a1728;
+}
+
+.week-day span {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.week-day.active {
+    border-color: rgba(34,197,94,.7);
+    background: rgba(34,197,94,.15);
+}
+
+.week-day.today {
+    outline: 2px solid var(--yellow);
+    outline-offset: 1px;
+}
+
+.streak-footer {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.streak-footer a,
+.section-head a {
+    color: #7dd3fc;
+}
+
+.daily-missions-section,
+.achievement-collection-section {
+    margin: 28px 0;
+}
+
+.daily-missions-section .section-head h2,
+.achievement-collection-section .section-head h2 {
+    margin: 0;
+}
+
+.mission-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.mission-card {
+    min-height: 190px;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 14px;
+    align-content: start;
+}
+
+.mission-card.ready {
+    border-color: rgba(34,197,94,.65);
+}
+
+.mission-card.claimed {
+    background: rgba(34,197,94,.08);
+}
+
+.mission-token {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(125,211,252,.45);
+    border-radius: 50%;
+    color: #7dd3fc;
+    background: rgba(29,140,255,.12);
+    font-weight: 900;
+}
+
+.mission-title-row h3 {
+    margin: 0;
+    font-size: 17px;
+}
+
+.mission-title-row span {
+    color: #fde68a;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mission-body p {
+    min-height: 38px;
+    margin: 8px 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.mission-body .bar {
+    margin: 10px 0 6px;
+}
+
+.mission-card > form,
+.mission-card > .mission-state {
+    grid-column: 2;
+    justify-self: start;
+}
+
+.mission-state.done {
+    color: #bbf7d0;
+    border-color: rgba(34,197,94,.45);
+}
+
+.game-stats .card > span {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: #7dd3fc;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.module-card-top {
+    margin-bottom: 18px;
+}
+
+.module-card.atual {
+    border-color: rgba(29,140,255,.7);
+}
+
+.module-card.concluido {
+    border-color: rgba(34,197,94,.4);
+}
+
+.module-card.bloqueado {
+    opacity: .58;
+}
+
+.league-card {
+    border-left: 4px solid #94a3b8;
+}
+
+.league-card.prata { border-left-color: #cbd5e1; }
+.league-card.ouro { border-left-color: #facc15; }
+.league-card.diamante { border-left-color: #67e8f9; }
+.league-card.mestre { border-left-color: #fb7185; }
+
+.section-head.compact h3 {
+    margin: 0;
+}
+
+.achievement-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.achievement-row {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.achievement-row > span,
+.achievement-tile > span {
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    color: #fde68a;
+    font-weight: 900;
+}
+
+.achievement-row small,
+.achievement-tile small {
+    display: block;
+    margin-top: 3px;
+    color: var(--muted);
+}
+
+.journey-level {
+    width: min(300px, 100%);
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(17,31,51,.82);
+}
+
+.journey-level span,
+.journey-level strong {
+    display: block;
+}
+
+.journey-level strong {
+    margin-top: 4px;
+    color: #bbf7d0;
+}
+
+.journey-level .bar {
+    margin-bottom: 0;
+}
+
+.journey-resume {
+    margin-bottom: 18px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    border-left: 4px solid var(--green);
+}
+
+.journey-resume h2,
+.journey-resume p {
+    margin: 0;
+}
+
+.journey-resume p {
+    margin-top: 6px;
+    color: var(--muted);
+}
+
+.journey-search {
+    max-width: 900px;
+    margin: 0 auto 18px;
+}
+
+.learning-path {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.journey-step {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    min-height: 230px;
+}
+
+.journey-step[hidden] {
+    display: none;
+}
+
+.journey-rail {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.journey-rail::after {
+    content: "";
+    position: absolute;
+    top: 64px;
+    bottom: 0;
+    width: 3px;
+    background: var(--border);
+}
+
+.journey-step:last-child .journey-rail::after {
+    display: none;
+}
+
+.journey-node {
+    position: relative;
+    z-index: 1;
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--border);
+    border-radius: 50%;
+    background: #0a1728;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 900;
+}
+
+.journey-step.atual .journey-node {
+    border-color: var(--blue);
+    color: white;
+    box-shadow: 0 0 0 7px rgba(29,140,255,.13);
+}
+
+.journey-step.concluido .journey-node {
+    border-color: var(--green);
+    color: #bbf7d0;
+    background: rgba(34,197,94,.12);
+}
+
+.journey-step.concluido .journey-rail::after {
+    background: var(--green);
+}
+
+.journey-step.bloqueado {
+    opacity: .58;
+}
+
+.journey-stage {
+    margin-bottom: 24px;
+    padding: 22px;
+}
+
+.journey-step:nth-child(even) .journey-stage {
+    margin-left: 32px;
+}
+
+.journey-stage-head h2 {
+    margin: 5px 0 0;
+    font-size: 22px;
+}
+
+.journey-stage-head > div > span,
+.stage-meta {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.journey-stage > p {
+    color: var(--muted);
+    line-height: 1.55;
+}
+
+.stage-meta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.profile-game-strip {
+    display: grid;
+    grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr);
+    gap: 24px;
+    margin: 20px 0;
+    padding: 22px;
+}
+
+.profile-level-block strong,
+.profile-streak-block strong {
+    display: block;
+    font-size: 20px;
+}
+
+.week-strip.compact {
+    margin: 0;
+}
+
+.achievement-collection-section {
+    padding: 22px;
+}
+
+.achievement-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.achievement-tile {
+    min-height: 130px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #0a1728;
+}
+
+.achievement-tile p {
+    margin: 5px 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.achievement-tile.rara { border-color: rgba(29,140,255,.55); }
+.achievement-tile.epica { border-color: rgba(245,158,11,.6); }
+.achievement-tile.lendaria { border-color: rgba(251,113,133,.65); }
+
+@media (max-width: 1050px) {
+    .game-overview,
+    .profile-game-strip {
+        grid-template-columns: 1fr;
+    }
+
+    .mission-grid,
+    .achievement-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .game-overview,
+    .mission-grid,
+    .achievement-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .continue-card,
+    .journey-resume,
+    .journey-stage-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .level-orbit {
+        align-self: center;
+    }
+
+    .mission-card {
+        grid-template-columns: 44px minmax(0, 1fr);
+    }
+
+    .journey-step {
+        grid-template-columns: 58px minmax(0, 1fr);
+    }
+
+    .journey-node {
+        width: 46px;
+        height: 46px;
+    }
+
+    .journey-rail::after {
+        top: 54px;
+    }
+
+    .journey-step:nth-child(even) .journey-stage {
+        margin-left: 0;
+    }
+
+    .journey-stage {
+        padding: 17px;
+    }
+
+    .week-strip {
+        gap: 4px;
+    }
+
+    .week-day {
+        padding: 8px 2px;
     }
 }

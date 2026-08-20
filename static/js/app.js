@@ -1153,7 +1153,7 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
     const busca = document.getElementById("buscaModulos");
     const resultado = document.getElementById("resultadoBusca");
-    const cards = Array.from(document.querySelectorAll(".module-card[data-search]"));
+    const cards = Array.from(document.querySelectorAll("[data-search]"));
 
     if (!busca || !cards.length) {
         return;

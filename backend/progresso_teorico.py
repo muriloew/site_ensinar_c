@@ -112,10 +112,16 @@ def atualizar_resposta_teorica(licao, valor_atual, desafio_id, resposta, quiz_co
 
     respostas = carregar_respostas_teoricas(valor_atual, licao, quiz_correto)
     correta = resposta == desafio.get("resposta")
+    registro_anterior = respostas.get(desafio_id, {})
+    ja_foi_acertada = bool(registro_anterior.get("acertou_antes")) or (
+        bool(registro_anterior.get("correta"))
+        and registro_anterior.get("resposta") == desafio.get("resposta")
+    )
 
     respostas[desafio_id] = {
         "resposta": resposta,
         "correta": correta,
+        "acertou_antes": ja_foi_acertada or correta,
     }
 
     total = len(desafios)
@@ -129,6 +135,7 @@ def atualizar_resposta_teorica(licao, valor_atual, desafio_id, resposta, quiz_co
         "respostas": respostas,
         "resposta_json": serializar_respostas_teoricas(respostas),
         "correta": correta,
+        "novo_acerto": correta and not ja_foi_acertada,
         "corretos": corretos,
         "total": total,
         "todos_corretos": total > 0 and corretos == total,
