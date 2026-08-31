@@ -53,6 +53,7 @@ class CompilerSecurityTest(unittest.TestCase):
         self.assertGreater(compilador.MAX_EXECUTAVEL_BYTES, compilador.MAX_SAIDA_BYTES)
         self.assertEqual(compilador.MAX_EXECUCOES_SIMULTANEAS, 1)
         self.assertLessEqual(compilador.MAX_PROCESSOS_POR_JOB, 8)
+        self.assertGreater(compilador.MAX_PROCESSOS_USUARIO_APP, compilador.MAX_PROCESSOS_POR_JOB)
 
         comando = compilador.comando_gcc("programa.c", "programa")
         self.assertIn("-pipe", comando)
@@ -102,14 +103,28 @@ class CompilerSecurityTest(unittest.TestCase):
             with patch.object(
                 compilador,
                 "_executar_processo",
-                side_effect=[falha_gcc, sucesso_tcc],
+                side_effect=[falha_gcc, falha_gcc.copy(), sucesso_tcc],
             ) as executar:
                 resultado = compilador._compilar_workspace(".", "programa.c", "programa")
 
         self.assertTrue(resultado["ok"], resultado)
         self.assertEqual(resultado["compilador"], "TCC")
         self.assertIn("Compilador alternativo: TCC", resultado["build"])
-        self.assertEqual(executar.call_count, 2)
+        self.assertEqual(executar.call_count, 3)
+
+    def test_limite_de_processos_considera_usuario_compartilhado(self):
+        def localizar_programa(nome):
+            return "/usr/bin/prlimit" if nome == "prlimit" else None
+
+        with patch.object(compilador.os, "name", "posix"):
+            with patch.object(compilador.shutil, "which", side_effect=localizar_programa):
+                with patch.object(compilador, "_identidade_runner", return_value=None):
+                    comando_nativo = compilador._com_limites(["gcc"], "compilar")
+                with patch.object(compilador, "_identidade_runner", return_value=(1000, 1000)):
+                    comando_docker = compilador._com_limites(["gcc"], "compilar")
+
+        self.assertIn(f"--nproc={compilador.MAX_PROCESSOS_USUARIO_APP}", comando_nativo)
+        self.assertIn(f"--nproc={compilador.MAX_PROCESSOS_POR_JOB}", comando_docker)
 
     def test_erro_de_sintaxe_nao_aciona_compilador_alternativo(self):
         erro_sintaxe = {

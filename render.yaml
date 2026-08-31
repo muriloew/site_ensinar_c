@@ -16,8 +16,12 @@ services:
         value: "1"
       - key: COMPILER_MAX_PROCESSES
         value: "8"
+      - key: COMPILER_APP_MAX_PROCESSES
+        value: "24"
       - key: COMPILER_QUEUE_TIMEOUT
         value: "5"
+      - key: COMPILER_RESOURCE_RETRIES
+        value: "2"
       - key: COMPILER_COMPILE_TIMEOUT
         value: "30"
       - key: COMPILER_COMPILE_CPU

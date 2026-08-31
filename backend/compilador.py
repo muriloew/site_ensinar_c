@@ -42,7 +42,9 @@ MAX_EXECUTAVEL_BYTES = _inteiro_ambiente(
 ) * 1024 * 1024
 MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 1, 1, 4)
 MAX_PROCESSOS_POR_JOB = _inteiro_ambiente("COMPILER_MAX_PROCESSES", 8, 4, 24)
+MAX_PROCESSOS_USUARIO_APP = _inteiro_ambiente("COMPILER_APP_MAX_PROCESSES", 24, 12, 64)
 ESPERA_FILA_SEGUNDOS = _inteiro_ambiente("COMPILER_QUEUE_TIMEOUT", 5, 1, 15)
+REPETICOES_FALHA_RECURSO = _inteiro_ambiente("COMPILER_RESOURCE_RETRIES", 2, 1, 3)
 
 _slots_execucao = threading.BoundedSemaphore(MAX_EXECUCOES_SIMULTANEAS)
 _limite_lock = threading.Lock()
@@ -215,12 +217,16 @@ def _com_limites(comando, modo):
         cpu, memoria = TEMPO_EXECUCAO, 160 * 1024 * 1024
         tamanho_arquivo = MAX_SAIDA_BYTES
 
+    identidade_runner = _identidade_runner()
+    limite_processos = (
+        MAX_PROCESSOS_POR_JOB if identidade_runner else MAX_PROCESSOS_USUARIO_APP
+    )
     limitado = [
         prlimit,
         f"--cpu={cpu}:{cpu + 1}",
         f"--as={memoria}",
         f"--fsize={tamanho_arquivo}",
-        f"--nproc={MAX_PROCESSOS_POR_JOB}",
+        f"--nproc={limite_processos}",
         "--nofile=64",
         "--core=0",
         "--",
@@ -359,19 +365,30 @@ def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
 
     ultima_falha_infra = None
     for indice, (nome, comando) in enumerate(compiladores):
-        try:
-            resultado = _executar_processo(
-                comando,
-                temp_dir,
-                "compilar",
-                timeout=TEMPO_COMPILACAO,
-            )
-        except FileNotFoundError:
-            continue
-        except Exception as erro:
-            return {"ok": False, "build": f"Erro ao compilar: {erro}", "saida": ""}
+        resultado = None
+        for repeticao in range(REPETICOES_FALHA_RECURSO):
+            try:
+                resultado = _executar_processo(
+                    comando,
+                    temp_dir,
+                    "compilar",
+                    timeout=TEMPO_COMPILACAO,
+                )
+            except FileNotFoundError:
+                resultado = None
+                break
+            except Exception as erro:
+                return {"ok": False, "build": f"Erro ao compilar: {erro}", "saida": ""}
 
-        resultado["compilador"] = nome
+            resultado["compilador"] = nome
+            if not _falha_infraestrutura_compilador(resultado):
+                break
+            if repeticao + 1 < REPETICOES_FALHA_RECURSO:
+                time.sleep(0.5 * (repeticao + 1))
+
+        if resultado is None:
+            continue
+
         ok = resultado["codigo"] == 0 and not resultado["tempo_excedido"]
         fallback_disponivel = indice + 1 < len(compiladores)
         falha_infra = _falha_infraestrutura_compilador(resultado)
