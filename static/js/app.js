@@ -260,154 +260,97 @@ function abrirJanelaTerminal() {
 }
 
 function fecharJanelaTerminal() {
+    if (!terminalFinalizado && socketTerminal && document.getElementById("codigoCompilador")) {
+        socketTerminal.emit("terminal_cancelar");
+        terminalFinalizado = true;
+    }
     const modal = document.getElementById("terminalModal");
     if (modal) {
         modal.classList.remove("ativo");
     }
 }
 
-function codigoSolicitaEntrada(codigo) {
-    const semComentarios = (codigo || "")
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/\/\/[^\n\r]*/g, "");
-    return /\b(?:scanf|fgets|getchar|gets)\s*\(/.test(semComentarios);
-}
-
-function promptDoCompilador(codigo) {
-    const achou = (codigo || "").match(/printf\s*\(\s*"([^"]*)"\s*\)\s*;\s*scanf/s);
-    if (!achou || !achou[1]) return "Entrada:";
-    return achou[1].replaceAll("\\n", "\n").replaceAll("\\t", "\t");
-}
-
-function ocultarEntradaConsoleCompilador() {
-    const painel = document.getElementById("entradaConsoleCompilador");
-    if (painel) painel.hidden = true;
-}
-
-function solicitarEntradaConsoleCompilador(codigo) {
-    const painel = document.getElementById("entradaConsoleCompilador");
-    const prompt = document.getElementById("promptConsoleCompilador");
+function enviarEntradaCompilador() {
     const input = document.getElementById("terminalInputCompilador");
-    const entrada = document.getElementById("entradaCompilador");
-    const saida = document.getElementById("saidaCompilador");
-    const build = document.getElementById("buildCompilador");
-
-    abrirJanelaTerminal();
-    if (prompt) prompt.textContent = promptDoCompilador(codigo);
-    if (input) input.value = entrada ? entrada.value : "";
-    if (painel) painel.hidden = false;
-    if (saida) saida.textContent = "";
-    if (build) build.textContent = "Aguardando a entrada do programa antes de executar.";
-
-    setTimeout(() => {
-        if (input) input.focus();
-    }, 80);
+    enviarLinhaTerminal(input);
 }
 
-function confirmarEntradaCompilador() {
-    const input = document.getElementById("terminalInputCompilador");
-    const entrada = document.getElementById("entradaCompilador");
-    if (!input || !entrada) return;
-
-    if (!input.value.length) {
-        input.focus();
-        return;
-    }
-
-    entrada.value = input.value.endsWith("\n") ? input.value : input.value + "\n";
-    ocultarEntradaConsoleCompilador();
-    executarCompiladorOnline(true);
-}
-
-async function executarCompiladorOnline(entradaConfirmada = false) {
+function compilarCompiladorInterativo() {
     const codigo = document.getElementById("codigoCompilador");
-    const entrada = document.getElementById("entradaCompilador");
     const saida = document.getElementById("saidaCompilador");
     const build = document.getElementById("buildCompilador");
+    const painelEntrada = document.getElementById("entradaConsoleCompilador");
+    const input = document.getElementById("terminalInputCompilador");
 
     if (!codigo || !saida || !build) {
         return;
     }
 
-    const codigoAtual = obterCodigoDoEditor(codigo);
-    if (!entradaConfirmada && codigoSolicitaEntrada(codigoAtual) && (!entrada || !entrada.value.length)) {
-        solicitarEntradaConsoleCompilador(codigoAtual);
+    const codigoAtual = obterCodigoDoEditor(codigo).trim();
+    if (!codigoAtual) {
+        build.textContent = "Digite um programa em C antes de compilar.";
         return;
     }
 
-    const botoes = document.querySelectorAll('button[onclick*="executarCompiladorOnline"]');
-    botoes.forEach((botao) => {
-        botao.disabled = true;
-        botao.setAttribute("aria-busy", "true");
-    });
-
+    terminalFinalizado = false;
+    definirCompilacaoRealEmAndamento(true);
     abrirJanelaTerminal();
-    ocultarEntradaConsoleCompilador();
-    saida.textContent = "Executando...";
+    saida.textContent = "";
     build.textContent = "Compilando...";
-
-    try {
-        const retorno = await fetch("/api/compilador/executar", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                codigo: codigoAtual,
-                entrada: entrada ? entrada.value : ""
-            })
-        });
-
-        const dados = await retorno.json();
-
-        build.textContent = (dados.build || "Build finalizado.") + (dados.origem ? "\n\nOrigem: " + dados.origem : "");
-        saida.textContent = dados.ok
-            ? dados.saida || "Programa executado sem saída."
-            : dados.saida || "A compilação não foi concluída. Consulte o Build log.";
-    } catch (erro) {
-        build.textContent = "Erro de conexão.";
-        saida.textContent = "Não foi possível executar o compilador agora.";
-    } finally {
-        botoes.forEach((botao) => {
-            botao.disabled = false;
-            botao.removeAttribute("aria-busy");
-        });
+    if (painelEntrada) painelEntrada.hidden = false;
+    if (input) {
+        input.value = "";
+        input.disabled = true;
+        input.placeholder = "Aguardando compilação...";
     }
+
+    let socket;
+    try {
+        socket = iniciarSocketTerminal();
+    } catch (erro) {
+        terminalFinalizado = true;
+        definirCompilacaoRealEmAndamento(false);
+        build.textContent = "O terminal interativo não carregou. Recarregue a página e tente novamente.";
+        return;
+    }
+
+    socket.emit("compilar_real", {
+        tipo: "compilador",
+        codigo: codigoAtual
+    });
+}
+
+function executarCompiladorOnline() {
+    compilarCompiladorInterativo();
 }
 
 function limparCompilador() {
     const codigo = document.getElementById("codigoCompilador");
-    const entrada = document.getElementById("entradaCompilador");
     const saida = document.getElementById("saidaCompilador");
     const build = document.getElementById("buildCompilador");
 
+    if (!terminalFinalizado && socketTerminal) {
+        socketTerminal.emit("terminal_cancelar");
+        terminalFinalizado = true;
+    }
     if (codigo) definirCodigoNoEditor(codigo, "");
-    if (entrada) entrada.value = "";
     const inputTerminal = document.getElementById("terminalInputCompilador");
-    if (inputTerminal) inputTerminal.value = "";
-    ocultarEntradaConsoleCompilador();
+    if (inputTerminal) {
+        inputTerminal.value = "";
+        inputTerminal.disabled = true;
+    }
+    const painelEntrada = document.getElementById("entradaConsoleCompilador");
+    if (painelEntrada) painelEntrada.hidden = true;
     if (saida) saida.textContent = "Nenhum código foi executado ainda. Clique em Compilar para iniciar.";
     if (build) build.textContent = "Aguardando o usuário clicar em Compilar.";
+    definirCompilacaoRealEmAndamento(false);
 }
 
-function carregarHistorico(codigo, entrada) {
+function carregarHistorico(codigo) {
     const editor = document.getElementById("codigoCompilador");
-    const input = document.getElementById("entradaCompilador");
 
     if (editor) definirCodigoNoEditor(editor, codigo || "");
-    if (input) input.value = entrada || "";
-    ocultarEntradaConsoleCompilador();
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("terminalInputCompilador");
-    if (!input) return;
-
-    input.addEventListener("keydown", (event) => {
-        if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
-            event.preventDefault();
-            confirmarEntradaCompilador();
-        }
-    });
-});
 
 
 
@@ -1036,7 +979,9 @@ let socketTerminal = null;
 let terminalFinalizado = true;
 
 function definirCompilacaoRealEmAndamento(ocupado) {
-    document.querySelectorAll('button[onclick*="compilarReal"]').forEach((botao) => {
+    document.querySelectorAll(
+        'button[onclick*="compilarReal"], button[onclick*="compilarCompiladorInterativo"], button[onclick*="executarCompiladorOnline"]'
+    ).forEach((botao) => {
         botao.disabled = ocupado;
         if (ocupado) botao.setAttribute("aria-busy", "true");
         else botao.removeAttribute("aria-busy");
@@ -1062,23 +1007,38 @@ function iniciarSocketTerminal() {
     socketTerminal = io();
 
     socketTerminal.on("build_log", (dados) => {
-        definirCompilacaoRealEmAndamento(false);
-        const build = document.getElementById("buildExercicio");
+        const compiladorLivre = Boolean(document.getElementById("codigoCompilador"));
+        const build = document.getElementById("buildExercicio") || document.getElementById("buildCompilador");
         if (build) build.textContent = dados.texto || "";
 
         if (!dados.ok) {
+            terminalFinalizado = true;
+            definirCompilacaoRealEmAndamento(false);
+            const input = document.getElementById("terminalInputReal") || document.getElementById("terminalInputCompilador");
+            if (input) input.disabled = true;
             atualizarFeedbackCorrecao({
                 ok: false,
                 mensagem: dados.texto || "Não foi possível compilar o código."
             });
-            abrirBuildModal();
+            if (compiladorLivre) abrirJanelaTerminal();
+            else abrirBuildModal();
+        } else if (compiladorLivre) {
+            abrirJanelaTerminal();
+            const painel = document.getElementById("entradaConsoleCompilador");
+            const input = document.getElementById("terminalInputCompilador");
+            if (painel) painel.hidden = false;
+            if (input) {
+                input.disabled = false;
+                input.placeholder = "";
+                setTimeout(() => input.focus(), 80);
+            }
         } else {
             abrirTerminalReal();
         }
     });
 
     socketTerminal.on("terminal_saida", (dados) => {
-        const saida = document.getElementById("terminalSaidaReal");
+        const saida = document.getElementById("terminalSaidaReal") || document.getElementById("saidaCompilador");
         if (!saida) return;
 
         saida.textContent += dados.texto || "";
@@ -1087,7 +1047,8 @@ function iniciarSocketTerminal() {
 
     socketTerminal.on("terminal_finalizado", () => {
         terminalFinalizado = true;
-        const input = document.getElementById("terminalInputReal");
+        definirCompilacaoRealEmAndamento(false);
+        const input = document.getElementById("terminalInputReal") || document.getElementById("terminalInputCompilador");
         if (input) {
             input.disabled = true;
             input.placeholder = "Processo finalizado.";
@@ -1099,7 +1060,10 @@ function iniciarSocketTerminal() {
     });
 
     socketTerminal.on("connect_error", () => {
+        terminalFinalizado = true;
         definirCompilacaoRealEmAndamento(false);
+        const build = document.getElementById("buildCompilador");
+        if (build) build.textContent = "Não foi possível conectar ao terminal interativo agora.";
         atualizarFeedbackCorrecao({
             ok: false,
             mensagem: "Não foi possível conectar ao compilador agora."
@@ -1180,22 +1144,26 @@ function fecharBuildModal() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("terminalInputReal");
-
-    if (input) {
+    ["terminalInputReal", "terminalInputCompilador"].forEach((id) => {
+        const input = document.getElementById(id);
+        if (!input) return;
         input.addEventListener("keydown", (event) => {
-            if (event.key === "Enter" && !terminalFinalizado) {
+            if (event.key === "Enter" && !event.isComposing && !terminalFinalizado) {
                 event.preventDefault();
-
-                const texto = input.value + "\n";
-                input.value = "";
-
-                const socket = iniciarSocketTerminal();
-                socket.emit("terminal_entrada", {texto: texto});
+                enviarLinhaTerminal(input);
             }
         });
-    }
+    });
 });
+
+function enviarLinhaTerminal(input) {
+    if (!input || input.disabled || terminalFinalizado) return;
+
+    const texto = input.value + "\n";
+    input.value = "";
+    const socket = iniciarSocketTerminal();
+    socket.emit("terminal_entrada", {texto: texto});
+}
 
 function limparTerminalReal() {
     if (!terminalFinalizado && socketTerminal) {

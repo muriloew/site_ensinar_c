@@ -48,8 +48,8 @@
 
     function executarAtalho(editor) {
         const id = editor.getTextArea().id;
-        if (id === "codigoCompilador" && typeof window.executarCompiladorOnline === "function") {
-            window.executarCompiladorOnline();
+        if (id === "codigoCompilador" && typeof window.compilarCompiladorInterativo === "function") {
+            window.compilarCompiladorInterativo();
         } else if (id === "codigoExercicio" && typeof window.compilarReal === "function") {
             const licaoId = Number(editor.getTextArea().dataset.licaoId);
             window.compilarReal(licaoId, "licao");

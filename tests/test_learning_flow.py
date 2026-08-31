@@ -143,6 +143,10 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn("clique em Compilar apenas quando quiser executar", pratica_livre)
         self.assertIn("vendor/codemirror/lib/codemirror.min.js", pratica_livre)
         self.assertIn("js/editor-c.js", pratica_livre)
+        self.assertIn("compilarCompiladorInterativo()", pratica_livre)
+        self.assertIn("terminalInputCompilador", pratica_livre)
+        self.assertIn("socket.io/4.7.5/socket.io.min.js", pratica_livre)
+        self.assertNotIn('id="entradaCompilador"', pratica_livre)
 
         dashboard = self.client.get("/dashboard").get_data(as_text=True)
         self.assertIn("Missões de hoje", dashboard)
@@ -151,6 +155,49 @@ class LearningFlowTest(unittest.TestCase):
         jornada = self.client.get("/modulos").get_data(as_text=True)
         self.assertIn("Sua jornada em C", jornada)
         self.assertEqual(jornada.count('class="journey-step'), 21)
+
+    def test_compilador_livre_aceita_terminal_interativo(self):
+        cliente_socket = self.site.socketio.test_client(
+            self.site.app,
+            flask_test_client=self.client,
+        )
+        self.assertTrue(cliente_socket.is_connected())
+
+        cliente_socket.emit(
+            "compilar_real",
+            {
+                "tipo": "compilador",
+                "codigo": "#include <stdio.h>\nint main(void) { return 0; }",
+            },
+        )
+        eventos = cliente_socket.get_received()
+        cliente_socket.disconnect()
+
+        builds = [
+            evento["args"][0]
+            for evento in eventos
+            if evento["name"] == "build_log"
+        ]
+        self.assertTrue(builds)
+        self.assertNotIn("Tipo de execução inválido", builds[0].get("texto", ""))
+
+        self.site.salvar_compilador_livre_execucao(
+            1,
+            "int main(void) { return 0; }",
+            "42\n",
+            "Digite: 42\nResultado: 42\n",
+            True,
+        )
+        conn = self.site.conectar()
+        historico = conn.execute(
+            "SELECT contexto, entrada, saida, aprovado FROM compilador_historico WHERE usuario_id = ?",
+            (1,),
+        ).fetchone()
+        conn.close()
+        self.assertEqual(historico["contexto"], "livre")
+        self.assertEqual(historico["entrada"], "42\n")
+        self.assertIn("Resultado: 42", historico["saida"])
+        self.assertEqual(historico["aprovado"], 1)
 
     def test_fluxo_do_modulo_inicial_ate_desafios_diarios(self):
         pagina_licao = self.client.get("/estudar/1")

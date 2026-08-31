@@ -3616,6 +3616,26 @@ def salvar_desafio_diario_execucao(usuario_id, codigo, entrada, saida, execucao_
     return validacao
 
 
+def salvar_compilador_livre_execucao(usuario_id, codigo, entrada, saida, execucao_ok=True):
+    conn = conectar()
+    registrar_historico_codigo(
+        conn,
+        usuario_id,
+        codigo,
+        entrada,
+        saida,
+        "Terminal interativo compilado com GCC.",
+        contexto="livre",
+        aprovado=bool(execucao_ok),
+        origem="GCC interativo protegido",
+    )
+    if execucao_ok:
+        registrar_atividade(conn, usuario_id)
+    conn.commit()
+    conn.close()
+    criar_backup_progresso(usuario_id)
+
+
 def encerrar_processo_socket(sid):
     with PROCESSOS_TERMINAL_LOCK:
         dados = PROCESSOS_TERMINAL.pop(sid, None)
@@ -3762,6 +3782,10 @@ def leitor_terminal(sid):
             validacao = salvar_codigo_execucao(
                 usuario_id, licao_id, codigo, entrada, saida_total, execucao_ok
             )
+        elif usuario_id and tipo == "compilador":
+            salvar_compilador_livre_execucao(
+                usuario_id, codigo, entrada, saida_total, execucao_ok
+            )
 
         if validacao:
             socketio.emit("correcao_resultado", validacao, to=sid)
@@ -3812,6 +3836,8 @@ def compilar_real(dados):
                 "texto": "Conclua o módulo 1 para desbloquear os desafios diários."
             })
             return
+    elif tipo == "compilador":
+        licao_id = None
     else:
         emit("build_log", {"ok": False, "texto": "Tipo de execução inválido."})
         return

@@ -13,7 +13,7 @@
 <div class="compiler-page">
     <section class="compiler-editor card">
         <div class="compiler-toolbar">
-            <button class="btn btn-primary" onclick="executarCompiladorOnline()">⚙️ Compilar</button>
+            <button class="btn btn-primary" onclick="compilarCompiladorInterativo()">⚙️ Compilar</button>
             <button class="btn btn-ghost" onclick="limparCompilador()">Limpar</button>
             <button class="btn btn-ghost" onclick="abrirJanelaTerminal()">Abrir terminal</button>
         </div>
@@ -22,14 +22,10 @@
     </section>
 
     <section class="compiler-side card">
-        <h2>Entrada do terminal</h2>
-        <p class="small-muted">Digite os valores que seriam usados no scanf.</p>
-        <textarea id="entradaCompilador" class="terminal-input compiler-input" placeholder="Exemplo:&#10;19"></textarea>
-
         <h2>Histórico recente</h2>
         <div class="history-list">
             {% for item in historico %}
-            <button onclick='carregarHistorico({{ item.codigo|tojson }}, {{ item.entrada|tojson }})'>
+            <button onclick='carregarHistorico({{ item.codigo|tojson }})'>
                 Código salvo em {{ item.criado_em }}
             </button>
             {% else %}
@@ -48,12 +44,12 @@
         </div>
 
         <div class="codeblocks-body">
-            <div id="entradaConsoleCompilador" class="compiler-console-prompt" hidden>
-                <span id="promptConsoleCompilador">Entrada:</span>
-                <textarea id="terminalInputCompilador" class="terminal-real-input" rows="1" spellcheck="false" aria-label="Entrada do programa"></textarea>
-                <button type="button" class="terminal-send-button" onclick="confirmarEntradaCompilador()">Enviar</button>
-            </div>
             <pre id="saidaCompilador" class="codeblocks-console">Nenhum código foi executado ainda. Clique em Compilar para iniciar.</pre>
+            <div id="entradaConsoleCompilador" class="compiler-console-prompt" hidden>
+                <span aria-hidden="true">&gt;</span>
+                <input id="terminalInputCompilador" class="terminal-real-input" type="text" autocomplete="off" spellcheck="false" aria-label="Entrada do programa" disabled>
+                <button type="button" class="terminal-send-button" onclick="enviarEntradaCompilador()">Enviar</button>
+            </div>
 
             <details class="build-details" open>
                 <summary>Build log</summary>
@@ -62,7 +58,7 @@
         </div>
 
         <div class="console-footer">
-            <button class="btn btn-primary" onclick="executarCompiladorOnline()">⚙️ Compilar</button>
+            <button class="btn btn-primary" onclick="compilarCompiladorInterativo()">⚙️ Compilar</button>
             <button class="btn btn-ghost" onclick="fecharJanelaTerminal()">Sair</button>
         </div>
     </div>
@@ -70,5 +66,6 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 {% include "partials/editor_scripts.html" %}
 {% endblock %}
