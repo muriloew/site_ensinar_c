@@ -48,6 +48,11 @@
         </div>
 
         <div class="codeblocks-body">
+            <div id="entradaConsoleCompilador" class="compiler-console-prompt" hidden>
+                <span id="promptConsoleCompilador">Entrada:</span>
+                <textarea id="terminalInputCompilador" class="terminal-real-input" rows="1" spellcheck="false" aria-label="Entrada do programa"></textarea>
+                <button type="button" class="terminal-send-button" onclick="confirmarEntradaCompilador()">Enviar</button>
+            </div>
             <pre id="saidaCompilador" class="codeblocks-console">Nenhum código foi executado ainda. Clique em Compilar para iniciar.</pre>
 
             <details class="build-details" open>

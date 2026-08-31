@@ -266,13 +266,72 @@ function fecharJanelaTerminal() {
     }
 }
 
-async function executarCompiladorOnline() {
+function codigoSolicitaEntrada(codigo) {
+    const semComentarios = (codigo || "")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/\/\/[^\n\r]*/g, "");
+    return /\b(?:scanf|fgets|getchar|gets)\s*\(/.test(semComentarios);
+}
+
+function promptDoCompilador(codigo) {
+    const achou = (codigo || "").match(/printf\s*\(\s*"([^"]*)"\s*\)\s*;\s*scanf/s);
+    if (!achou || !achou[1]) return "Entrada:";
+    return achou[1].replaceAll("\\n", "\n").replaceAll("\\t", "\t");
+}
+
+function ocultarEntradaConsoleCompilador() {
+    const painel = document.getElementById("entradaConsoleCompilador");
+    if (painel) painel.hidden = true;
+}
+
+function solicitarEntradaConsoleCompilador(codigo) {
+    const painel = document.getElementById("entradaConsoleCompilador");
+    const prompt = document.getElementById("promptConsoleCompilador");
+    const input = document.getElementById("terminalInputCompilador");
+    const entrada = document.getElementById("entradaCompilador");
+    const saida = document.getElementById("saidaCompilador");
+    const build = document.getElementById("buildCompilador");
+
+    abrirJanelaTerminal();
+    if (prompt) prompt.textContent = promptDoCompilador(codigo);
+    if (input) input.value = entrada ? entrada.value : "";
+    if (painel) painel.hidden = false;
+    if (saida) saida.textContent = "";
+    if (build) build.textContent = "Aguardando a entrada do programa antes de executar.";
+
+    setTimeout(() => {
+        if (input) input.focus();
+    }, 80);
+}
+
+function confirmarEntradaCompilador() {
+    const input = document.getElementById("terminalInputCompilador");
+    const entrada = document.getElementById("entradaCompilador");
+    if (!input || !entrada) return;
+
+    if (!input.value.length) {
+        input.focus();
+        return;
+    }
+
+    entrada.value = input.value.endsWith("\n") ? input.value : input.value + "\n";
+    ocultarEntradaConsoleCompilador();
+    executarCompiladorOnline(true);
+}
+
+async function executarCompiladorOnline(entradaConfirmada = false) {
     const codigo = document.getElementById("codigoCompilador");
     const entrada = document.getElementById("entradaCompilador");
     const saida = document.getElementById("saidaCompilador");
     const build = document.getElementById("buildCompilador");
 
     if (!codigo || !saida || !build) {
+        return;
+    }
+
+    const codigoAtual = obterCodigoDoEditor(codigo);
+    if (!entradaConfirmada && codigoSolicitaEntrada(codigoAtual) && (!entrada || !entrada.value.length)) {
+        solicitarEntradaConsoleCompilador(codigoAtual);
         return;
     }
 
@@ -283,6 +342,7 @@ async function executarCompiladorOnline() {
     });
 
     abrirJanelaTerminal();
+    ocultarEntradaConsoleCompilador();
     saida.textContent = "Executando...";
     build.textContent = "Compilando...";
 
@@ -291,7 +351,7 @@ async function executarCompiladorOnline() {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({
-                codigo: obterCodigoDoEditor(codigo),
+                codigo: codigoAtual,
                 entrada: entrada ? entrada.value : ""
             })
         });
@@ -321,6 +381,9 @@ function limparCompilador() {
 
     if (codigo) definirCodigoNoEditor(codigo, "");
     if (entrada) entrada.value = "";
+    const inputTerminal = document.getElementById("terminalInputCompilador");
+    if (inputTerminal) inputTerminal.value = "";
+    ocultarEntradaConsoleCompilador();
     if (saida) saida.textContent = "Nenhum código foi executado ainda. Clique em Compilar para iniciar.";
     if (build) build.textContent = "Aguardando o usuário clicar em Compilar.";
 }
@@ -331,7 +394,20 @@ function carregarHistorico(codigo, entrada) {
 
     if (editor) definirCodigoNoEditor(editor, codigo || "");
     if (input) input.value = entrada || "";
+    ocultarEntradaConsoleCompilador();
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("terminalInputCompilador");
+    if (!input) return;
+
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+            event.preventDefault();
+            confirmarEntradaCompilador();
+        }
+    });
+});
 
 
 
