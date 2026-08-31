@@ -51,10 +51,15 @@ class CompilerSecurityTest(unittest.TestCase):
         self.assertGreaterEqual(compilador.TEMPO_COMPILACAO, 30)
         self.assertGreaterEqual(compilador.TEMPO_INTERATIVO, 120)
         self.assertGreater(compilador.MAX_EXECUTAVEL_BYTES, compilador.MAX_SAIDA_BYTES)
+        self.assertEqual(compilador.MAX_EXECUCOES_SIMULTANEAS, 1)
+        self.assertLessEqual(compilador.MAX_PROCESSOS_POR_JOB, 8)
 
         comando = compilador.comando_gcc("programa.c", "programa")
         self.assertIn("-pipe", comando)
         self.assertIn("-fdiagnostics-color=never", comando)
+
+        comando_alternativo = compilador.comando_tcc("programa.c", "programa")
+        self.assertEqual(comando_alternativo[0], "tcc")
 
     def test_build_log_informa_tempo_real(self):
         sucesso = compilador._build_log({
@@ -72,6 +77,64 @@ class CompilerSecurityTest(unittest.TestCase):
             "duracao_segundos": compilador.TEMPO_COMPILACAO,
         })
         self.assertIn(str(compilador.TEMPO_COMPILACAO), excedido)
+
+    def test_falha_de_recursos_do_gcc_aciona_compilador_alternativo(self):
+        falha_gcc = {
+            "codigo": 1,
+            "texto": "gcc: fatal error: cannot execute cc1: vfork: Resource temporarily unavailable",
+            "tempo_excedido": False,
+            "saida_truncada": False,
+            "duracao_segundos": 0.2,
+        }
+        sucesso_tcc = {
+            "codigo": 0,
+            "texto": "",
+            "tempo_excedido": False,
+            "saida_truncada": False,
+            "duracao_segundos": 0.1,
+        }
+
+        with patch.object(
+            compilador,
+            "_comandos_compiladores",
+            return_value=[("GCC", ["gcc"]), ("TCC", ["tcc"])],
+        ):
+            with patch.object(
+                compilador,
+                "_executar_processo",
+                side_effect=[falha_gcc, sucesso_tcc],
+            ) as executar:
+                resultado = compilador._compilar_workspace(".", "programa.c", "programa")
+
+        self.assertTrue(resultado["ok"], resultado)
+        self.assertEqual(resultado["compilador"], "TCC")
+        self.assertIn("Compilador alternativo: TCC", resultado["build"])
+        self.assertEqual(executar.call_count, 2)
+
+    def test_erro_de_sintaxe_nao_aciona_compilador_alternativo(self):
+        erro_sintaxe = {
+            "codigo": 1,
+            "texto": "programa.c: error: expected semicolon",
+            "tempo_excedido": False,
+            "saida_truncada": False,
+            "duracao_segundos": 0.1,
+        }
+
+        with patch.object(
+            compilador,
+            "_comandos_compiladores",
+            return_value=[("GCC", ["gcc"]), ("TCC", ["tcc"])],
+        ):
+            with patch.object(
+                compilador,
+                "_executar_processo",
+                return_value=erro_sintaxe,
+            ) as executar:
+                resultado = compilador._compilar_workspace(".", "programa.c", "programa")
+
+        self.assertFalse(resultado["ok"])
+        self.assertIn("expected semicolon", resultado["build"])
+        self.assertEqual(executar.call_count, 1)
 
     @unittest.skipUnless(shutil.which("gcc"), "GCC nao esta instalado neste Windows")
     def test_gcc_local_compila_executa_e_rejeita_erro(self):

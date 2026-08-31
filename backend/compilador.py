@@ -40,7 +40,9 @@ TEMPO_INTERATIVO = _inteiro_ambiente("COMPILER_INTERACTIVE_TIMEOUT", 120, 20, 30
 MAX_EXECUTAVEL_BYTES = _inteiro_ambiente(
     "COMPILER_MAX_EXECUTABLE_MB", 8, 1, 32
 ) * 1024 * 1024
-MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 4, 1, 16)
+MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 1, 1, 4)
+MAX_PROCESSOS_POR_JOB = _inteiro_ambiente("COMPILER_MAX_PROCESSES", 8, 4, 24)
+ESPERA_FILA_SEGUNDOS = _inteiro_ambiente("COMPILER_QUEUE_TIMEOUT", 5, 1, 15)
 
 _slots_execucao = threading.BoundedSemaphore(MAX_EXECUCOES_SIMULTANEAS)
 _limite_lock = threading.Lock()
@@ -73,8 +75,10 @@ def permitir_execucao(chave, limite=12, janela_segundos=60):
         return True
 
 
-def adquirir_slot():
-    return _slots_execucao.acquire(blocking=False)
+def adquirir_slot(espera=0):
+    if espera <= 0:
+        return _slots_execucao.acquire(blocking=False)
+    return _slots_execucao.acquire(timeout=espera)
 
 
 def liberar_slot():
@@ -85,8 +89,8 @@ def liberar_slot():
 
 
 @contextmanager
-def slot_execucao():
-    adquirido = adquirir_slot()
+def slot_execucao(espera=ESPERA_FILA_SEGUNDOS):
+    adquirido = adquirir_slot(espera)
     try:
         yield adquirido
     finally:
@@ -108,6 +112,49 @@ def comando_gcc(arquivo_c, arquivo_saida):
         arquivo_saida,
         "-lm",
     ]
+
+
+def comando_tcc(arquivo_c, arquivo_saida):
+    return [
+        "tcc",
+        "-Wall",
+        arquivo_c,
+        "-o",
+        arquivo_saida,
+        "-lm",
+    ]
+
+
+def _comandos_compiladores(arquivo_c, arquivo_saida):
+    comandos = {
+        "gcc": ("GCC", comando_gcc(arquivo_c, arquivo_saida)),
+        "tcc": ("TCC", comando_tcc(arquivo_c, arquivo_saida)),
+    }
+    preferido = os.environ.get("COMPILER_LOCAL_PRIMARY", "gcc").strip().lower()
+    ordem = [preferido, "gcc", "tcc"]
+    encontrados = []
+    nomes = set()
+    for nome in ordem:
+        if nome in comandos and nome not in nomes and shutil.which(nome):
+            encontrados.append(comandos[nome])
+            nomes.add(nome)
+    return encontrados
+
+
+def _falha_infraestrutura_compilador(resultado):
+    texto = resultado.get("texto", "").lower()
+    sinais = (
+        "resource temporarily unavailable",
+        "cannot execute",
+        "cannot fork",
+        "vfork",
+        "/cc1",
+    )
+    return any(sinal in texto for sinal in sinais)
+
+
+def _origem_compilador(resultado):
+    return f"{resultado.get('compilador', 'Compilador C')} local protegido"
 
 
 def _identidade_runner():
@@ -173,7 +220,7 @@ def _com_limites(comando, modo):
         f"--cpu={cpu}:{cpu + 1}",
         f"--as={memoria}",
         f"--fsize={tamanho_arquivo}",
-        "--nproc=24",
+        f"--nproc={MAX_PROCESSOS_POR_JOB}",
         "--nofile=64",
         "--core=0",
         "--",
@@ -201,25 +248,45 @@ def _popen_kwargs(temp_dir):
 
 
 def encerrar_processo(proc, tolerancia=0.35):
-    if not proc or proc.poll() is not None:
+    if not proc:
         return
-    try:
-        if os.name == "posix":
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        else:
+
+    if os.name != "posix":
+        if proc.poll() is not None:
+            return
+        try:
             proc.terminate()
-        proc.wait(timeout=tolerancia)
-        return
-    except Exception:
-        pass
-    try:
-        if os.name == "posix":
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        else:
+            proc.wait(timeout=tolerancia)
+            return
+        except Exception:
+            pass
+        try:
             proc.kill()
-        proc.wait(timeout=1)
-    except Exception:
+            proc.wait(timeout=1)
+        except Exception:
+            pass
+        return
+
+    # Cada job inicia uma nova sessao, portanto o PID tambem e o PGID. O grupo
+    # precisa ser limpo mesmo se o processo principal ja tiver terminado.
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except OSError:
         pass
+    if proc.poll() is None:
+        try:
+            proc.wait(timeout=tolerancia)
+        except Exception:
+            pass
+    try:
+        os.killpg(proc.pid, signal.SIGKILL)
+    except OSError:
+        pass
+    if proc.poll() is None:
+        try:
+            proc.wait(timeout=1)
+        except Exception:
+            pass
 
 
 def _ler_log(caminho):
@@ -252,6 +319,7 @@ def _executar_processo(comando, temp_dir, modo, entrada=b"", timeout=5):
             proc.communicate(input=entrada, timeout=timeout)
         except subprocess.TimeoutExpired:
             excedeu_tempo = True
+        finally:
             encerrar_processo(proc)
 
     texto, truncada = _ler_log(caminho_log)
@@ -273,34 +341,61 @@ def _build_log(resultado):
             "O processo foi interrompido; tente novamente em alguns instantes."
         )
     if resultado.get("codigo") != 0:
-        return "Build failed.\n\n" + (texto or "O GCC encerrou com erro.")
+        compilador = resultado.get("compilador", "compilador C")
+        return "Build failed.\n\n" + (texto or f"O {compilador} encerrou com erro.")
     if texto:
         return f"Build finished successfully in {duracao:.2f}s, com avisos:\n\n" + texto
     return f"Build finished successfully in {duracao:.2f}s.\n0 errors, 0 warnings."
 
 
 def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
-    try:
-        resultado = _executar_processo(
-            comando_gcc(arquivo_c, arquivo_saida),
-            temp_dir,
-            "compilar",
-            timeout=TEMPO_COMPILACAO,
-        )
-    except FileNotFoundError:
+    compiladores = _comandos_compiladores(arquivo_c, arquivo_saida)
+    if not compiladores:
         return {
             "ok": False,
-            "build": "GCC nao esta disponivel no servidor.",
+            "build": "Nenhum compilador C local esta disponivel no servidor.",
             "saida": "",
         }
-    except Exception as erro:
-        return {"ok": False, "build": f"Erro ao compilar: {erro}", "saida": ""}
 
-    return {
-        "ok": resultado["codigo"] == 0 and not resultado["tempo_excedido"],
-        "build": _build_log(resultado),
-        "saida": "",
-    }
+    ultima_falha_infra = None
+    for indice, (nome, comando) in enumerate(compiladores):
+        try:
+            resultado = _executar_processo(
+                comando,
+                temp_dir,
+                "compilar",
+                timeout=TEMPO_COMPILACAO,
+            )
+        except FileNotFoundError:
+            continue
+        except Exception as erro:
+            return {"ok": False, "build": f"Erro ao compilar: {erro}", "saida": ""}
+
+        resultado["compilador"] = nome
+        ok = resultado["codigo"] == 0 and not resultado["tempo_excedido"]
+        fallback_disponivel = indice + 1 < len(compiladores)
+        falha_infra = _falha_infraestrutura_compilador(resultado)
+
+        if ok or not falha_infra:
+            build = _build_log(resultado)
+            if ok and indice > 0:
+                build += f"\nCompilador alternativo: {nome}."
+            return {
+                "ok": ok,
+                "build": build,
+                "saida": "",
+                "compilador": nome,
+            }
+
+        ultima_falha_infra = resultado
+        if fallback_disponivel:
+            time.sleep(0.2)
+
+    detalhe = (ultima_falha_infra or {}).get("texto", "").strip()
+    build = "O servidor esta temporariamente sem recursos para iniciar o compilador. Aguarde alguns segundos e tente novamente."
+    if detalhe:
+        build += "\n\nDetalhes tecnicos:\n" + detalhe
+    return {"ok": False, "build": build, "saida": "", "compilador": "C"}
 
 
 def compilar_codigo(codigo):
@@ -319,7 +414,7 @@ def compilar_codigo(codigo):
         temp_dir, arquivo_c, arquivo_saida = _preparar_workspace(codigo)
         try:
             resultado = _compilar_workspace(temp_dir, arquivo_c, arquivo_saida)
-            resultado["origem"] = "GCC local protegido"
+            resultado["origem"] = _origem_compilador(resultado)
             return resultado
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
@@ -342,7 +437,7 @@ def executar_codigo_local(codigo, entrada=""):
         try:
             compilacao = _compilar_workspace(temp_dir, arquivo_c, arquivo_saida)
             if not compilacao["ok"]:
-                compilacao["origem"] = "GCC local protegido"
+                compilacao["origem"] = _origem_compilador(compilacao)
                 return compilacao
 
             execucao = _executar_processo(
@@ -361,14 +456,14 @@ def executar_codigo_local(codigo, entrada=""):
                 "ok": execucao["codigo"] == 0 and not execucao["tempo_excedido"] and not execucao["saida_truncada"],
                 "build": compilacao["build"],
                 "saida": saida,
-                "origem": "GCC local protegido",
+                "origem": _origem_compilador(compilacao),
             }
         except Exception as erro_execucao:
             return {
                 "ok": False,
                 "build": "Erro durante build/run.",
                 "saida": f"Erro ao executar o codigo: {erro_execucao}",
-                "origem": "GCC local protegido",
+                "origem": "Compilador C local protegido",
             }
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)

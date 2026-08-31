@@ -2,6 +2,7 @@ FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
     gcc \
+    tcc \
     build-essential \
     util-linux \
     && rm -rf /var/lib/apt/lists/*
@@ -27,10 +28,12 @@ ENV PORT=10000
 ENV PYTHONUNBUFFERED=1
 ENV COMPILER_BACKEND=local
 ENV COMPILER_RUNNER_USER=compiler-runner
-ENV MAX_COMPILER_JOBS=4
+ENV MAX_COMPILER_JOBS=1
+ENV COMPILER_MAX_PROCESSES=8
+ENV COMPILER_QUEUE_TIMEOUT=5
 ENV COMPILER_COMPILE_TIMEOUT=30
 ENV COMPILER_COMPILE_CPU=12
 ENV COMPILER_RUN_TIMEOUT=8
 ENV COMPILER_INTERACTIVE_TIMEOUT=120
 
-CMD gunicorn -w 1 --threads 8 --timeout 75 app:app --bind 0.0.0.0:$PORT
+CMD gunicorn -w 1 --threads 4 --timeout 75 app:app --bind 0.0.0.0:$PORT

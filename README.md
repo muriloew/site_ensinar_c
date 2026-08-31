@@ -51,7 +51,7 @@ http://127.0.0.1:5000
 
 ## Render
 
-Esta versão deve ser publicada como serviço **Docker**, pois o compilador interativo precisa de Python 3.11, GCC e WebSocket. O arquivo `render.yaml` já aponta para o `Dockerfile` do projeto.
+Esta versão deve ser publicada como serviço **Docker**, pois o compilador interativo precisa de Python 3.11, GCC, TCC e WebSocket. O arquivo `render.yaml` já aponta para o `Dockerfile` do projeto.
 
 Para enviar uma atualização ao Render:
 
@@ -73,7 +73,9 @@ python -m unittest discover -s tests -v
 
 - `SECRET_KEY`: obrigatória em produção; o `render.yaml` gera uma automaticamente.
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
-- `MAX_COMPILER_JOBS`: quantidade máxima de compilações simultâneas; o padrão é 4.
+- `MAX_COMPILER_JOBS`: quantidade máxima de compilações simultâneas; no Render gratuito use `1`.
+- `COMPILER_MAX_PROCESSES`: máximo de processos por compilação ou programa; o padrão é 8.
+- `COMPILER_QUEUE_TIMEOUT`: segundos que uma compilação aguarda sua vez; o padrão é 5.
 - `COMPILER_COMPILE_TIMEOUT`: tempo de parede da compilação; o padrão é 30 segundos.
 - `COMPILER_COMPILE_CPU`: CPU que o GCC pode consumir; o padrão é 12 segundos.
 - `COMPILER_RUN_TIMEOUT`: limite de execução sem interação; o padrão é 8 segundos.
@@ -398,3 +400,12 @@ python app.py
 - Foram adicionados autocompletar C, desfazer/refazer, formatação, comentário rápido, movimentação e duplicação de linhas.
 - `Ctrl+Enter` compila, `Ctrl+S` salva, `Ctrl+Espaço` sugere comandos e `Ctrl+/` comenta a linha.
 - A prática livre preserva o rascunho no navegador e continua sem executar nada automaticamente.
+
+
+## Versão 27 — Compilador estável no Render gratuito
+
+- O Render executa somente uma compilação por vez e mantém as demais em uma fila curta.
+- O GCC continua principal; o TCC assume automaticamente somente em falhas de infraestrutura como `vfork: Resource temporarily unavailable`.
+- Programas e subprocessos remanescentes são encerrados mesmo quando o processo principal já terminou.
+- O limite por job foi reduzido para 8 processos e o Gunicorn passou a usar 4 threads para consumir menos memória.
+- O build log identifica quando o compilador alternativo foi utilizado.
