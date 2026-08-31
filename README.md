@@ -75,7 +75,6 @@ python -m unittest discover -s tests -v
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
 - `MAX_COMPILER_JOBS`: quantidade máxima de compilações simultâneas; no Render gratuito use `1`.
 - `COMPILER_MAX_PROCESSES`: máximo de processos por compilação ou programa; o padrão é 8.
-- `COMPILER_APP_MAX_PROCESSES`: limite usado quando o compilador compartilha o usuário do servidor; o padrão é 24.
 - `COMPILER_QUEUE_TIMEOUT`: segundos que uma compilação aguarda sua vez; o padrão é 5.
 - `COMPILER_RESOURCE_RETRIES`: tentativas após uma falha temporária de processos; o padrão é 2.
 - `COMPILER_COMPILE_TIMEOUT`: tempo de parede da compilação; o padrão é 30 segundos.
@@ -408,7 +407,7 @@ python app.py
 
 - O Render executa somente uma compilação por vez e mantém as demais em uma fila curta.
 - O GCC continua principal; o TCC assume automaticamente somente em falhas de infraestrutura como `vfork: Resource temporarily unavailable`.
-- No runtime Python, o limite de processos considera também as threads do Gunicorn; no Docker, o usuário isolado mantém o limite mais rígido.
+- No runtime Python compartilhado, `nproc` não é aplicado porque ele também contaria as threads do Gunicorn; no Docker, o usuário isolado mantém o limite rígido.
 - Programas e subprocessos remanescentes são encerrados mesmo quando o processo principal já terminou.
-- O `Procfile` e o Docker usam 4 threads, uma compilação por vez e duas tentativas para falhas temporárias.
+- O `Procfile` usa 2 threads, o Docker usa 4, e ambos permitem uma compilação por vez com duas tentativas para falhas temporárias.
 - O build log identifica quando o compilador alternativo foi utilizado.

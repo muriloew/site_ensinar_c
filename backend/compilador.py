@@ -42,7 +42,6 @@ MAX_EXECUTAVEL_BYTES = _inteiro_ambiente(
 ) * 1024 * 1024
 MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 1, 1, 4)
 MAX_PROCESSOS_POR_JOB = _inteiro_ambiente("COMPILER_MAX_PROCESSES", 8, 4, 24)
-MAX_PROCESSOS_USUARIO_APP = _inteiro_ambiente("COMPILER_APP_MAX_PROCESSES", 24, 12, 64)
 ESPERA_FILA_SEGUNDOS = _inteiro_ambiente("COMPILER_QUEUE_TIMEOUT", 5, 1, 15)
 REPETICOES_FALHA_RECURSO = _inteiro_ambiente("COMPILER_RESOURCE_RETRIES", 2, 1, 3)
 
@@ -217,21 +216,20 @@ def _com_limites(comando, modo):
         cpu, memoria = TEMPO_EXECUCAO, 160 * 1024 * 1024
         tamanho_arquivo = MAX_SAIDA_BYTES
 
-    identidade_runner = _identidade_runner()
-    limite_processos = (
-        MAX_PROCESSOS_POR_JOB if identidade_runner else MAX_PROCESSOS_USUARIO_APP
-    )
     limitado = [
         prlimit,
         f"--cpu={cpu}:{cpu + 1}",
         f"--as={memoria}",
         f"--fsize={tamanho_arquivo}",
-        f"--nproc={limite_processos}",
         "--nofile=64",
         "--core=0",
         "--",
         *comando,
     ]
+    # RLIMIT_NPROC conta todos os processos e threads do mesmo usuario. Ele so
+    # e seguro quando o Docker fornece um usuario exclusivo ao compilador.
+    if _identidade_runner():
+        limitado.insert(4, f"--nproc={MAX_PROCESSOS_POR_JOB}")
     setpriv = shutil.which("setpriv")
     if setpriv:
         limitado = [setpriv, "--no-new-privs", "--", *limitado]
@@ -412,7 +410,8 @@ def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
     build = "O servidor esta temporariamente sem recursos para iniciar o compilador. Aguarde alguns segundos e tente novamente."
     if detalhe:
         build += "\n\nDetalhes tecnicos:\n" + detalhe
-    return {"ok": False, "build": build, "saida": "", "compilador": "C"}
+    compilador = (ultima_falha_infra or {}).get("compilador", "C")
+    return {"ok": False, "build": build, "saida": "", "compilador": compilador}
 
 
 def compilar_codigo(codigo):
