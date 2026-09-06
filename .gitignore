@@ -3,6 +3,7 @@ __pycache__/
 .env
 venv/
 .venv/
+node_modules/
 *.exe
 instance/backups/
 instance/*.db

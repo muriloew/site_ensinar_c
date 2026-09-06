@@ -105,5 +105,5 @@
 
 {% block scripts %}
 {% include "partials/editor_scripts.html" %}
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='vendor/socket.io/4.7.5/socket.io.min.js') }}"></script>
 {% endblock %}

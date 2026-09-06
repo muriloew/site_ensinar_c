@@ -56,6 +56,20 @@ socketio = SocketIO(app, **socketio_opcoes)
 DB_PATH = os.environ.get("DB_PATH", "instance/ensinar_c.db")
 
 
+@app.url_defaults
+def versionar_arquivo_estatico(endpoint, valores):
+    if endpoint != "static" or "v" in valores:
+        return
+    nome = valores.get("filename")
+    if not nome:
+        return
+    try:
+        arquivo = os.path.join(app.static_folder, nome)
+        valores["v"] = str(os.stat(arquivo).st_mtime_ns)
+    except OSError:
+        pass
+
+
 MODULOS = [
     {
         "id": 1,

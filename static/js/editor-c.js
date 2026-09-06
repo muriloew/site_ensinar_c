@@ -2,6 +2,16 @@
     "use strict";
 
     const editores = new Map();
+    function lerPraticaLivre() {
+        try { return localStorage.getItem("ensinar-c-pratica-livre"); }
+        catch { return null; }
+    }
+
+    function salvarPraticaLivre(codigo) {
+        try { localStorage.setItem("ensinar-c-pratica-livre", codigo); }
+        catch { /* O editor continua disponivel quando o navegador bloqueia armazenamento. */ }
+    }
+
     const sugestoesC = [
         "auto", "break", "case", "char", "const", "continue", "default", "do",
         "double", "else", "enum", "extern", "float", "for", "free", "fgets",
@@ -62,7 +72,7 @@
         editor.save();
         const textarea = editor.getTextArea();
         if (textarea.id === "codigoCompilador") {
-            localStorage.setItem("ensinar-c-pratica-livre", editor.getValue());
+            salvarPraticaLivre(editor.getValue());
         } else if (typeof window.salvarRascunhoAtual === "function") {
             window.salvarRascunhoAtual();
         }
@@ -206,17 +216,26 @@
             if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("licao_id")) {
                 clearTimeout(editor._timerPraticaLivre);
                 editor._timerPraticaLivre = setTimeout(() => {
-                    localStorage.setItem("ensinar-c-pratica-livre", editor.getValue());
+                    salvarPraticaLivre(editor.getValue());
                 }, 500);
             }
         });
 
         if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("licao_id")) {
-            const salvo = localStorage.getItem("ensinar-c-pratica-livre");
+            const salvo = lerPraticaLivre();
             if (salvo && salvo.trim()) editor.setValue(salvo);
         }
 
         montarInterface(textarea, editor);
+        if (typeof ResizeObserver !== "undefined") {
+            let largura = frame.clientWidth;
+            const observador = new ResizeObserver(() => {
+                if (frame.clientWidth === largura) return;
+                largura = frame.clientWidth;
+                requestAnimationFrame(() => editor.refresh());
+            });
+            observador.observe(frame);
+        }
         setTimeout(() => editor.refresh(), 0);
     }
 

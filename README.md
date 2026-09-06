@@ -2,6 +2,46 @@
 
 Plataforma web educativa para ensino da linguagem C.
 
+## Revisao de telas e compatibilidade - setembro de 2026
+
+- Colunas e textos ajustam-se a celulares, tablets, notebooks e monitores, inclusive com zoom do navegador.
+- O menu lateral tem rolagem em telas baixas. Em telas menores, o menu horizontal destaca a pagina atual.
+- O terminal ajusta sua altura ao espaco visivel, incluindo a abertura do teclado do celular; a entrada e os botoes permanecem acessiveis.
+- O editor atualiza suas medidas ao redimensionar a janela e continua funcionando quando o navegador bloqueia armazenamento local.
+- Fechar ou limpar uma execucao libera novamente o botao Compilar.
+- CSS e JavaScript recebem uma versao na URL para renovar o cache quando os arquivos mudam.
+- O cliente Socket.IO 4.7.5 e servido pelo proprio site, mantendo a mesma versao e os mesmos eventos do terminal.
+
+### Verificacao antes de publicar
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+Os testes visuais usam um banco temporario, independente do progresso dos alunos.
+Instale Playwright apenas no ambiente de desenvolvimento:
+
+```powershell
+npm install --no-save --package-lock=false playwright
+npx playwright install webkit
+python tests/browser/serve.py
+```
+
+Em outro terminal, com Chrome ou Edge instalado:
+
+```powershell
+node tests/browser/responsive.cjs review chrome
+node tests/browser/responsive.cjs review msedge
+node tests/browser/responsive.cjs review webkit
+node tests/browser/interactions.cjs chrome
+node tests/browser/interactions.cjs webkit
+```
+
+Os relatorios e capturas ficam na pasta temporaria `ensinar-c-layout` do sistema.
+`LAYOUT_REPORT_DIR` permite escolher outra pasta; `PLAYWRIGHT_MODULE` permite usar uma instalacao existente do Playwright.
+Os testes de interacao verificam a conexao real com o servidor e simulam os eventos de execucao para conferir a interface em Windows.
+A compilacao C nativa deve ser conferida tambem no ambiente Linux/Docker com GCC; o teste correspondente e ignorado quando GCC nao esta instalado.
+
 ## Recursos
 
 - Cadastro com e-mail único

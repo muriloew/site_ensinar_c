@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <title>{% block title %}Ensinar C{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
 {% if usuario %}
@@ -15,7 +15,7 @@
         <strong>Ensinar C</strong>
     </a>
 
-    <nav>
+    <nav aria-label="Menu principal">
         <a href="/dashboard">🏠 Painel</a>
         <a href="/modulos">📚 Módulos</a>
         <a href="/desafio-diario">🎯 Desafio diário</a>
@@ -35,6 +35,7 @@
 </main>
 
 <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/layout.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>

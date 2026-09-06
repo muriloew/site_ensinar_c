@@ -263,6 +263,7 @@ function fecharJanelaTerminal() {
     if (!terminalFinalizado && socketTerminal && document.getElementById("codigoCompilador")) {
         socketTerminal.emit("terminal_cancelar");
         terminalFinalizado = true;
+        definirCompilacaoRealEmAndamento(false);
     }
     const modal = document.getElementById("terminalModal");
     if (modal) {
@@ -1128,6 +1129,7 @@ function fecharTerminalReal() {
     if (!terminalFinalizado && socketTerminal) {
         socketTerminal.emit("terminal_cancelar");
         terminalFinalizado = true;
+        definirCompilacaoRealEmAndamento(false);
     }
     const modal = document.getElementById("terminalModalExercicio");
     if (modal) modal.classList.remove("ativo");
@@ -1169,6 +1171,7 @@ function limparTerminalReal() {
     if (!terminalFinalizado && socketTerminal) {
         socketTerminal.emit("terminal_cancelar");
         terminalFinalizado = true;
+        definirCompilacaoRealEmAndamento(false);
     }
     const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
     const saida = document.getElementById("terminalSaidaReal");

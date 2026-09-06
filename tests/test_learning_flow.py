@@ -3,7 +3,10 @@ import os
 import sys
 import tempfile
 import unittest
+from html.parser import HTMLParser
 from pathlib import Path
+from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
@@ -198,6 +201,49 @@ class LearningFlowTest(unittest.TestCase):
         self.assertEqual(historico["entrada"], "42\n")
         self.assertIn("Resultado: 42", historico["saida"])
         self.assertEqual(historico["aprovado"], 1)
+
+    def test_dependencias_locais_versionadas_e_ordem_do_estilo(self):
+        class Recursos(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.urls = []
+
+            def handle_starttag(self, tag, attrs):
+                atributos = dict(attrs)
+                if tag == "script" and "src" in atributos:
+                    self.urls.append(atributos["src"])
+                if tag == "link" and atributos.get("rel") == "stylesheet":
+                    self.urls.append(atributos["href"])
+
+        parser = Recursos()
+        parser.feed(self.client.get("/compilador").get_data(as_text=True))
+        caminhos = []
+        for url in parser.urls:
+            partes = urlsplit(url)
+            self.assertFalse(partes.netloc, url)
+            self.assertIn("v", parse_qs(partes.query), url)
+            resposta = self.client.get(url)
+            self.assertEqual(resposta.status_code, 200, url)
+            resposta.close()
+            caminhos.append(partes.path)
+        self.assertIn("/static/vendor/socket.io/4.7.5/socket.io.min.js", caminhos)
+        self.assertGreater(
+            caminhos.index("/static/css/style.css"),
+            caminhos.index("/static/vendor/codemirror/theme/material-darker.min.css"),
+        )
+
+    def test_url_estatica_muda_quando_o_arquivo_e_atualizado(self):
+        with tempfile.TemporaryDirectory() as pasta:
+            arquivo = Path(pasta) / "teste.css"
+            arquivo.write_text("body { color: white; }", encoding="utf-8")
+            with patch.object(self.site.app, "_static_folder", pasta):
+                with self.site.app.test_request_context():
+                    antes = self.site.url_for("static", filename="teste.css")
+                    horario = arquivo.stat().st_mtime_ns + 1_000_000_000
+                    os.utime(arquivo, ns=(horario, horario))
+                    depois = self.site.url_for("static", filename="teste.css")
+                    self.assertNotEqual(antes, depois)
+                    self.assertEqual(depois, self.site.url_for("static", filename="teste.css"))
 
     def test_fluxo_do_modulo_inicial_ate_desafios_diarios(self):
         pagina_licao = self.client.get("/estudar/1")

@@ -20,6 +20,20 @@ body {
     background: var(--bg);
     color: var(--text);
     font-family: Arial, Helvetica, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+button, input, textarea, select { font: inherit; }
+img, video, canvas { max-width: 100%; }
+button, input, textarea, select, .btn { max-width: 100%; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; }
+
+:where(.hero, .stats-row, .feature-grid, .mini-stats, .module-grid,
+       .dashboard-grid, .content-grid, .compiler-page, .profile-summary,
+       .game-overview, .mission-grid, .achievement-grid, .profile-game-strip,
+       .spaced-review-layout, .saved-lessons-grid, .module-row,
+       .topbar, .profile-card, .user-pill, .journey-resume, .section-head) > * {
+    min-width: 0;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -56,6 +70,7 @@ a { color: inherit; text-decoration: none; }
     color: var(--blue);
     border-radius: 12px;
     font-weight: 900;
+    flex-shrink: 0;
 }
 
 .btn {
@@ -67,6 +82,9 @@ a { color: inherit; text-decoration: none; }
     cursor: pointer;
     display: inline-block;
     font-weight: 700;
+    text-align: center;
+    line-height: 1.4;
+    white-space: normal;
 }
 
 .btn-primary {
@@ -115,7 +133,7 @@ a { color: inherit; text-decoration: none; }
     line-height: 1.6;
 }
 
-.actions { display: flex; gap: 14px; margin-top: 28px; }
+.actions { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 28px; }
 
 .stats-row {
     display: grid;
@@ -211,6 +229,8 @@ a { color: inherit; text-decoration: none; }
     background: rgba(10,19,34,.95);
     border-right: 1px solid var(--border);
     padding: 22px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .sidebar nav {
@@ -230,11 +250,18 @@ a { color: inherit; text-decoration: none; }
     color: var(--text);
 }
 
+.sidebar nav a[aria-current="page"] {
+    background: rgba(29,140,255,.14);
+    color: var(--text);
+    box-shadow: inset 3px 0 var(--blue);
+}
+
 .sidebar .sair { color: #fb7185; margin-top: 40px; }
 
 .app-main {
     margin-left: 230px;
     padding: 28px;
+    min-width: 0;
 }
 
 .topbar {
@@ -243,6 +270,7 @@ a { color: inherit; text-decoration: none; }
     gap: 20px;
     align-items: center;
     margin-bottom: 24px;
+    flex-wrap: wrap;
 }
 
 .topbar h1 { margin: 0; font-size: 34px; }
@@ -255,10 +283,11 @@ a { color: inherit; text-decoration: none; }
     border: 1px solid var(--border);
     padding: 10px 14px;
     border-radius: 999px;
+    max-width: 100%;
 }
 
 .user-pill span { display: block; color: var(--muted); font-size: 12px; }
-.user-pill b { background: var(--purple); padding: 8px 12px; border-radius: 999px; }
+.user-pill b { background: var(--purple); padding: 8px 12px; border-radius: 999px; flex-shrink: 0; }
 
 .avatar {
     width: 42px;
@@ -268,6 +297,7 @@ a { color: inherit; text-decoration: none; }
     display: grid;
     place-items: center;
     font-weight: 900;
+    flex-shrink: 0;
 }
 
 .dashboard-grid {
@@ -304,7 +334,7 @@ a { color: inherit; text-decoration: none; }
 
 .content-grid {
     display: grid;
-    grid-template-columns: 1fr 330px;
+    grid-template-columns: minmax(0, 1fr) 300px;
     gap: 18px;
 }
 
@@ -312,6 +342,8 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .module-grid {
@@ -405,6 +437,7 @@ a { color: inherit; text-decoration: none; }
     padding: 12px;
     color: var(--muted);
     border-radius: 10px;
+    gap: 10px;
 }
 
 .lesson-list a.active,
@@ -504,6 +537,7 @@ a { color: inherit; text-decoration: none; }
     color: #dbeafe;
     min-height: 110px;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .quiz {
@@ -1131,6 +1165,11 @@ a { color: inherit; text-decoration: none; }
     justify-content: center;
     z-index: 999;
     padding: 22px;
+    height: 100vh;
+    height: var(--console-viewport-height, 100dvh);
+    top: var(--console-viewport-top, 0px);
+    bottom: auto;
+    overflow-y: auto;
 }
 
 .console-modal.ativo {
@@ -1147,6 +1186,9 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    max-width: 100%;
+    max-height: 100%;
+    min-height: 0;
 }
 
 .console-titlebar {
@@ -1156,6 +1198,8 @@ a { color: inherit; text-decoration: none; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    gap: 10px;
 }
 
 .console-titlebar span {
@@ -1229,6 +1273,7 @@ a { color: inherit; text-decoration: none; }
     gap: 10px;
     justify-content: flex-end;
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 @media (max-width: 700px) {
@@ -1280,7 +1325,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .codeblocks-titlebar {
-    height: 36px;
+    min-height: 36px;
+    flex-shrink: 0;
     background: #f2f2f2;
     color: #111;
     border-bottom: 1px solid #b5b5b5;
@@ -1290,7 +1336,11 @@ a { color: inherit; text-decoration: none; }
     padding: 0 10px;
     font-family: Consolas, monospace;
     font-size: 14px;
+    gap: 8px;
 }
+
+.codeblocks-titlebar span { min-width: 0; }
+.codeblocks-titlebar button { flex-shrink: 0; }
 
 .codeblocks-titlebar button {
     border: none;
@@ -1313,6 +1363,9 @@ a { color: inherit; text-decoration: none; }
     flex-direction: column;
     padding: 0;
     background: #000;
+    min-height: 0;
+    min-width: 0;
+    overflow: auto;
 }
 
 .terminal-label {
@@ -1347,6 +1400,8 @@ a { color: inherit; text-decoration: none; }
     line-height: 1.35;
     white-space: pre-wrap;
     overflow: auto;
+    min-height: 0;
+    overflow-wrap: anywhere;
 }
 
 .compiler-console-prompt {
@@ -1360,6 +1415,7 @@ a { color: inherit; text-decoration: none; }
     font-family: Consolas, "Courier New", monospace;
     font-size: 16px;
     line-height: 1.35;
+    flex-shrink: 0;
 }
 
 .compiler-console-prompt[hidden] {
@@ -1372,7 +1428,7 @@ a { color: inherit; text-decoration: none; }
 
 .compiler-console-prompt .terminal-real-input {
     flex: 1;
-    min-width: 100px;
+    min-width: 0;
     max-width: none;
     height: 28px;
 }
@@ -1400,6 +1456,7 @@ a { color: inherit; text-decoration: none; }
     color: #ddd;
     border-top: 1px solid #333;
     font-family: Consolas, monospace;
+    flex-shrink: 0;
 }
 
 .build-details summary {
@@ -1416,6 +1473,7 @@ a { color: inherit; text-decoration: none; }
     max-height: 120px;
     overflow: auto;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 .codeblocks-window .console-footer {
@@ -1436,7 +1494,8 @@ a { color: inherit; text-decoration: none; }
 
 .compiler-page {
     display: grid;
-    grid-template-columns: 1fr 330px;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    align-items: start;
     gap: 18px;
 }
 
@@ -1481,6 +1540,9 @@ a { color: inherit; text-decoration: none; }
     color: #cbd5e1;
     font: 700 14px/1 Consolas, monospace;
     cursor: pointer;
+    padding: 0;
+    white-space: nowrap;
+    overflow-wrap: normal;
 }
 
 .ide-tool-button:hover,
@@ -1497,6 +1559,7 @@ a { color: inherit; text-decoration: none; }
     font: 15px/1.65 Consolas, "Courier New", monospace;
     letter-spacing: 0;
     background: #07111f;
+    overflow-wrap: normal;
 }
 
 .ide-editor-codigoCompilador .CodeMirror {
@@ -1533,6 +1596,7 @@ a { color: inherit; text-decoration: none; }
     background: #0b1727;
     color: #93a4b8;
     font-size: 12px;
+    flex-wrap: wrap;
 }
 
 .CodeMirror-hints {
@@ -1826,11 +1890,14 @@ li.CodeMirror-hint-active {
     font-family: Consolas, "Courier New", monospace;
     font-size: 16px;
     outline: none;
+    flex-shrink: 0;
+    min-width: 0;
+    min-height: 40px;
 }
 
 .terminal-final-output {
     flex: 1;
-    min-height: 460px;
+    min-height: 0;
     margin: 0;
     white-space: pre-wrap;
     overflow: auto;
@@ -1909,6 +1976,7 @@ li.CodeMirror-hint-active {
     background: linear-gradient(135deg, var(--blue), var(--purple));
     font-size: 42px;
     font-weight: 900;
+    flex-shrink: 0;
 }
 
 .profile-card h2 {
@@ -2158,10 +2226,6 @@ li.CodeMirror-hint-active {
         font-size: 14px;
     }
 
-    .terminal-final-output {
-        min-height: 320px;
-    }
-
     .compiler-header,
     .exam-result {
         flex-direction: column;
@@ -2358,7 +2422,7 @@ li.CodeMirror-hint-active {
 
 .week-strip {
     display: grid;
-    grid-template-columns: repeat(7, minmax(34px, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 7px;
     margin: 24px 0;
 }
@@ -2392,11 +2456,13 @@ li.CodeMirror-hint-active {
 .streak-footer {
     color: var(--muted);
     font-size: 13px;
+    flex-wrap: wrap;
 }
 
 .streak-footer > div {
     display: flex;
     gap: 12px;
+    flex-wrap: wrap;
 }
 
 .streak-footer a,
@@ -2452,12 +2518,14 @@ li.CodeMirror-hint-active {
 .mission-title-row h3 {
     margin: 0;
     font-size: 17px;
+    min-width: 0;
 }
 
 .mission-title-row span {
     color: #fde68a;
     font-size: 12px;
     font-weight: 800;
+    flex-shrink: 0;
 }
 
 .mission-body p {
@@ -2818,4 +2886,76 @@ li.CodeMirror-hint-active {
     .week-day {
         padding: 8px 2px;
     }
+}
+
+/* Reflow by the space available beside the navigation, including browser zoom. */
+@media (min-width: 1101px) and (max-width: 1400px) {
+    .content-grid { grid-template-columns: minmax(0, 1fr); }
+    .module-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .right-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+    .right-panel > * { min-width: 0; }
+}
+
+@media (min-width: 701px) and (max-width: 1250px) {
+    .game-overview, .profile-summary, .compiler-page {
+        grid-template-columns: minmax(0, 1fr);
+    }
+    .mission-grid, .achievement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 1100px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        width: 100%;
+        padding: 10px 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        overflow: visible;
+    }
+    .sidebar nav {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        padding-bottom: 4px;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+    .sidebar nav::-webkit-scrollbar { display: block; height: 4px; }
+    .sidebar nav a { flex: 0 0 auto; padding: 10px 12px; white-space: nowrap; }
+    .sidebar .sair { margin-top: 0; }
+    .app-main { margin-left: 0; }
+}
+
+body.console-aberto { overflow: hidden; }
+
+@media (max-width: 540px) {
+    .console-modal { padding: 8px; }
+    .console-window, .codeblocks-window { width: 100%; height: 100%; }
+    .card, .continue-card, .game-streak-card, .profile-game-strip,
+    .achievement-collection-section { padding: 16px; }
+    .compiler-toolbar { gap: 8px; }
+    .compiler-toolbar .btn { flex: 1 1 auto; padding: 10px 12px; }
+    .history-filters { flex-wrap: wrap; }
+    .history-filters a { flex: 1 1 auto; text-align: center; }
+    .journey-step { grid-template-columns: 44px minmax(0, 1fr); }
+    .journey-node { width: 36px; height: 36px; }
+    .journey-stage { padding: 14px; }
+    .mission-title-row { flex-wrap: wrap; gap: 6px; }
+    .topbar h1 { font-size: 28px; }
+    .codeblocks-titlebar, .console-footer { padding-left: 8px; padding-right: 8px; }
+    input, textarea, select { font-size: 16px; }
+}
+
+@media (max-height: 540px) {
+    .console-modal { padding: 8px; }
+    .console-window, .codeblocks-window { height: 100%; }
+    .build-log { max-height: 72px; }
+    .console-footer { padding: 6px 10px; }
+    .console-footer .btn { padding: 8px 14px; }
+}
+
+@media (max-height: 540px) and (max-width: 1100px) {
+    .sidebar { position: static; }
 }
