@@ -1,0 +1,109 @@
+{% extends "layout/base.html" %}
+{% block head %}{% include "layout/editor_head.html" %}{% endblock %}
+{% block title %}Exercício - {{ licao.titulo }}{% endblock %}
+
+{% block content %}
+<div class="exercise-compiler-page">
+    <section class="card exercise-compiler-card">
+        <div class="compiler-header">
+            <div>
+                <a href="/estudar/{{ modulo.id }}?licao={{ licao.id }}" class="back">← Voltar para teoria</a>
+                <h1>Exercício de código</h1>
+                <p>{{ modulo.titulo }} — {{ licao.titulo }}</p>
+            </div>
+
+            <a class="btn btn-ghost" href="/modulos">Módulos</a>
+        </div>
+
+        <div class="exercise-box">
+            <strong>Objetivo:</strong>
+            <p>{{ licao.exercicio_codigo }}</p>
+        </div>
+
+        <div class="exercise-criteria">
+            <strong>O que será verificado</strong>
+            <ul>
+                <li>O programa precisa compilar e terminar sem erro.</li>
+                {% if licao.correcao.codigo_contem %}
+                <li>Recursos esperados:
+                    {% for termo in licao.correcao.codigo_contem %}
+                        <code>{{ termo }}</code>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </li>
+                {% endif %}
+                <li>A saída será conferida automaticamente; quando houver entrada, outros valores também poderão ser testados.</li>
+            </ul>
+        </div>
+
+        <div class="codeblocks-editor-shell">
+            <div class="fake-menu-bar">
+                <span>Arquivo</span>
+                <span>Editar</span>
+                <span>Executar</span>
+                <span>Ajuda</span>
+            </div>
+
+            <textarea id="codigoExercicio" data-licao-id="{{ licao.id }}" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
+            <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
+
+            <div class="codeblocks-bottom-bar">
+                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">⚙️ Compilar</button>
+                <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
+                <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
+            </div>
+        </div>
+
+        <div id="feedbackCorrecao" class="correction-feedback {% if codigo_validado %}success{% elif feedback_codigo %}warning{% endif %}">
+            {% if feedback_codigo %}
+                {{ feedback_codigo }}
+            {% else %}
+                Execute o código para receber a correção automática.
+            {% endif %}
+        </div>
+
+        <div id="dicaTentativas" class="hint hidden-hint">
+            <strong>Dica:</strong> revise se você declarou as variáveis, usou scanf quando precisa ler dados e colocou ponto e vírgula no final dos comandos.
+        </div>
+    </section>
+</div>
+
+<div id="buildModal" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>Build log</span>
+            <button onclick="fecharBuildModal()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="buildExercicio" class="codeblocks-console">Aguardando compilação.</pre>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharBuildModal()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<div id="terminalModalExercicio" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>"programa.exe"</span>
+            <button onclick="fecharTerminalReal()">×</button>
+        </div>
+
+        <div class="codeblocks-body terminal-real-body">
+            <pre id="terminalSaidaReal" class="codeblocks-console terminal-final-output"></pre>
+            <input id="terminalInputReal" class="terminal-real-line" autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharTerminalReal()">Sair</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% include "layout/editor_scripts.html" %}
+<script src="{{ url_for('static', filename='js/estudo.js') }}"></script>
+{% endblock %}

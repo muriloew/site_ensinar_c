@@ -3,7 +3,7 @@ import shutil
 import unittest
 from unittest.mock import Mock, patch
 
-from backend import compilador
+from backend.compilador import executor as compilador
 
 
 class CompilerSecurityTest(unittest.TestCase):

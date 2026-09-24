@@ -3,7 +3,7 @@
 
     const menu = document.querySelector('.sidebar nav');
     if (menu) {
-        const caminho = /^\/(estudar|exercicio|modulo)\//.test(location.pathname)
+        const caminho = /^\/(estudar|exercicio)\//.test(location.pathname)
             ? '/modulos' : location.pathname;
         const atual = Array.from(menu.querySelectorAll('a')).find(link => link.pathname === caminho);
         if (atual) {
