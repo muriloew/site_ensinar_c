@@ -38,8 +38,10 @@ backend/
     revisao.py                  Revisão e favoritos             -> templates/revisao/
     compilador.py               Prática livre e histórico       -> templates/compilador/
   sessao.py                     Usuário logado na requisição
+  seguranca.py                  Token CSRF e limite de tentativas de login
 templates/layout/               Página base, menu e partes do editor
-static/css/style.css            Visual de todo o site
+static/css/style.css            Visual de todo o site (tema escuro)
+static/css/tema-claro.css       Cores do tema claro
 static/js/estudo.js             Desafios teóricos, conclusão de lições e busca
 static/js/terminal.js           Compilador, terminal e rascunho automático
 static/js/editor-c.js           Editor de código (CodeMirror)
@@ -47,6 +49,7 @@ static/js/layout.js             Menu e janelas do terminal
 static/vendor/                  Bibliotecas de terceiros (CodeMirror, Socket.IO)
 scripts/                        Scripts de manutenção (migração do banco)
 tests/                          Testes automáticos (Python) e de navegador (Playwright)
+.github/workflows/testes.yml    Roda os testes e o build do Docker a cada push no GitHub
 ```
 
 Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para mudar o programa de exemplo, `backend/conteudo/exemplos.py`.
@@ -57,13 +60,15 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para muda
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição
 - Três desafios teóricos por lição e exercício de código com correção automática, incluindo testes ocultos
+- Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre
 - 200 desafios diários, sorteados só entre os módulos já liberados
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
 - Perfil com relatório por módulo, metas diárias e semanais e calendário de atividade
 - Simulado, revisão espaçada, favoritos e histórico das 100 últimas execuções
 - Download do progresso em JSON
-- Telas ajustadas para celular, tablet e computador
+- Telas ajustadas para celular, tablet e computador, com tema claro e escuro
+- Proteção contra envios de outros sites (CSRF), limite de tentativas de login e senha de 8 caracteres
 
 ## Como rodar no computador
 
@@ -110,6 +115,8 @@ O serviço deve ser do tipo **Docker**, pois o compilador precisa de GCC, TCC e 
 ```bash
 python -m unittest discover -s tests -v
 ```
+
+O GitHub Actions roda esses testes com SQLite e PostgreSQL e monta a imagem Docker a cada push.
 
 Os testes usam um SQLite temporário e **ignoram** a `DATABASE_URL`, porque apagam as tabelas. Para testá-los em um PostgreSQL descartável, use `TEST_DATABASE_URL`. O teste de compilação real é ignorado quando o GCC não está instalado.
 

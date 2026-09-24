@@ -336,3 +336,7 @@ python app.py
 - Correções: pontos-chave das lições iniciais, casos ocultos do `scanf`, dica após 3 tentativas, Ctrl+S apagando a aprovação, metas contando lições editadas, redirecionamento dos favoritos, mensagem de conclusão sem login.
 - O build log mostra `programa.c:linha:coluna` e o terminal explica falha de segmentação, divisão por zero e limites de tempo.
 - Cada página lê o progresso do aluno uma única vez, em vez de uma consulta por módulo.
+- Token CSRF em todos os envios, bloqueio de 15 minutos após 5 senhas erradas e senha mínima de 8 caracteres.
+- Dicas progressivas específicas de cada lição e desafio diário, liberadas a cada tentativa sem sucesso.
+- Tema claro com botão no menu; segue a preferência do sistema até o aluno escolher.
+- GitHub Actions roda os testes com SQLite e PostgreSQL e monta a imagem Docker a cada push.
