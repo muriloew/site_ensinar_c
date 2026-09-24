@@ -41,11 +41,18 @@ MAX_EXECUTAVEL_BYTES = _inteiro_ambiente(
     "COMPILER_MAX_EXECUTABLE_MB", 8, 1, 32
 ) * 1024 * 1024
 MAX_EXECUCOES_SIMULTANEAS = _inteiro_ambiente("MAX_COMPILER_JOBS", 1, 1, 4)
+# Programas do terminal passam quase todo o tempo esperando o aluno digitar; por isso
+# várias podem ficar abertas enquanto a compilação, que usa CPU, continua uma por vez.
+MAX_PROGRAMAS_INTERATIVOS = _inteiro_ambiente("MAX_INTERACTIVE_PROGRAMS", 4, 1, 16)
+MEMORIA_INTERATIVA_MB = _inteiro_ambiente("COMPILER_INTERACTIVE_MEMORY_MB", 96, 32, 256)
 MAX_PROCESSOS_POR_JOB = _inteiro_ambiente("COMPILER_MAX_PROCESSES", 8, 4, 24)
+# O limite de processos do Linux vale para o usuário inteiro, somando todos os jobs abertos.
+LIMITE_PROCESSOS_USUARIO = MAX_PROCESSOS_POR_JOB * (MAX_EXECUCOES_SIMULTANEAS + MAX_PROGRAMAS_INTERATIVOS)
 ESPERA_FILA_SEGUNDOS = _inteiro_ambiente("COMPILER_QUEUE_TIMEOUT", 5, 1, 15)
 REPETICOES_FALHA_RECURSO = _inteiro_ambiente("COMPILER_RESOURCE_RETRIES", 2, 1, 3)
 
 _slots_execucao = threading.BoundedSemaphore(MAX_EXECUCOES_SIMULTANEAS)
+_vagas_interativas = threading.BoundedSemaphore(MAX_PROGRAMAS_INTERATIVOS)
 _limite_lock = threading.Lock()
 _execucoes_recentes = defaultdict(deque)
 
@@ -85,6 +92,17 @@ def adquirir_slot(espera=0):
 def liberar_slot():
     try:
         _slots_execucao.release()
+    except ValueError:
+        pass
+
+
+def adquirir_vaga_interativa():
+    return _vagas_interativas.acquire(blocking=False)
+
+
+def liberar_vaga_interativa():
+    try:
+        _vagas_interativas.release()
     except ValueError:
         pass
 
@@ -210,7 +228,7 @@ def _com_limites(comando, modo):
         cpu, memoria = TEMPO_CPU_COMPILACAO, 512 * 1024 * 1024
         tamanho_arquivo = MAX_EXECUTAVEL_BYTES
     elif modo == "interativo":
-        cpu, memoria = 20, 160 * 1024 * 1024
+        cpu, memoria = 20, MEMORIA_INTERATIVA_MB * 1024 * 1024
         tamanho_arquivo = MAX_SAIDA_BYTES
     else:
         cpu, memoria = TEMPO_EXECUCAO, 160 * 1024 * 1024
@@ -229,7 +247,7 @@ def _com_limites(comando, modo):
     # RLIMIT_NPROC conta todos os processos e threads do mesmo usuario. Ele so
     # e seguro quando o Docker fornece um usuario exclusivo ao compilador.
     if _identidade_runner():
-        limitado.insert(4, f"--nproc={MAX_PROCESSOS_POR_JOB}")
+        limitado.insert(4, f"--nproc={LIMITE_PROCESSOS_USUARIO}")
     setpriv = shutil.which("setpriv")
     if setpriv:
         limitado = [setpriv, "--no-new-privs", "--", *limitado]

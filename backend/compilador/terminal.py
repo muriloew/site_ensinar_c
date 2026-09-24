@@ -125,9 +125,9 @@ def encerrar_processo_socket(sid):
         pass
     shutil.rmtree(dados["temp_dir"], ignore_errors=True)
 
-    if dados.get("slot_adquirido"):
-        dados["slot_adquirido"] = False
-        executor.liberar_slot()
+    if dados.get("vaga_interativa"):
+        dados["vaga_interativa"] = False
+        executor.liberar_vaga_interativa()
 
 
 def leitor_terminal(sid):
@@ -215,9 +215,9 @@ def leitor_terminal(sid):
         enviar(f"\n\n{executor.texto_retorno(codigo_saida, motivo_interrupcao)}\n")
     socketio.emit("terminal_finalizado", {"codigo": codigo_saida}, to=sid)
 
-    if dados.get("slot_adquirido"):
-        dados["slot_adquirido"] = False
-        executor.liberar_slot()
+    if dados.get("vaga_interativa"):
+        dados["vaga_interativa"] = False
+        executor.liberar_vaga_interativa()
 
     execucao = {
         "codigo": dados["codigo"],
@@ -302,19 +302,30 @@ def compilar_real(dados):
             })
             return
 
-    if not executor.adquirir_slot():
-        emit("build_log", {"ok": False, "texto": "Todos os terminais estão ocupados. Aguarde alguns segundos."})
+    if not executor.adquirir_vaga_interativa():
+        emit("build_log", {
+            "ok": False,
+            "texto": "Muitos programas abertos no servidor agora. Aguarde alguns segundos e compile de novo.",
+        })
         return
 
     with PROCESSOS_TERMINAL_LOCK:
         TERMINAL_POR_USUARIO[usuario_id] = sid
 
-    slot_reservado = True
+    vaga_reservada = True
     temp_dir = None
     master_fd = None
     slave_fd = None
     try:
-        preparacao = executor.preparar_terminal(codigo)
+        # A compilação usa CPU: uma por vez, com uma fila curta. A vaga é liberada ao terminar de compilar.
+        with executor.slot_execucao() as compilador_livre:
+            if not compilador_livre:
+                emit("build_log", {
+                    "ok": False,
+                    "texto": "O compilador está ocupado com outros alunos. Aguarde alguns segundos e tente de novo.",
+                })
+                return
+            preparacao = executor.preparar_terminal(codigo)
         if not preparacao.get("ok"):
             emit("build_log", {"ok": False, "texto": preparacao.get("build", "Falha ao compilar.")})
             return
@@ -340,9 +351,9 @@ def compilar_real(dados):
                 "entrada": "",
                 "build_log": build_log,
                 "origem": f"{preparacao.get('compilador', 'GCC')} interativo protegido",
-                "slot_adquirido": True,
+                "vaga_interativa": True,
             }
-        slot_reservado = False
+        vaga_reservada = False
         master_fd = None
         temp_dir = None
 
@@ -358,11 +369,11 @@ def compilar_real(dados):
                     pass
         if temp_dir:
             shutil.rmtree(temp_dir, ignore_errors=True)
-        if slot_reservado:
+        if vaga_reservada:
             with PROCESSOS_TERMINAL_LOCK:
                 if TERMINAL_POR_USUARIO.get(usuario_id) == sid:
                     TERMINAL_POR_USUARIO.pop(usuario_id, None)
-            executor.liberar_slot()
+            executor.liberar_vaga_interativa()
 
 
 @socketio.on("terminal_entrada")

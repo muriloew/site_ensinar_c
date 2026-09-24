@@ -155,7 +155,9 @@ Os relatórios e capturas ficam na pasta temporária `ensinar-c-layout` do siste
 - `DB_POOL_MAX`: máximo de conexões abertas com o PostgreSQL; o padrão é 5.
 - `ADMIN_EMAILS`: e-mails (separados por vírgula) que veem o painel do professor em `/professor`. Cada professor cria a conta normalmente pelo cadastro.
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
-- `MAX_COMPILER_JOBS`: compilações simultâneas; no Render gratuito use `1`.
+- `MAX_COMPILER_JOBS`: compilações simultâneas; no Render gratuito use `1` (as outras esperam até `COMPILER_QUEUE_TIMEOUT` segundos na fila).
+- `MAX_INTERACTIVE_PROGRAMS`: programas abertos ao mesmo tempo no terminal (alunos esperando no scanf); o padrão é 4. Em um plano pago com mais memória, 8 ou mais.
+- `COMPILER_INTERACTIVE_MEMORY_MB`: memória de cada programa do terminal; o padrão é 96 MB.
 - `COMPILER_MAX_PROCESSES`: máximo de processos por compilação ou programa; o padrão é 8.
 - `COMPILER_QUEUE_TIMEOUT`: segundos que uma compilação aguarda sua vez; o padrão é 5.
 - `COMPILER_RESOURCE_RETRIES`: tentativas após uma falha temporária de processos; o padrão é 2.

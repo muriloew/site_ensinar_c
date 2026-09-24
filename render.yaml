@@ -20,6 +20,8 @@ services:
         value: compiler-runner
       - key: MAX_COMPILER_JOBS
         value: "1"
+      - key: MAX_INTERACTIVE_PROGRAMS
+        value: "4"
       - key: COMPILER_MAX_PROCESSES
         value: "8"
       - key: COMPILER_QUEUE_TIMEOUT

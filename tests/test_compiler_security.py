@@ -123,7 +123,7 @@ class CompilerSecurityTest(unittest.TestCase):
                     comando_docker = compilador._com_limites(["gcc"], "compilar")
 
         self.assertFalse(any(item.startswith("--nproc=") for item in comando_nativo))
-        self.assertIn(f"--nproc={compilador.MAX_PROCESSOS_POR_JOB}", comando_docker)
+        self.assertIn(f"--nproc={compilador.LIMITE_PROCESSOS_USUARIO}", comando_docker)
 
     def test_erro_de_sintaxe_nao_aciona_compilador_alternativo(self):
         erro_sintaxe = {
