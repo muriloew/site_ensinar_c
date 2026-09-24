@@ -1,0 +1,88 @@
+{% extends "layout/base.html" %}
+{% block title %}Professor - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <span class="page-kicker">Área do professor</span>
+        <h1>Acompanhamento da turma</h1>
+        <p>Progresso dos alunos, exercícios com mais dificuldade e redefinição de senha.</p>
+    </div>
+</div>
+
+{% if senha_nova %}
+<div class="success-box" role="status">
+    Senha temporária de <strong>{{ senha_nova.nome }}</strong> ({{ senha_nova.email }}):
+    <code class="temp-password">{{ senha_nova.senha }}</code><br>
+    Passe esta senha ao aluno agora; ela não será mostrada de novo. No primeiro acesso ele será levado a criar uma senha nova.
+</div>
+{% endif %}
+
+<section class="mini-stats game-stats teacher-stats">
+    <div class="card"><span>A</span><strong>{{ resumo.alunos }}</strong><p>alunos cadastrados</p></div>
+    <div class="card"><span>7D</span><strong>{{ resumo.ativos }}</strong><p>estudaram nos últimos 7 dias</p></div>
+    <div class="card"><span>%</span><strong>{{ resumo.progresso_medio }}%</strong><p>progresso médio da turma</p></div>
+    <div class="card"><span>L</span><strong>{{ resumo.licoes_concluidas }}</strong><p>lições concluídas no total</p></div>
+</section>
+
+<section class="card teacher-section">
+    <h2>Alunos</h2>
+    {% if alunos %}
+    <div class="table-scroll">
+        <table class="teacher-table">
+            <thead>
+                <tr><th>Nome</th><th>E-mail</th><th>Lições</th><th>Progresso</th><th>XP</th><th>Última atividade</th><th>Senha</th></tr>
+            </thead>
+            <tbody>
+                {% for aluno in alunos %}
+                <tr>
+                    <td>{{ aluno.nome }}</td>
+                    <td>{{ aluno.email }}</td>
+                    <td>{{ aluno.concluidas }}/{{ total }}</td>
+                    <td><div class="bar" aria-label="{{ aluno.progresso }}%"><span style="width: {{ aluno.progresso }}%"></span></div> {{ aluno.progresso }}%</td>
+                    <td>{{ aluno.xp }}</td>
+                    <td>{{ aluno.ultima_atividade }}</td>
+                    <td>
+                        <form method="post" action="/professor/alunos/{{ aluno.id }}/redefinir-senha"
+                              data-confirmar="Gerar uma senha temporária para {{ aluno.nome }}? A senha atual deixará de funcionar.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-ghost btn-small" type="submit">Redefinir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="small-muted">Nenhum aluno cadastrado ainda.</p>
+    {% endif %}
+</section>
+
+<section class="card teacher-section">
+    <h2>Exercícios com mais dificuldade</h2>
+    <p class="small-muted">Baseado nas últimas execuções de código de cada aluno.</p>
+    {% if dificuldades %}
+    <div class="table-scroll">
+        <table class="teacher-table">
+            <thead>
+                <tr><th>Lição</th><th>Módulo</th><th>Tentativas sem sucesso</th><th>Taxa de sucesso</th><th>Alunos</th></tr>
+            </thead>
+            <tbody>
+                {% for item in dificuldades %}
+                <tr>
+                    <td>{{ item.licao }}</td>
+                    <td>{{ item.modulo }}</td>
+                    <td>{{ item.falhas }} de {{ item.tentativas }}</td>
+                    <td>{{ item.taxa_sucesso }}%</td>
+                    <td>{{ item.alunos }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="small-muted">Ainda não há tentativas sem sucesso registradas.</p>
+    {% endif %}
+</section>
+{% endblock %}

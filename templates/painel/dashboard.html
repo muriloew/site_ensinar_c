@@ -1,0 +1,209 @@
+{% extends "layout/base.html" %}
+{% block title %}Painel - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar game-topbar">
+    <div>
+        <span class="page-kicker">Jornada de aprendizagem</span>
+        <h1>Olá, {{ usuario.nome }}!</h1>
+        <p>Seu próximo passo já está preparado.</p>
+    </div>
+
+    <div class="user-pill">
+        <div class="avatar">{{ usuario.nome[0] }}</div>
+        <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>{{ liga.nome }} · Nível {{ usuario.nivel }}</span>
+        </div>
+        <b>{{ usuario.xp }} XP</b>
+    </div>
+</div>
+
+{% if recompensa_mensagem %}
+<div class="game-notice success" role="status">{{ recompensa_mensagem }}</div>
+{% elif aviso_mensagem %}
+<div class="game-notice warning" role="status">{{ aviso_mensagem }}</div>
+{% endif %}
+
+<section class="game-overview">
+    <article class="continue-card">
+        <div class="continue-copy">
+            <span class="page-kicker">Próxima missão</span>
+            {% if proxima_licao.concluido %}
+                <h2>Trilha concluída</h2>
+                <p>Você completou todos os módulos disponíveis.</p>
+                <a class="btn btn-primary" href="/modulos">Revisar jornada</a>
+            {% else %}
+                <h2>{{ proxima_licao.licao }}</h2>
+                <p>Módulo {{ proxima_licao.modulo_id }} · {{ proxima_licao.modulo }}</p>
+                <div class="mission-progress-line">
+                    <span>{{ proxima_licao.progresso }}% do módulo</span>
+                    <div class="bar"><span style="width: {{ proxima_licao.progresso }}%"></span></div>
+                </div>
+                <a class="btn btn-primary" href="/estudar/{{ proxima_licao.modulo_id }}?licao={{ proxima_licao.licao_id }}">Continuar</a>
+            {% endif %}
+        </div>
+
+        <div class="level-orbit" aria-label="Progresso do nível {{ nivel_jogo.nivel }}">
+            <strong>{{ nivel_jogo.nivel }}</strong>
+            <span>NÍVEL</span>
+            <small>{{ nivel_jogo.xp_atual }}/{{ nivel_jogo.xp_alvo }} XP</small>
+        </div>
+    </article>
+
+    <article class="streak-card game-streak-card">
+        <div class="streak-heading">
+            <div>
+                <span class="page-kicker">Sequência atual</span>
+                <strong>{{ usuario.sequencia }} dias</strong>
+            </div>
+            <span class="streak-record">Recorde {{ usuario.melhor_sequencia }}</span>
+        </div>
+
+        <div class="week-strip" aria-label="Atividade nos últimos sete dias">
+            {% for dia in calendario %}
+            <div class="week-day {% if dia.ativo %}active{% endif %} {% if dia.hoje %}today{% endif %}">
+                <span>{{ dia.nome }}</span>
+                <b>{{ dia.dia }}</b>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="streak-footer">
+            <span>Proteções: <strong>{{ usuario.protecoes_sequencia }}</strong></span>
+            <div>
+                <a href="/revisao">{{ revisoes_pendentes }} revisões</a>
+                <a href="/desafio-diario">Desafio diário</a>
+            </div>
+        </div>
+    </article>
+</section>
+
+<section class="daily-missions-section">
+    <div class="section-head">
+        <div>
+            <span class="page-kicker">Recompensas renovadas diariamente</span>
+            <h2>Missões de hoje</h2>
+        </div>
+        <span class="mission-count">{{ missoes|selectattr('concluida')|list|length }}/{{ missoes|length }} concluídas</span>
+    </div>
+
+    <div class="mission-grid">
+        {% for missao in missoes %}
+        <article class="mission-card {% if missao.resgatada %}claimed{% elif missao.concluida %}ready{% endif %}">
+            <div class="mission-token">{{ missao.icone }}</div>
+            <div class="mission-body">
+                <div class="mission-title-row">
+                    <h3>{{ missao.titulo }}</h3>
+                    <span>+{{ missao.recompensa }} XP</span>
+                </div>
+                <p>{{ missao.descricao }}</p>
+                <div class="bar"><span style="width: {{ missao.percentual }}%"></span></div>
+                <small>{{ missao.progresso }}/{{ missao.alvo }}</small>
+            </div>
+
+            {% if missao.resgatada %}
+                <span class="mission-state done">Resgatada</span>
+            {% elif missao.concluida %}
+                <form method="post" action="/missoes/{{ missao.id }}/resgatar">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-primary" type="submit">Resgatar</button>
+                </form>
+            {% else %}
+                <span class="mission-state">Em andamento</span>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="mini-stats game-stats">
+    <div class="card"><span>XP</span><strong>{{ usuario.xp }}</strong><p>experiência total</p></div>
+    <div class="card"><span>C</span><strong>{{ concluidas }}</strong><p>lições concluídas</p></div>
+    <div class="card"><span>A</span><strong>{{ conquistas|length }}</strong><p>conquistas</p></div>
+    <a class="card stat-link" href="/perfil"><span>{{ usuario.nivel }}</span><strong>{{ liga.nome }}</strong><p>ver perfil</p></a>
+</section>
+
+<section class="content-grid game-content-grid">
+    <div>
+        <div class="section-head">
+            <h2>Na sua jornada</h2>
+            <a href="/modulos">Ver trilha completa</a>
+        </div>
+
+        <div class="module-grid journey-preview">
+            {% for modulo in modulos_destaque %}
+            <article class="module-card {{ modulo.estado }}">
+                <div class="module-card-top">
+                    <div class="module-icon">{{ modulo.icone }}</div>
+                    <span class="module-state-label">
+                        {% if modulo.estado == 'concluido' %}Concluído{% elif modulo.estado == 'atual' %}Disponível{% else %}Bloqueado{% endif %}
+                    </span>
+                </div>
+                <span>Módulo {{ modulo.id }}</span>
+                <h3>{{ modulo.titulo }}</h3>
+                <p>{{ modulo.licoes|length }} lições · {{ modulo.estrelas }}/3 estrelas</p>
+                <div class="bar"><span style="width: {{ modulo.progresso }}%"></span></div>
+
+                {% if modulo.liberado %}
+                    <a class="btn {% if modulo.estado == 'atual' %}btn-primary{% else %}btn-ghost{% endif %}" href="/estudar/{{ modulo.id }}">
+                        {% if modulo.estado == 'concluido' %}Revisar{% else %}Continuar{% endif %}
+                    </a>
+                {% else %}
+                    <button class="btn btn-disabled" type="button" disabled>Bloqueado</button>
+                {% endif %}
+            </article>
+            {% endfor %}
+        </div>
+    </div>
+
+    <aside class="right-panel">
+        <section class="card league-card {{ liga.classe }}">
+            <span class="page-kicker">Liga atual</span>
+            <h3>{{ liga.nome }}</h3>
+            {% if liga.proximo %}
+                <p>Faltam {{ liga.proximo - usuario.xp }} XP para a próxima liga.</p>
+            {% else %}
+                <p>Você alcançou a liga mais alta.</p>
+            {% endif %}
+        </section>
+
+        <section class="card">
+            <div class="section-head compact">
+                <h3>Conquistas recentes</h3>
+                <a href="/perfil">Coleção</a>
+            </div>
+            <div class="achievement-list">
+                {% for c in conquistas[:4] %}
+                <div class="achievement-row {{ c.raridade or 'comum' }}">
+                    <span>{{ c.icone }}</span>
+                    <div>
+                        <strong>{{ c.nome }}</strong>
+                        <small>{{ c.descricao or 'Conquista da jornada.' }}</small>
+                    </div>
+                </div>
+                {% else %}
+                <p class="small-muted">A primeira conquista está a uma lição de distância.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="card">
+            <h3>Ranking de XP</h3>
+            <ol class="ranking">
+                {% for item in ranking %}
+                <li><span>{{ item.nome }}</span><b>{{ item.xp }} XP</b></li>
+                {% endfor %}
+            </ol>
+        </section>
+
+        <section class="card backup-card">
+            <div class="section-head compact">
+                <h3>Progresso protegido</h3>
+                <a href="/backup-progresso">Baixar</a>
+            </div>
+            <p class="small-muted">Seu progresso é salvo no banco de dados a cada atividade. Baixe uma cópia quando quiser.</p>
+        </section>
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "layout/base.html" %}
+{% block title %}Configurações - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>Configurações</h1>
+        <p>Seu perfil, sua senha, suas preferências e seus dados.</p>
+    </div>
+    <a class="btn btn-ghost" href="/perfil">Ver perfil</a>
+</div>
+
+{% if aviso %}<div class="alert" role="alert">{{ aviso }}</div>{% endif %}
+{% if request.args.get("salvo") == "perfil" %}<div class="success-box" role="status">Perfil atualizado.</div>{% endif %}
+{% if request.args.get("salvo") == "senha" %}<div class="success-box" role="status">Senha alterada.</div>{% endif %}
+
+<div class="settings-grid">
+    <section class="card settings-card" id="perfil">
+        <h2>Perfil</h2>
+        <div class="settings-identity">
+            <div class="profile-avatar-large">{{ usuario.nome[0] }}</div>
+            <div>
+                <strong>{{ usuario.nome }}</strong>
+                <p class="small-muted">{{ usuario.email }}</p>
+            </div>
+        </div>
+        {% if erro_perfil %}<div class="alert" role="alert">{{ erro_perfil }}</div>{% endif %}
+        <form method="post" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="perfil">
+            <label>Nome
+                <input type="text" name="nome" value="{{ usuario.nome }}" maxlength="60" autocomplete="name" required>
+            </label>
+            <label>E-mail
+                <input type="email" name="email" value="{{ usuario.email }}" maxlength="120" autocomplete="email" required>
+            </label>
+            <label>Senha atual <span class="small-muted">(só para trocar o e-mail)</span>
+                <input type="password" name="senha_atual" autocomplete="current-password">
+            </label>
+            <button class="btn btn-primary" type="submit">Salvar perfil</button>
+        </form>
+    </section>
+
+    <section class="card settings-card" id="senha">
+        <h2>Senha</h2>
+        {% if erro_senha %}<div class="alert" role="alert">{{ erro_senha }}</div>{% endif %}
+        <form method="post" class="settings-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="senha">
+            <label>Senha atual
+                <input type="password" name="senha_atual" autocomplete="current-password" required>
+            </label>
+            <label>Nova senha <span class="small-muted">(mínimo de 8 caracteres)</span>
+                <input type="password" name="nova_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+            </label>
+            <label>Confirme a nova senha
+                <input type="password" name="confirmar_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+            </label>
+            <label class="settings-check"><input type="checkbox" data-mostrar-senha> Mostrar senhas</label>
+            <button class="btn btn-primary" type="submit">Alterar senha</button>
+        </form>
+    </section>
+
+    <section class="card settings-card" id="preferencias">
+        <h2>Preferências</h2>
+        <p class="small-muted">Ficam salvas neste navegador.</p>
+        <div class="settings-form">
+            <label>Tema
+                <select data-preferencia="tema">
+                    <option value="sistema">Igual ao sistema</option>
+                    <option value="escuro">Escuro</option>
+                    <option value="claro">Claro</option>
+                </select>
+            </label>
+            <label>Tamanho da letra do editor de código
+                <select data-preferencia="fonte_editor">
+                    <option value="">Normal</option>
+                    <option value="16">Média</option>
+                    <option value="18">Grande</option>
+                    <option value="20">Muito grande</option>
+                </select>
+            </label>
+            <p class="small-muted" data-preferencia-status role="status"></p>
+        </div>
+        <p>Metas diárias e semanais de estudo: <a class="text-link" href="/perfil#metas">ajustar no perfil</a>.</p>
+    </section>
+
+    <section class="card settings-card" id="dados">
+        <h2>Seus dados</h2>
+        <p>Baixe uma cópia de todo o seu progresso, respostas e códigos em formato JSON.</p>
+        <a class="btn btn-ghost" href="/backup-progresso">Baixar meus dados</a>
+
+        <div class="danger-zone">
+            <h3>Excluir conta</h3>
+            <p>Apaga sua conta e todo o progresso. Não é possível desfazer.</p>
+            {% if erro_excluir %}<div class="alert" role="alert">{{ erro_excluir }}</div>{% endif %}
+            <form method="post" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="acao" value="excluir">
+                <label>Digite EXCLUIR
+                    <input type="text" name="confirmacao" autocomplete="off" required>
+                </label>
+                <label>Senha atual
+                    <input type="password" name="senha_atual" autocomplete="current-password" required>
+                </label>
+                <button class="btn btn-danger" type="submit">Excluir minha conta</button>
+            </form>
+        </div>
+    </section>
+</div>
+{% endblock %}

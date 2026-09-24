@@ -4,3 +4,5 @@ gunicorn==22.0.0
 requests==2.32.3
 Flask-SocketIO==5.3.6
 simple-websocket==1.1.0
+psycopg[binary]==3.3.6
+psycopg-pool==3.3.3

@@ -15,12 +15,21 @@ class TheoryContentTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.temporary = tempfile.TemporaryDirectory()
-        cls.previous_env = {key: os.environ.get(key) for key in ("DB_PATH", "BACKUP_DIR")}
+        cls.previous_env = {key: os.environ.get(key) for key in ("DB_PATH", "DATABASE_URL")}
         os.environ["DB_PATH"] = str(Path(cls.temporary.name) / "theory.db")
-        os.environ["BACKUP_DIR"] = str(Path(cls.temporary.name) / "backups")
+        # Estes testes só leem conteúdo: nunca abrem o banco real da DATABASE_URL.
+        os.environ.pop("DATABASE_URL", None)
         sys.path.insert(0, str(PROJECT))
         cls.site = importlib.import_module("app")
-        cls.lessons = [lesson for module in cls.site.MODULOS for lesson in module["licoes"]]
+
+        from backend.conteudo.exemplos_teoricos import ARQUIVOS_BUILD
+        from backend.conteudo.teoria_ampliada import LEITURAS
+        from backend.conteudo.trilha import MODULOS
+
+        cls.MODULOS = MODULOS
+        cls.LEITURAS = LEITURAS
+        cls.ARQUIVOS_BUILD = ARQUIVOS_BUILD
+        cls.lessons = [lesson for module in MODULOS for lesson in module["licoes"]]
 
     @classmethod
     def tearDownClass(cls):
@@ -35,7 +44,7 @@ class TheoryContentTest(unittest.TestCase):
 
     def test_all_lessons_have_specific_readings(self):
         self.assertEqual(len(self.lessons), 91)
-        self.assertEqual(set(self.site.LEITURAS), {lesson["titulo"] for lesson in self.lessons})
+        self.assertEqual(set(self.LEITURAS), {lesson["titulo"] for lesson in self.lessons})
         self.assertEqual(len({lesson["leitura"]["explicacao"] for lesson in self.lessons}), 91)
         for lesson in self.lessons:
             with self.subTest(lesson=lesson["titulo"]):
@@ -58,24 +67,27 @@ class TheoryContentTest(unittest.TestCase):
             for prerequisite in guide["revisar"]:
                 self.assertLess(prerequisite["id"], lesson["id"])
                 self.assertEqual(lookup[prerequisite["id"]]["titulo"], prerequisite["titulo"])
-                module = next(m for m in self.site.MODULOS if m["id"] == prerequisite["modulo_id"])
+                module = next(m for m in self.MODULOS if m["id"] == prerequisite["modulo_id"])
                 self.assertIn(lookup[prerequisite["id"]], module["licoes"])
 
     def test_template_renders_all_lessons_without_changing_quiz_controls(self):
         from flask import render_template
         self.site.app.config["TESTING"] = True
-        for module in self.site.MODULOS:
+        for module in self.MODULOS:
             for lesson in module["licoes"]:
                 with self.subTest(lesson=lesson["titulo"]), self.site.app.test_request_context("/"):
                     html = render_template(
-                        "learning/estudar.html", modulo=module, licao=lesson,
+                        "estudo/estudar.html", modulo=module, licao=lesson,
                         concluidas_ids=[], favorita=False,
                         desafios_teoricos=lesson["desafios_teoricos"],
                         desafios_teoricos_corretos=0, total_desafios_teoricos=3,
+                        anotacao="", posicao=module["licoes"].index(lesson) + 1,
+                        anterior=None, proxima=None,
                     )
                     self.assertIn("Como funciona", html)
                     self.assertIn("Pense antes de continuar", html)
-                    self.assertEqual(html.count('data-licao-id="'), 3)
+                    self.assertIn("Indo além", html)
+                    self.assertEqual(html.count('class="quiz"'), 3)
                     self.assertEqual(html.count('data-desafio-id="'), 3)
                     self.assertNotIn("<stdio.h>", html)
                     self.assertIn("&lt;stdio.h&gt;", html)
@@ -121,7 +133,7 @@ class TheoryContentTest(unittest.TestCase):
     def test_multifile_example_compiles_and_makefile_lists_dependencies(self):
         compiler = self.compiler()
         with tempfile.TemporaryDirectory() as folder:
-            for file in self.site.ARQUIVOS_BUILD:
+            for file in self.ARQUIVOS_BUILD:
                 (Path(folder) / file["nome"]).write_text(file["codigo"], encoding="utf-8")
             executable = Path(folder) / ("program.exe" if os.name == "nt" else "program")
             self.compile(compiler, ["main.c", "calculos.c"], executable, folder)

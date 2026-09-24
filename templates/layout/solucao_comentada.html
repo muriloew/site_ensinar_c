@@ -1,0 +1,17 @@
+{% if solucao %}
+<section id="solucaoComentada" class="solution-card">
+    <h2>Solução comentada</h2>
+    <p id="solucaoBloqueada" class="small-muted"{% if liberada %} hidden{% endif %}>
+        🔒 Libera quando a correção automática aprovar o seu código. Tente primeiro: as dicas aparecem a cada tentativa.
+    </p>
+    <details id="solucaoConteudo"{% if not liberada %} hidden{% endif %}>
+        <summary>Comparar com uma solução de referência</summary>
+        <p id="solucaoExplicacao" class="code-explanation">{% if liberada %}{{ solucao.explicacao }}{% endif %}</p>
+        <div class="code-window">
+            <div class="dots"><span></span><span></span><span></span></div>
+            <pre><code id="solucaoCodigo">{% if liberada %}{{ solucao.codigo }}{% endif %}</code></pre>
+        </div>
+        <p class="small-muted">Seu código não precisa ser igual: se passou na correção, está certo. Compare as ideias e os nomes usados.</p>
+    </details>
+</section>
+{% endif %}

@@ -1,0 +1,79 @@
+/* Tema claro: ativado com data-theme="claro" no <html>.
+   Editor, terminal e blocos de código continuam escuros, como nas IDEs. */
+
+:root[data-theme="claro"] {
+    --bg: #f3f6fb;
+    --panel: #ffffff;
+    --panel-2: #eef3f9;
+    --border: #d4dde9;
+    --text: #0f172a;
+    --muted: #4d5d74;
+    --blue: #1567c9;
+    --purple: #6a46d9;
+    --green: #15803d;
+    --yellow: #b45309;
+    --red: #c62828;
+    --shadow: 0 14px 36px rgba(15, 23, 42, .10);
+    color-scheme: light;
+}
+
+:root[data-theme="claro"] :is(.stats-row div, .card, .module-card, .lesson-list, .auth-card, .user-pill,
+    .search-panel, .module-row, .question-card, .review-item, .continue-card, .game-streak-card,
+    .mission-card, .journey-resume, .journey-stage, .profile-card, .journey-level,
+    .profile-game-strip, .achievement-collection-section) {
+    background: var(--panel);
+}
+
+:root[data-theme="claro"] .sidebar { background: rgba(255, 255, 255, .96); }
+:root[data-theme="claro"] .sidebar nav a { border-color: var(--border); }
+:root[data-theme="claro"] .sidebar .sair { color: #be123c; }
+
+:root[data-theme="claro"] :is(.btn-ghost, .quiz button, .history-list button, .answer-list label,
+    .correction-feedback, .toolbar-codeblocks, .exercise-criteria, .dots) {
+    background: rgba(15, 23, 42, .04);
+}
+
+:root[data-theme="claro"] :is(.auth-card input, .search-panel input, .goals-form input) {
+    background: #ffffff;
+    color: var(--text);
+    border-color: var(--border);
+}
+
+:root[data-theme="claro"] :is(.bar) { background: #dbe3ee; }
+:root[data-theme="claro"] :is(.level-orbit, .week-day, .journey-node, .achievement-tile) { background: var(--panel-2); }
+
+:root[data-theme="claro"] .pill { color: #5b21b6; }
+:root[data-theme="claro"] :is(.exercise-box, .daily-module-label, .exercise-criteria code) { color: #1e40af; }
+:root[data-theme="claro"] :is(.hint, .correction-feedback.warning, .mission-title-row span,
+    .achievement-row > span, .achievement-tile > span) { color: #92400e; }
+:root[data-theme="claro"] :is(.theory-challenge-progress, .correction-feedback.success, .mission-state.done,
+    .journey-level strong, .journey-step.concluido .journey-node) { color: #166534; }
+:root[data-theme="claro"] :is(.page-kicker, .streak-footer a, .section-head a, .mission-token,
+    .game-stats .card > span) { color: #0369a1; }
+:root[data-theme="claro"] .favorite-button:is(:hover, .active) { color: #b45309; }
+:root[data-theme="claro"] .save-status.saving { color: #a16207; }
+:root[data-theme="claro"] .save-status.saved { color: #15803d; }
+
+:root[data-theme="claro"] .console-modal { background: rgba(15, 23, 42, .45); }
+
+/* Texto branco sobre fundos coloridos (botões, avatar e selo de XP). */
+:root[data-theme="claro"] :is(.btn-primary, .avatar, .profile-avatar-large, .user-pill b) {
+    color: #ffffff;
+}
+
+.theme-toggle {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--muted);
+    text-align: left;
+    cursor: pointer;
+}
+
+.theme-toggle:hover { color: var(--text); }
+
+@media (max-width: 1100px) {
+    .theme-toggle { width: auto; flex: 0 0 auto; padding: 10px 12px; white-space: nowrap; }
+}

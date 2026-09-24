@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Ensinar C{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aprenda a linguagem C com lições em 21 módulos, exercícios corrigidos automaticamente e compilador no navegador.">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <script>
+        // Aplica o tema antes de desenhar a página, evitando piscar o tema errado.
+        try {
+            const tema = localStorage.getItem("tema")
+                || (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
+            document.documentElement.dataset.theme = tema;
+        } catch (erro) { /* sem armazenamento, fica o tema escuro */ }
+    </script>
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tema-claro.css') }}">
+</head>
+<body>
+{% if usuario %}
+<aside class="sidebar">
+    <a href="/dashboard" class="brand">
+        <span class="brand-icon">C</span>
+        <strong>Ensinar C</strong>
+    </a>
+
+    <nav aria-label="Menu principal">
+        <a href="/dashboard">🏠 Painel</a>
+        <a href="/modulos">📚 Módulos</a>
+        <a href="/desafio-diario">🎯 Desafio diário</a>
+        <a href="/revisao">↻ Revisão</a>
+        <a href="/favoritos">★ Favoritos</a>
+        <a href="/simulado">📝 Simulado</a>
+        <a href="/referencia">📖 Consulta rápida</a>
+        <a href="/compilador">💻 Prática livre</a>
+        <a href="/historico-codigos">⌛ Histórico</a>
+        <a href="/perfil">👤 Perfil</a>
+        <a href="/configuracoes">⚙️ Configurações</a>
+        {% if professor %}<a href="/professor">🧑‍🏫 Professor</a>{% endif %}
+        <button type="button" class="theme-toggle" data-alternar-tema>◐ Tema claro</button>
+        <a href="/sair" class="sair">↩ Sair</a>
+    </nav>
+</aside>
+{% endif %}
+
+<main class="{% if usuario %}app-main{% else %}public-main{% endif %}">
+    {% block content %}{% endblock %}
+</main>
+
+<script src="{{ url_for('static', filename='js/layout.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

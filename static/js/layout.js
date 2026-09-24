@@ -1,9 +1,79 @@
+// Token que acompanha cada envio ao servidor (proteção CSRF).
+window.cabecalhosEnvio = function (extras = {}) {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return {...extras, "X-CSRFToken": meta ? meta.content : ""};
+};
+
 (function () {
     "use strict";
 
+    function lerPreferencia(chave) {
+        try { return localStorage.getItem(chave) || ""; } catch (erro) { return ""; }
+    }
+
+    function salvarPreferencia(chave, valor) {
+        try {
+            if (valor) localStorage.setItem(chave, valor);
+            else localStorage.removeItem(chave);
+            return true;
+        } catch (erro) {
+            return false;
+        }
+    }
+
+    const botaoTema = document.querySelector("[data-alternar-tema]");
+    function aplicarTema(escolha) {
+        const tema = escolha || (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
+        document.documentElement.dataset.theme = tema;
+        if (botaoTema) {
+            botaoTema.textContent = tema === "claro" ? "◐ Tema escuro" : "◐ Tema claro";
+            botaoTema.setAttribute("aria-pressed", String(tema === "claro"));
+        }
+    }
+    aplicarTema(lerPreferencia("tema"));
+    botaoTema?.addEventListener("click", () => {
+        const novo = document.documentElement.dataset.theme === "claro" ? "escuro" : "claro";
+        salvarPreferencia("tema", novo);
+        aplicarTema(novo);
+        const seletor = document.querySelector('[data-preferencia="tema"]');
+        if (seletor) seletor.value = novo;
+    });
+
+    // Página de configurações: preferências guardadas no navegador.
+    const statusPreferencia = document.querySelector("[data-preferencia-status]");
+    document.querySelectorAll("[data-preferencia]").forEach((seletor) => {
+        const chave = seletor.dataset.preferencia;
+        seletor.value = lerPreferencia(chave) || (chave === "tema" ? "sistema" : "");
+        seletor.addEventListener("change", () => {
+            const valor = seletor.value === "sistema" ? "" : seletor.value;
+            const salvo = salvarPreferencia(chave, valor);
+            if (chave === "tema") aplicarTema(valor);
+            if (statusPreferencia) {
+                statusPreferencia.textContent = salvo
+                    ? "Preferência salva."
+                    : "O navegador bloqueou o armazenamento; a escolha vale só nesta página.";
+            }
+        });
+    });
+
+    // Formulários com data-confirmar pedem confirmação antes de enviar.
+    document.addEventListener("submit", (evento) => {
+        const mensagem = evento.target.dataset?.confirmar;
+        if (mensagem && !confirm(mensagem)) evento.preventDefault();
+    });
+
+    document.querySelectorAll("[data-mostrar-senha]").forEach((caixa) => {
+        caixa.addEventListener("change", () => {
+            caixa.closest("form").querySelectorAll('input[type="password"], input[data-era-senha]').forEach((campo) => {
+                campo.dataset.eraSenha = "1";
+                campo.type = caixa.checked ? "text" : "password";
+            });
+        });
+    });
+
     const menu = document.querySelector('.sidebar nav');
     if (menu) {
-        const caminho = /^\/(estudar|exercicio|modulo)\//.test(location.pathname)
+        const caminho = /^\/(estudar|exercicio)\//.test(location.pathname)
             ? '/modulos' : location.pathname;
         const atual = Array.from(menu.querySelectorAll('a')).find(link => link.pathname === caminho);
         if (atual) {

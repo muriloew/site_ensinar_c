@@ -5,6 +5,12 @@ const fs = require('node:fs/promises');
 const base = 'http://127.0.0.1:5113';
 const channel = process.argv[2] || 'chrome';
 
+async function entrar(context) {
+    const pagina = await context.request.get(base + '/login');
+    const token = (await pagina.text()).match(/name="csrf_token" value="([^"]+)"/)[1];
+    return context.request.post(base + '/login', {form: {email: 'teste@example.test', senha: 'layout-test', csrf_token: token}});
+}
+
 (async () => {
     const browser = channel === 'webkit' ? await webkit.launch({headless:true}) : await chromium.launch({channel,headless:true});
     try {
@@ -14,7 +20,7 @@ const channel = process.argv[2] || 'chrome';
             if(new URL(route.request().url()).origin !== base) {remote.push(route.request().url());return route.abort();}
             return route.continue();
         });
-        await context.request.post(base+'/login',{form:{email:'teste@example.test',senha:'layout-test'}});
+        await entrar(context);
         const page = await context.newPage();
         const errors = [];
         page.on('pageerror',error => errors.push(error.message));
@@ -100,7 +106,7 @@ const channel = process.argv[2] || 'chrome';
         await restricted.addInitScript(()=>{
             Storage.prototype.getItem = Storage.prototype.setItem = function(){throw new DOMException('Blocked','SecurityError');};
         });
-        await restricted.request.post(base+'/login',{form:{email:'teste@example.test',senha:'layout-test'}});
+        await entrar(restricted);
         const limited = await restricted.newPage();
         limited.on('pageerror',error=>errors.push(error.message));
         await limited.goto(base+'/compilador');
