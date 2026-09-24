@@ -36,7 +36,12 @@
 
         <div class="card">
             <h2>Conteúdo teórico</h2>
+            <p class="lesson-objective"><strong>Objetivo:</strong> {{ licao.leitura.objetivo }}</p>
             <p class="theory-lead">{{ licao.conteudo }}</p>
+            <div class="lesson-reading">
+                <h3>Como funciona</h3>
+                <p>{{ licao.leitura.explicacao }}</p>
+            </div>
 
             {% if licao.pontos_chave %}
             <div class="theory-section">
@@ -61,8 +66,85 @@
                 <div class="dots"><span></span><span></span><span></span></div>
                 <pre><code>{{ licao.codigo }}</code></pre>
             </div>
-            {% if licao.explicacao_codigo %}
-            <p class="code-explanation">{{ licao.explicacao_codigo }}</p>
+            <ol class="example-walkthrough">
+                {% for passo in licao.leitura.passos %}
+                <li>{{ passo }}</li>
+                {% endfor %}
+            </ol>
+
+            {% if licao.exemplo_execucao %}
+            <div class="example-execution">
+                {% if licao.exemplo_execucao.entrada %}
+                <div>
+                    <h3>Entrada de exemplo</h3>
+                    <pre>{{ licao.exemplo_execucao.entrada }}</pre>
+                </div>
+                {% endif %}
+                <div>
+                    <h3>Saída do programa</h3>
+                    <pre>{{ licao.exemplo_execucao.saida }}</pre>
+                </div>
+            </div>
+            {% if licao.exemplo_execucao.entrada %}
+            <p class="small-muted">A saída acima contém apenas o que o programa imprime; o eco dos dados digitados no terminal não faz parte dela.</p>
+            {% endif %}
+            {% endif %}
+
+            <section class="lesson-reading">
+                <h3>Ligação com os projetos</h3>
+                <p>{{ licao.leitura.aplicacao }}</p>
+            </section>
+
+            <section class="lesson-reading self-check">
+                <h3>Pense antes de continuar</h3>
+                <p>{{ licao.leitura.pergunta }}</p>
+                <details>
+                    <summary>Conferir explicação</summary>
+                    <p>{{ licao.leitura.resposta }}</p>
+                </details>
+            </section>
+
+            {% if licao.arquivos_build %}
+            <details class="lesson-reading build-reading">
+                <summary>Exemplo complementar: organização em vários arquivos</summary>
+                <p>Estes arquivos formam um único projeto local. O cabeçalho declara a função, um arquivo a implementa e main faz a chamada. No exemplo de arquivo único acima, essas partes estão reunidas.</p>
+                {% for arquivo in licao.arquivos_build %}
+                <h3>{{ arquivo.nome }}</h3>
+                <div class="code-window"><pre><code>{{ arquivo.codigo }}</code></pre></div>
+                {% endfor %}
+                <p>Com GCC e GNU make disponíveis, execute <code>make</code> na pasta dos arquivos. As linhas de receita do Makefile começam com uma tabulação. A saída esperada do programa é <code>42</code>.</p>
+                <p>Sem make, a construção equivalente é <code>gcc -std=c11 -Wall -Wextra -pedantic main.c calculos.c -o programa</code>. Execute <code>./programa</code> no Linux ou <code>.\programa.exe</code> no PowerShell do Windows. O Makefile não deve ser colado como código C no compilador de arquivo único.</p>
+            </details>
+            {% endif %}
+
+            {% if licao.guia_projeto %}
+            <section class="lesson-reading project-study-guide">
+                <h2>Roteiro do projeto</h2>
+                <p><strong>Exercício avaliado:</strong> {{ licao.exercicio_codigo }}</p>
+                <p>As etapas de ampliação abaixo são sugestões de estudo e não acrescentam exigências à correção do exercício.</p>
+                <h3>Conceitos para revisar</h3>
+                <ul class="prerequisite-links">
+                    {% for item in licao.guia_projeto.revisar %}
+                    <li><a href="/estudar/{{ item.modulo_id }}?licao={{ item.id }}">{{ item.titulo }}</a></li>
+                    {% endfor %}
+                </ul>
+                <h3>Organização dos dados</h3>
+                <p>{{ licao.guia_projeto.modelo }}</p>
+                <h3>Etapas de construção</h3>
+                <ol class="example-walkthrough">
+                    {% for etapa in licao.guia_projeto.etapas %}
+                    <li>{{ etapa }}</li>
+                    {% endfor %}
+                </ol>
+                <h3>Casos para testar</h3>
+                <dl class="project-test-cases">
+                    {% for caso, esperado in licao.guia_projeto.testes %}
+                    <div><dt>{{ caso }}</dt><dd>{{ esperado }}</dd></div>
+                    {% endfor %}
+                </dl>
+                <h3>Depois da primeira versão</h3>
+                <p>{{ licao.guia_projeto.ampliacao }}</p>
+            </section>
             {% endif %}
 
             <section class="lesson-theory-challenges">

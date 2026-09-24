@@ -506,6 +506,99 @@ a { color: inherit; text-decoration: none; }
     border-radius: 8px;
 }
 
+.lesson-objective {
+    line-height: 1.65;
+    color: var(--text);
+}
+
+.lesson-reading {
+    min-width: 0;
+    margin: 24px 0;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+
+.lesson-reading h3,
+.example-execution h3 {
+    font-size: 17px;
+    margin: 16px 0 8px;
+}
+
+.example-walkthrough {
+    padding-left: 24px;
+    margin: 18px 0;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+}
+
+.example-walkthrough li + li {
+    margin-top: 10px;
+}
+
+.example-execution {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+    gap: 16px;
+}
+
+.example-execution > div {
+    min-width: 0;
+}
+
+.example-execution pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    padding: 12px;
+    border-left: 2px solid var(--border);
+    line-height: 1.6;
+}
+
+.self-check,
+.build-reading,
+.project-study-guide {
+    border-top: 1px solid var(--border);
+    padding-top: 20px;
+}
+
+.lesson-reading summary {
+    cursor: pointer;
+    color: var(--text);
+    padding: 8px 0;
+    font-weight: 600;
+}
+
+.lesson-reading summary:focus-visible,
+.prerequisite-links a:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 4px;
+}
+
+.prerequisite-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 24px;
+    padding-left: 20px;
+}
+
+.prerequisite-links a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.project-test-cases > div {
+    border-bottom: 1px solid var(--border);
+    padding: 12px 0;
+}
+
+.project-test-cases dt {
+    font-weight: 600;
+}
+
+.project-test-cases dd {
+    margin: 4px 0 0;
+    color: var(--muted);
+}
+
 .exercise-criteria code {
     color: #bfdbfe;
     overflow-wrap: anywhere;

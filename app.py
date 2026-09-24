@@ -10,6 +10,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import date, datetime, timedelta
 from flask_socketio import SocketIO, emit
 from conteudo_pedagogico import PLANOS_LICOES, obter_plano, montar_desafios_teoricos_licao
+from teoria_ampliada import LEITURAS
+from exemplos_teoricos import EXEMPLOS, ARQUIVOS_BUILD
+from guias_projetos import GUIAS_PROJETOS
 from backend.desafios_diarios import (
     desafio_por_id as desafio_diario_por_id,
     desafios_disponiveis_por_progresso,
@@ -1020,6 +1023,19 @@ def gerar_trilha_completa_c():
             if ajustes:
                 licao_dados.update(ajustes)
 
+            # A leitura usa o exercicio final, sem modificar respostas ja salvas.
+            licao_dados["leitura"] = LEITURAS[conteudo]
+            licao_dados["pontos_chave"] = [
+                pontos_chave[0],
+                f"Nesta lição: {licao_dados['exercicio_codigo']}",
+            ]
+            licao_dados["explicacao_codigo"] = " ".join(LEITURAS[conteudo]["passos"])
+            if conteudo in EXEMPLOS:
+                licao_dados["codigo"] = EXEMPLOS[conteudo]["codigo"]
+                licao_dados["exemplo_execucao"] = EXEMPLOS[conteudo]
+            if conteudo in (".h", ".c", "include guards", "linking", "makefile"):
+                licao_dados["arquivos_build"] = ARQUIVOS_BUILD
+
             desafios_teoricos = montar_desafios_teoricos_licao(
                 conteudo,
                 modulo,
@@ -1045,6 +1061,18 @@ def gerar_trilha_completa_c():
             "licoes": modulo_licoes,
         })
 
+    por_titulo = {
+        licao["titulo"]: {"titulo": licao["titulo"], "modulo_id": modulo["id"], "id": licao["id"]}
+        for modulo in trilha for licao in modulo["licoes"]
+    }
+    for modulo in trilha:
+        for licao in modulo["licoes"]:
+            guia = GUIAS_PROJETOS.get(licao["titulo"])
+            if guia:
+                licao["guia_projeto"] = {
+                    **guia,
+                    "revisar": [por_titulo[titulo] for titulo in guia["revisar"]],
+                }
     return trilha
 
 
