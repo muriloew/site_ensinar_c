@@ -38,6 +38,7 @@ class LearningFlowTest(unittest.TestCase):
         cls.MODULOS = trilha.MODULOS
         cls.DESAFIOS_DIARIOS = desafios_diarios.DESAFIOS_DIARIOS
         cls.conectar = staticmethod(conexao.conectar)
+        cls.usando_postgres = staticmethod(conexao.usando_postgres)
         cls.gamificacao = gamificacao
         cls.SituacaoAluno = situacao.SituacaoAluno
         cls.teoria = teoria
@@ -73,6 +74,9 @@ class LearningFlowTest(unittest.TestCase):
             "INSERT INTO usuarios (id, nome, email, senha) VALUES (?, ?, ?, ?)",
             (1, "Aluno Teste", "aluno@example.com", "senha"),
         )
+        if self.usando_postgres():
+            # O id foi escolhido à mão; o contador precisa seguir depois dele para os cadastros do teste.
+            conn.execute("SELECT setval(pg_get_serial_sequence('usuarios', 'id'), 1)")
         conn.commit()
         conn.close()
 
