@@ -1,3 +1,9 @@
+// Token que acompanha cada envio ao servidor (proteção CSRF).
+window.cabecalhosEnvio = function (extras = {}) {
+    const meta = document.querySelector('meta[name="csrf-token"]');
+    return {...extras, "X-CSRFToken": meta ? meta.content : ""};
+};
+
 (function () {
     "use strict";
 

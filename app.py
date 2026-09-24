@@ -4,11 +4,13 @@ import os
 import secrets
 
 from flask import Flask, render_template
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.banco.tabelas import criar_tabelas
 from backend.compilador.terminal import socketio
 from backend.conteudo.trilha import TOTAL_LICOES
 from backend.rotas import registrar_rotas
+from backend.seguranca import token_csrf, verificar_csrf
 from backend.sessao import usuario_logado
 
 
@@ -21,6 +23,10 @@ def criar_app():
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")),
     )
+    if os.environ.get("RENDER"):
+        # O Render repassa o IP do visitante no cabeçalho X-Forwarded-For.
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+    app.before_request(verificar_csrf)
 
     @app.url_defaults
     def versionar_arquivo_estatico(endpoint, valores):
@@ -34,7 +40,7 @@ def criar_app():
 
     @app.context_processor
     def dados_do_menu():
-        return {"usuario": usuario_logado(), "total_licoes": TOTAL_LICOES}
+        return {"usuario": usuario_logado(), "total_licoes": TOTAL_LICOES, "csrf_token": token_csrf}
 
     @app.errorhandler(404)
     def pagina_nao_encontrada(_erro):

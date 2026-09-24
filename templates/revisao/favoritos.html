@@ -24,6 +24,7 @@
             <a class="btn btn-primary" href="/estudar/{{ item.modulo.id }}?licao={{ item.licao.id }}">Abrir lição</a>
             {% endif %}
             <form method="post" action="/favoritos/{{ item.licao.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="destino" value="/favoritos">
                 <button class="favorite-button active" type="submit" title="Remover dos favoritos" aria-label="Remover dos favoritos">★</button>
             </form>

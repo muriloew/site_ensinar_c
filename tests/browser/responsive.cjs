@@ -7,6 +7,12 @@ const channel = process.argv[3] || 'chrome';
 const out = path.join(process.env.LAYOUT_REPORT_DIR || path.join(require('node:os').tmpdir(), 'ensinar-c-layout'), stage + '-' + channel);
 const screens = [[320,568],[375,667],[768,1024],[844,390],[1024,768],[1100,700],[1120,630],[1280,720],[1366,768],[1536,864],[1920,1080],[2560,1440]];
 
+async function entrar(context) {
+    const pagina = await context.request.get(base + '/login');
+    const token = (await pagina.text()).match(/name="csrf_token" value="([^"]+)"/)[1];
+    return context.request.post(base + '/login', {form: {email: 'teste@example.test', senha: 'layout-test', csrf_token: token}});
+}
+
 (async () => {
     await fs.mkdir(out, {recursive:true});
     const browser = channel === 'webkit' ? await webkit.launch({headless:true}) : await chromium.launch({channel, headless:true});
@@ -58,7 +64,7 @@ const screens = [[320,568],[375,667],[768,1024],[844,390],[1024,768],[1100,700],
             }
         }
         for(const route of ['/','/login','/cadastro']) for(const [w,h] of [screens[0],screens[2],screens[6],screens[10]]) await check(route,w,h);
-        const login = await context.request.post(base + '/login',{form:{email:'teste@example.test',senha:'layout-test'}});
+        const login = await entrar(context);
         if (!login.ok() || !login.url().endsWith('/dashboard')) throw Error('Login failed: ' + login.url());
         for(const route of ['/dashboard','/modulos','/perfil','/estudar/2?licao=6','/exercicio/6','/desafio-diario','/compilador','/favoritos','/revisao','/simulado','/historico-codigos']) {
             for(const [w,h] of screens) await check(route,w,h);

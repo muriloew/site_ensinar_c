@@ -18,7 +18,7 @@ async function verificarResposta(licaoId, resposta, botao) {
     try {
         const retorno = await fetch("/verificar", {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: cabecalhosEnvio({"Content-Type": "application/json"}),
             body: JSON.stringify({
                 licao_id: licaoId,
                 desafio_id: quiz.dataset.desafioId || "conceito",
@@ -55,7 +55,7 @@ async function verificarResposta(licaoId, resposta, botao) {
 
 async function enviarConclusao(url, falha) {
     try {
-        const retorno = await fetch(url, {method: "POST"});
+        const retorno = await fetch(url, {method: "POST", headers: cabecalhosEnvio()});
         const dados = await retorno.json();
         alert(dados.mensagem || falha);
         return Boolean(dados.ok);

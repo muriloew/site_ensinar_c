@@ -22,6 +22,7 @@
                 <span>Módulo {{ modulo.id }} - {{ modulo.titulo }}</span>
             </div>
             <form method="post" action="/favoritos/{{ licao.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="destino" value="/estudar/{{ modulo.id }}?licao={{ licao.id }}">
                 <button
                     class="favorite-button {% if favorita %}active{% endif %}"

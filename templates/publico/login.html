@@ -4,6 +4,7 @@
 {% block content %}
 <section class="auth-page">
     <form class="auth-card" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <a class="brand auth-brand" href="/">
             <span class="brand-icon">C</span>
             <strong>Ensinar C</strong>

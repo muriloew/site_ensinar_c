@@ -310,7 +310,7 @@ async function salvarRascunhoAtual() {
     try {
         const retorno = await fetch(url, {
             method: "POST",
-            headers: {"Content-Type": "application/json"},
+            headers: cabecalhosEnvio({"Content-Type": "application/json"}),
             body: JSON.stringify(dados),
         });
         const resposta = await retorno.json();

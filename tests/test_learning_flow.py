@@ -27,7 +27,7 @@ class LearningFlowTest(unittest.TestCase):
         sys.path.insert(0, str(PROJECT_DIR))
 
         cls.site = importlib.import_module("app")
-        cls.site.app.config.update(TESTING=True, SECRET_KEY="test-secret")
+        cls.site.app.config.update(TESTING=True, SECRET_KEY="test-secret", VERIFICAR_CSRF=False)
         cls.client = cls.site.app.test_client()
 
         from backend.aluno import gamificacao, situacao, teoria
@@ -543,6 +543,39 @@ class LearningFlowTest(unittest.TestCase):
         historico = self.client.get("/historico-codigos").get_data(as_text=True)
         self.assertIn("int main(void){return 0;}", historico)
         self.assertIn("Aprovado", historico)
+
+    def test_protecoes_de_csrf_senha_e_login(self):
+        self.site.app.config["VERIFICAR_CSRF"] = True
+        try:
+            sem_token = self.client.post("/verificar", json={"licao_id": 1})
+            self.assertEqual(sem_token.status_code, 400)
+
+            with self.client.session_transaction() as sessao:
+                sessao["csrf_token"] = "token-de-teste"
+            com_token = self.client.post(
+                "/verificar",
+                json={"licao_id": 1, "desafio_id": "conceito", "resposta": "x"},
+                headers={"X-CSRFToken": "token-de-teste"},
+            )
+            self.assertEqual(com_token.status_code, 400)
+            self.assertIn("inválida", com_token.get_json()["mensagem"])
+        finally:
+            self.site.app.config["VERIFICAR_CSRF"] = False
+
+        visitante = self.site.app.test_client()
+        curta = visitante.post("/cadastro", data={"nome": "A", "email": "a@example.com", "senha": "1234567"})
+        self.assertIn("pelo menos 8", curta.get_data(as_text=True))
+
+        from backend.seguranca import FALHAS_POR_EMAIL, FALHAS_POR_IP
+
+        dados = {"email": "aluno@example.com", "senha": "errada"}
+        try:
+            for _ in range(5):
+                self.assertEqual(visitante.post("/login", data=dados).status_code, 200)
+            self.assertEqual(visitante.post("/login", data=dados).status_code, 429)
+        finally:
+            FALHAS_POR_EMAIL.esquecer("email:aluno@example.com")
+            FALHAS_POR_IP.esquecer("ip:127.0.0.1")
 
 
 if __name__ == "__main__":

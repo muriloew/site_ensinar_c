@@ -19,6 +19,7 @@
     <div class="review-queue">
         {% for item in pendentes %}
         <form class="review-challenge-card" method="post" action="/revisao/{{ item.licao.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <span>Módulo {{ item.modulo.id }} · {{ item.modulo.titulo }}</span>
             <h2>{{ item.licao.titulo }}</h2>
             <p class="review-question">{{ item.licao.pergunta }}</p>

@@ -125,6 +125,7 @@
         <div class="card goals-card">
             <h3>Metas</h3>
             <form method="post" action="/metas" class="goals-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 {% for meta in metas %}
                 <section class="goal-block">
                     <div class="goal-title">
