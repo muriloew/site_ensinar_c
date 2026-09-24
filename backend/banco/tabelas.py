@@ -18,7 +18,8 @@ TABELAS = (
         ultimo_acesso TEXT,
         melhor_sequencia INTEGER DEFAULT 0,
         ultima_atividade TEXT,
-        protecoes_sequencia INTEGER DEFAULT 1
+        protecoes_sequencia INTEGER DEFAULT 1,
+        senha_temporaria INTEGER DEFAULT 0
     )
     """,
     """
@@ -139,6 +140,16 @@ TABELAS = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS anotacoes_usuario (
+        id {chave},
+        usuario_id INTEGER NOT NULL,
+        licao_id INTEGER NOT NULL,
+        texto TEXT NOT NULL,
+        atualizado_em TEXT,
+        UNIQUE(usuario_id, licao_id)
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS revisoes_usuario (
         id {chave},
         usuario_id INTEGER NOT NULL,
@@ -182,6 +193,7 @@ COLUNAS_ADICIONADAS = (
     ("usuarios", "melhor_sequencia", "INTEGER DEFAULT 0"),
     ("usuarios", "ultima_atividade", "TEXT"),
     ("usuarios", "protecoes_sequencia", "INTEGER DEFAULT 1"),
+    ("usuarios", "senha_temporaria", "INTEGER DEFAULT 0"),
     ("desafios_diarios", "desafio_id", "TEXT"),
     ("desafios_diarios", "entrada_codigo", "TEXT"),
     ("desafios_diarios", "codigo_validado", "INTEGER DEFAULT 0"),

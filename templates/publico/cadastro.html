@@ -4,7 +4,7 @@
 {% block content %}
 <section class="auth-page">
     <form class="auth-card" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <a class="brand auth-brand" href="/">
             <span class="brand-icon">C</span>
             <strong>Ensinar C</strong>
@@ -13,16 +13,21 @@
         <h1>Criar conta</h1>
         <p>Use um e-mail único para salvar seu progresso, XP e códigos.</p>
 
-        {% if erro %}<div class="alert">{{ erro }}</div>{% endif %}
+        {% if erro %}<div class="alert" role="alert">{{ erro }}</div>{% endif %}
 
-        <label>Nome</label>
-        <input type="text" name="nome" required>
+        <label for="nome">Nome</label>
+        <input id="nome" type="text" name="nome" value="{{ nome or '' }}" maxlength="60" autocomplete="name" required>
 
-        <label>E-mail</label>
-        <input type="email" name="email" required>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" name="email" value="{{ email or '' }}" maxlength="120" autocomplete="email" required>
 
-        <label>Senha</label>
-        <input type="password" name="senha" minlength="8" autocomplete="new-password" required>
+        <label for="senha">Senha <span class="small-muted">(mínimo de 8 caracteres)</span></label>
+        <input id="senha" type="password" name="senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+
+        <label for="confirmar_senha">Confirme a senha</label>
+        <input id="confirmar_senha" type="password" name="confirmar_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+
+        <label class="auth-check"><input type="checkbox" data-mostrar-senha> Mostrar senha</label>
 
         <button class="btn btn-primary" type="submit">Começar agora</button>
 

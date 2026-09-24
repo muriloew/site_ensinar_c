@@ -19,7 +19,7 @@
         <div class="lesson-top">
             <div>
                 <h1>{{ licao.titulo }}</h1>
-                <span>Módulo {{ modulo.id }} - {{ modulo.titulo }}</span>
+                <span>Módulo {{ modulo.id }} - {{ modulo.titulo }} · Lição {{ posicao }} de {{ modulo.licoes|length }}</span>
             </div>
             <form method="post" action="/favoritos/{{ licao.id }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -61,6 +61,10 @@
             <div class="code-window">
                 <div class="dots"><span></span><span></span><span></span></div>
                 <pre><code>{{ licao.codigo }}</code></pre>
+            </div>
+            <div class="code-actions">
+                <button class="btn btn-ghost btn-small" type="button" data-copiar-codigo>Copiar código</button>
+                <a class="btn btn-ghost btn-small" href="/compilador?exemplo={{ licao.id }}">Executar no compilador</a>
             </div>
             {% if licao.explicacao_codigo %}
             <p class="code-explanation">{{ licao.explicacao_codigo }}</p>
@@ -128,6 +132,25 @@
                 {% endif %}
             </div>
         </div>
+
+        <details class="card notes-card" {% if anotacao %}open{% endif %}>
+            <summary><h2>Minhas anotações</h2></summary>
+            <p class="small-muted">Só você vê. São salvas automaticamente enquanto você escreve.</p>
+            <textarea id="anotacaoLicao" data-licao-id="{{ licao.id }}" maxlength="5000" rows="6"
+                      aria-label="Anotações sobre esta lição">{{ anotacao }}</textarea>
+            <p class="small-muted" id="statusAnotacao" role="status"></p>
+        </details>
+
+        <nav class="lesson-nav" aria-label="Navegação entre lições">
+            {% if anterior %}
+            <a class="btn btn-ghost" href="{{ anterior.url }}">← {{ anterior.titulo }}</a>
+            {% else %}<span></span>{% endif %}
+            {% if proxima and proxima.liberada %}
+            <a class="btn btn-ghost" href="{{ proxima.url }}">{{ proxima.titulo }} →</a>
+            {% elif proxima %}
+            <span class="small-muted">Próxima: {{ proxima.titulo }} (conclua este módulo para liberar)</span>
+            {% endif %}
+        </nav>
     </section>
 </div>
 {% endblock %}

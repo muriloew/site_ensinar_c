@@ -2,6 +2,7 @@
 
 import os
 import secrets
+from datetime import timedelta
 
 from flask import Flask, render_template
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -12,6 +13,7 @@ from backend.conteudo.trilha import TOTAL_LICOES
 from backend.rotas import registrar_rotas
 from backend.seguranca import token_csrf, verificar_csrf
 from backend.sessao import usuario_logado
+from backend.usuarios import eh_professor
 
 
 def criar_app():
@@ -22,6 +24,7 @@ def criar_app():
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         SESSION_COOKIE_SECURE=bool(os.environ.get("RENDER")),
+        PERMANENT_SESSION_LIFETIME=timedelta(days=30),
     )
     if os.environ.get("RENDER"):
         # O Render repassa o IP do visitante no cabeçalho X-Forwarded-For.
@@ -38,9 +41,22 @@ def criar_app():
         except OSError:
             pass
 
+    @app.after_request
+    def cabecalhos_de_seguranca(resposta):
+        resposta.headers.setdefault("X-Content-Type-Options", "nosniff")
+        resposta.headers.setdefault("X-Frame-Options", "SAMEORIGIN")
+        resposta.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return resposta
+
     @app.context_processor
     def dados_do_menu():
-        return {"usuario": usuario_logado(), "total_licoes": TOTAL_LICOES, "csrf_token": token_csrf}
+        usuario = usuario_logado()
+        return {
+            "usuario": usuario,
+            "professor": eh_professor(usuario),
+            "total_licoes": TOTAL_LICOES,
+            "csrf_token": token_csrf,
+        }
 
     @app.errorhandler(404)
     def pagina_nao_encontrada(_erro):

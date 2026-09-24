@@ -223,6 +223,7 @@ TOTAL_LICOES = sum(len(modulo["licoes"]) for modulo in MODULOS)
 _LICOES_POR_ID = {
     licao["id"]: (modulo, licao) for modulo in MODULOS for licao in modulo["licoes"]
 }
+_ORDEM = [licao["id"] for modulo in MODULOS for licao in modulo["licoes"]]
 
 
 def encontrar_licao(licao_id):
@@ -231,3 +232,15 @@ def encontrar_licao(licao_id):
 
 def modulo_por_id(modulo_id):
     return next((modulo for modulo in MODULOS if modulo["id"] == modulo_id), None)
+
+
+def licoes_vizinhas(licao_id):
+    """Lição anterior e próxima na ordem da trilha, como pares (modulo, licao) ou (None, None)."""
+    posicao = _ORDEM.index(licao_id)
+    anterior = encontrar_licao(_ORDEM[posicao - 1]) if posicao > 0 else (None, None)
+    proxima = encontrar_licao(_ORDEM[posicao + 1]) if posicao + 1 < len(_ORDEM) else (None, None)
+    return anterior, proxima
+
+
+def url_da_licao(modulo, licao):
+    return f"/estudar/{modulo['id']}?licao={licao['id']}"

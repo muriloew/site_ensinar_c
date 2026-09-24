@@ -33,6 +33,7 @@ TABELAS = (
     "recompensas_diarias",
     "favoritos_usuario",
     "revisoes_usuario",
+    "anotacoes_usuario",
 )
 
 

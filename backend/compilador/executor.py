@@ -54,7 +54,7 @@ def validar_codigo(codigo, entrada=None):
     if not isinstance(codigo, str) or not codigo.strip():
         return "Escreva um programa C antes de compilar."
     if len(codigo.encode("utf-8")) > MAX_CODIGO_BYTES:
-        return "O codigo ultrapassa o limite de 100 KB."
+        return "O código ultrapassa o limite de 100 KB."
     if entrada is not None:
         if not isinstance(entrada, str):
             return "A entrada do programa precisa ser texto."
@@ -330,7 +330,7 @@ def _ler_log(caminho):
     dados = dados[:MAX_SAIDA_BYTES]
     texto = dados.decode("utf-8", errors="replace")
     if truncada:
-        texto += "\n\n[Saida interrompida: limite atingido.]"
+        texto += "\n\n[Saída interrompida: limite atingido.]"
     return texto, truncada
 
 
@@ -368,7 +368,7 @@ def _build_log(resultado):
     duracao = resultado.get("duracao_segundos", 0)
     if resultado.get("tempo_excedido"):
         return (
-            f"Tempo de compilacao excedido apos {TEMPO_COMPILACAO} segundos. "
+            f"Tempo de compilação excedido após {TEMPO_COMPILACAO} segundos. "
             "O processo foi interrompido; tente novamente em alguns instantes."
         )
     if resultado.get("codigo") != 0:
@@ -387,7 +387,7 @@ def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
     if not compiladores:
         return {
             "ok": False,
-            "build": "Nenhum compilador C local esta disponivel no servidor.",
+            "build": "Nenhum compilador C local está disponível no servidor.",
             "saida": "",
         }
 
@@ -437,9 +437,9 @@ def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
             time.sleep(0.2)
 
     detalhe = (ultima_falha_infra or {}).get("texto", "").strip()
-    build = "O servidor esta temporariamente sem recursos para iniciar o compilador. Aguarde alguns segundos e tente novamente."
+    build = "O servidor está temporariamente sem recursos para iniciar o compilador. Aguarde alguns segundos e tente novamente."
     if detalhe:
-        build += "\n\nDetalhes tecnicos:\n" + detalhe
+        build += "\n\nDetalhes técnicos:\n" + detalhe
     compilador = (ultima_falha_infra or {}).get("compilador", "C")
     return {"ok": False, "build": build, "saida": "", "compilador": compilador}
 
@@ -447,13 +447,13 @@ def _compilar_workspace(temp_dir, arquivo_c, arquivo_saida):
 def executar_codigo_local(codigo, entrada=""):
     erro = validar_codigo(codigo, entrada)
     if erro:
-        return {"ok": False, "build": erro, "saida": "", "origem": "Validacao"}
+        return {"ok": False, "build": erro, "saida": "", "origem": "Validação"}
 
     with slot_execucao() as adquirido:
         if not adquirido:
             return {
                 "ok": False,
-                "build": "O compilador esta ocupado. Aguarde alguns segundos e tente novamente.",
+                "build": "O compilador está ocupado. Aguarde alguns segundos e tente novamente.",
                 "saida": "",
                 "origem": "Fila local",
             }
@@ -472,9 +472,9 @@ def executar_codigo_local(codigo, entrada=""):
                 TEMPO_EXECUCAO,
             )
             if execucao["tempo_excedido"]:
-                saida = "Tempo de execucao excedido. Verifique loops infinitos ou entradas ausentes."
+                saida = "Tempo de execução excedido. Verifique loops infinitos ou entradas ausentes."
             else:
-                saida = execucao["texto"] or "Programa executado sem saida na tela."
+                saida = execucao["texto"] or "Programa executado sem saída na tela."
             saida = saida.rstrip() + f"\n\n{texto_retorno(execucao['codigo'])}."
             return {
                 "ok": execucao["codigo"] == 0 and not execucao["tempo_excedido"] and not execucao["saida_truncada"],
@@ -486,7 +486,7 @@ def executar_codigo_local(codigo, entrada=""):
             return {
                 "ok": False,
                 "build": "Erro durante build/run.",
-                "saida": f"Erro ao executar o codigo: {erro_execucao}",
+                "saida": f"Erro ao executar o código: {erro_execucao}",
                 "origem": "Compilador C local protegido",
             }
         finally:
@@ -496,13 +496,13 @@ def executar_codigo_local(codigo, entrada=""):
 def executar_piston(codigo, entrada=""):
     erro = validar_codigo(codigo, entrada)
     if erro:
-        return {"ok": False, "build": erro, "saida": "", "origem": "Validacao"}
+        return {"ok": False, "build": erro, "saida": "", "origem": "Validação"}
 
     base = os.environ.get("PISTON_URL", "").rstrip("/")
     if not base:
         return {
             "ok": False,
-            "build": "PISTON_URL nao foi configurada.",
+            "build": "PISTON_URL não foi configurada.",
             "saida": "",
             "origem": "Piston",
         }
@@ -535,14 +535,14 @@ def executar_piston(codigo, entrada=""):
     if compile_out and (compile_out.get("code") != 0 or compile_out.get("status")):
         return {
             "ok": False,
-            "build": "Build failed.\n\n" + (build or compile_out.get("message") or "Erro de compilacao."),
+            "build": "Build failed.\n\n" + (build or compile_out.get("message") or "Erro de compilação."),
             "saida": "",
             "origem": "Piston configurado",
         }
     if not isinstance(run_out, dict):
         return {
             "ok": False,
-            "build": build or dados.get("message") or "O executor nao retornou a etapa de execucao.",
+            "build": build or dados.get("message") or "O executor não retornou a etapa de execução.",
             "saida": "",
             "origem": "Piston configurado",
         }
@@ -554,7 +554,7 @@ def executar_piston(codigo, entrada=""):
     return {
         "ok": ok,
         "build": build or "Build finished successfully.\n0 errors, 0 warnings.",
-        "saida": (saida or "Programa executado sem saida na tela.").rstrip()
+        "saida": (saida or "Programa executado sem saída na tela.").rstrip()
         + f"\n\nProcess returned {codigo_saida}.",
         "origem": "Piston configurado",
     }
@@ -567,7 +567,7 @@ def executar_codigo(codigo, entrada=""):
         except Exception as erro:
             return {
                 "ok": False,
-                "build": f"Falha no servico Piston configurado: {erro}",
+                "build": f"Falha no serviço Piston configurado: {erro}",
                 "saida": "",
                 "origem": "Piston configurado",
             }

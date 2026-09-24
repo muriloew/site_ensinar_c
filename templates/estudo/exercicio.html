@@ -43,12 +43,14 @@
                 <span>Ajuda</span>
             </div>
 
+            <textarea id="codigoInicial" hidden aria-hidden="true" tabindex="-1">{{ licao.codigo_minimo }}</textarea>
             <textarea id="codigoExercicio" data-licao-id="{{ licao.id }}" class="code-editor codeblocks-main-editor">{{ codigo_salvo }}</textarea>
             <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
 
             <div class="codeblocks-bottom-bar">
                 <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">⚙️ Compilar</button>
                 <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
+                <button class="btn btn-ghost" type="button" onclick="restaurarCodigoInicial()">Restaurar código inicial</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>
             </div>
         </div>

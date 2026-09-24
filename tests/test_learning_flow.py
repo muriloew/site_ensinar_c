@@ -55,6 +55,7 @@ class LearningFlowTest(unittest.TestCase):
     def setUp(self):
         conn = self.conectar()
         for tabela in (
+            "anotacoes_usuario",
             "recompensas_diarias",
             "atividades_estudo",
             "revisoes_usuario",
@@ -576,6 +577,105 @@ class LearningFlowTest(unittest.TestCase):
         finally:
             FALHAS_POR_EMAIL.esquecer("email:aluno@example.com")
             FALHAS_POR_IP.esquecer("ip:127.0.0.1")
+
+    def definir_senha_do_aluno(self, senha):
+        from werkzeug.security import generate_password_hash
+
+        conn = self.conectar()
+        conn.execute("UPDATE usuarios SET senha = ? WHERE id = 1", (generate_password_hash(senha),))
+        conn.commit()
+        conn.close()
+
+    def test_cadastro_valida_confirmacao_e_email(self):
+        visitante = self.site.app.test_client()
+        base = {"nome": "Ana", "email": "ana@example.com", "senha": "senha1234"}
+        diferente = visitante.post("/cadastro", data={**base, "confirmar_senha": "outra1234"})
+        self.assertIn("confirmação não é igual", diferente.get_data(as_text=True))
+        invalido = visitante.post("/cadastro", data={**base, "email": "ana", "confirmar_senha": "senha1234"})
+        self.assertIn("e-mail válido", invalido.get_data(as_text=True))
+        criado = visitante.post("/cadastro", data={**base, "confirmar_senha": "senha1234"})
+        self.assertEqual(criado.status_code, 302)
+        with visitante.session_transaction() as sessao:
+            self.assertTrue(sessao.permanent)
+
+    def test_configuracoes_perfil_senha_e_exclusao(self):
+        self.definir_senha_do_aluno("senha-antiga")
+        pagina = self.client.get("/configuracoes").get_data(as_text=True)
+        self.assertIn("Configurações", pagina)
+        self.assertIn('data-preferencia="tema"', pagina)
+
+        sem_senha = self.client.post("/configuracoes", data={"acao": "perfil", "nome": "Novo Nome", "email": "novo@example.com"})
+        self.assertIn("confirme sua senha atual", sem_senha.get_data(as_text=True))
+        so_nome = self.client.post("/configuracoes", data={"acao": "perfil", "nome": "Novo Nome", "email": "aluno@example.com"})
+        self.assertEqual(so_nome.status_code, 302)
+
+        errada = self.client.post("/configuracoes", data={
+            "acao": "senha", "senha_atual": "x", "nova_senha": "nova-senha-1", "confirmar_senha": "nova-senha-1",
+        })
+        self.assertIn("senha atual está incorreta", errada.get_data(as_text=True))
+        trocada = self.client.post("/configuracoes", data={
+            "acao": "senha", "senha_atual": "senha-antiga", "nova_senha": "nova-senha-1", "confirmar_senha": "nova-senha-1",
+        })
+        self.assertEqual(trocada.status_code, 302)
+
+        self.client.post("/favoritos/1", data={"destino": "/favoritos"})
+        sem_confirmar = self.client.post("/configuracoes", data={"acao": "excluir", "confirmacao": "", "senha_atual": "nova-senha-1"})
+        self.assertIn("Digite EXCLUIR", sem_confirmar.get_data(as_text=True))
+        excluida = self.client.post("/configuracoes", data={"acao": "excluir", "confirmacao": "excluir", "senha_atual": "nova-senha-1"})
+        self.assertIn("conta=excluida", excluida.location)
+
+        conn = self.conectar()
+        restantes = conn.execute("SELECT COUNT(*) AS total FROM usuarios").fetchone()["total"]
+        favoritos = conn.execute("SELECT COUNT(*) AS total FROM favoritos_usuario").fetchone()["total"]
+        conn.close()
+        self.assertEqual((restantes, favoritos), (0, 0))
+
+    def test_professor_ve_turma_e_redefine_senha(self):
+        self.assertEqual(self.client.get("/professor").status_code, 404)
+        with patch.dict(os.environ, {"ADMIN_EMAILS": "aluno@example.com"}):
+            painel = self.client.get("/professor").get_data(as_text=True)
+            self.assertIn("Acompanhamento da turma", painel)
+            self.assertIn("Aluno Teste", painel)
+            resposta = self.client.post("/professor/alunos/1/redefinir-senha").get_data(as_text=True)
+        self.assertIn("Senha temporária", resposta)
+
+        senha = resposta.split('class="temp-password">')[1].split("<")[0]
+        visitante = self.site.app.test_client()
+        entrada = visitante.post("/login", data={"email": "aluno@example.com", "senha": senha})
+        self.assertIn("aviso=senha_temporaria", entrada.location)
+        self.assertIn("senha temporária", visitante.get(entrada.location).get_data(as_text=True))
+
+    def test_navegacao_anotacoes_e_proxima_licao(self):
+        licao = self.MODULOS[0]["licoes"][0]
+        pagina = self.client.get(f"/estudar/1?licao={licao['id']}").get_data(as_text=True)
+        self.assertIn("Lição 1 de 4", pagina)
+        self.assertIn(self.MODULOS[0]["licoes"][1]["titulo"] + " →", pagina)
+
+        salva = self.client.post(f"/api/anotacoes/{licao['id']}", json={"texto": "scanf precisa de &"})
+        self.assertTrue(salva.get_json()["ok"])
+        self.assertIn("scanf precisa de &amp;", self.client.get("/estudar/1").get_data(as_text=True))
+        bloqueada = self.client.post(f"/api/anotacoes/{self.MODULOS[2]['licoes'][0]['id']}", json={"texto": "x"})
+        self.assertEqual(bloqueada.status_code, 403)
+
+        self.responder_licao(licao)
+        conclusao = self.client.post(f"/concluir/{licao['id']}").get_json()
+        self.assertEqual(conclusao["proxima"], f"/estudar/1?licao={self.MODULOS[0]['licoes'][1]['id']}")
+
+    def test_consulta_rapida_exemplo_e_cabecalhos(self):
+        visitante = self.site.app.test_client()
+        referencia = visitante.get("/referencia")
+        self.assertEqual(referencia.status_code, 200)
+        texto = referencia.get_data(as_text=True)
+        for trecho in ("%lf", "strcmp", "undeclared", "Ponteiro"):
+            self.assertIn(trecho, texto)
+        self.assertEqual(referencia.headers["X-Content-Type-Options"], "nosniff")
+        self.assertEqual(referencia.headers["X-Frame-Options"], "SAMEORIGIN")
+
+        licao = self.MODULOS[0]["licoes"][0]
+        compilador = self.client.get(f"/compilador?exemplo={licao['id']}").get_data(as_text=True)
+        self.assertIn(f"Exemplo - {licao['titulo']}", compilador)
+        bloqueado = self.client.get(f"/compilador?exemplo={self.MODULOS[3]['licoes'][0]['id']}").get_data(as_text=True)
+        self.assertIn("Compilador Online", bloqueado)
 
 
 if __name__ == "__main__":

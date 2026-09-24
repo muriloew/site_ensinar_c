@@ -58,22 +58,51 @@ async function enviarConclusao(url, falha) {
         const retorno = await fetch(url, {method: "POST", headers: cabecalhosEnvio()});
         const dados = await retorno.json();
         alert(dados.mensagem || falha);
-        return Boolean(dados.ok);
+        return dados.ok ? dados : null;
     } catch (erro) {
         alert(`${falha} Verifique sua conexão e tente novamente.`);
-        return false;
+        return null;
     }
 }
 
 async function concluirLicao(licaoId) {
-    if (await enviarConclusao(`/concluir/${licaoId}`, "Não foi possível concluir a lição.")) {
-        window.location.href = "/dashboard";
-    }
+    const dados = await enviarConclusao(`/concluir/${licaoId}`, "Não foi possível concluir a lição.");
+    if (dados) window.location.href = dados.proxima || "/dashboard";
 }
 
 async function concluirDesafioDiario() {
     if (await enviarConclusao("/concluir-desafio-diario", "Não foi possível concluir o desafio.")) {
         window.location.reload();
+    }
+}
+
+async function copiarCodigo(botao) {
+    const codigo = botao.closest(".card, section, main").querySelector(".code-window code");
+    if (!codigo) return;
+    const original = botao.textContent;
+    try {
+        await navigator.clipboard.writeText(codigo.textContent);
+        botao.textContent = "Copiado!";
+    } catch (erro) {
+        botao.textContent = "Selecione e copie com Ctrl+C";
+    }
+    setTimeout(() => { botao.textContent = original; }, 2000);
+}
+
+let timerAnotacao = null;
+
+async function salvarAnotacao(campo) {
+    const status = document.getElementById("statusAnotacao");
+    try {
+        const retorno = await fetch(`/api/anotacoes/${campo.dataset.licaoId}`, {
+            method: "POST",
+            headers: cabecalhosEnvio({"Content-Type": "application/json"}),
+            body: JSON.stringify({texto: campo.value}),
+        });
+        const dados = await retorno.json();
+        if (status) status.textContent = dados.ok ? "Anotação salva." : (dados.mensagem || "Não foi possível salvar.");
+    } catch (erro) {
+        if (status) status.textContent = "Sem conexão: a anotação ainda não foi salva.";
     }
 }
 
@@ -84,6 +113,41 @@ document.addEventListener("DOMContentLoaded", () => {
             verificarResposta(Number(quiz.dataset.licaoId), botao.dataset.resposta, botao);
         });
     });
+
+    document.querySelectorAll("[data-copiar-codigo]").forEach((botao) => {
+        botao.addEventListener("click", () => copiarCodigo(botao));
+    });
+
+    const anotacao = document.getElementById("anotacaoLicao");
+    if (anotacao) {
+        anotacao.addEventListener("input", () => {
+            const status = document.getElementById("statusAnotacao");
+            if (status) status.textContent = "Salvando...";
+            clearTimeout(timerAnotacao);
+            timerAnotacao = setTimeout(() => salvarAnotacao(anotacao), 800);
+        });
+    }
+
+    const buscaReferencia = document.getElementById("buscaReferencia");
+    if (buscaReferencia) {
+        const itens = Array.from(document.querySelectorAll("[data-busca]"));
+        const resultado = document.getElementById("resultadoReferencia");
+        const normalizarTexto = (texto) => texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        itens.forEach((item) => { item.dataset.texto = normalizarTexto(item.textContent); });
+        buscaReferencia.addEventListener("input", () => {
+            const termo = normalizarTexto(buscaReferencia.value.trim());
+            let visiveis = 0;
+            itens.forEach((item) => {
+                const combina = !termo || item.dataset.texto.includes(termo);
+                item.hidden = !combina;
+                if (combina) visiveis += 1;
+            });
+            document.querySelectorAll(".reference-section").forEach((secao) => {
+                secao.hidden = Boolean(termo) && !secao.querySelector("[data-busca]:not([hidden])");
+            });
+            if (resultado) resultado.textContent = termo ? `${visiveis} resultado(s).` : "";
+        });
+    }
 
     const busca = document.getElementById("buscaModulos");
     const resultadoBusca = document.getElementById("resultadoBusca");

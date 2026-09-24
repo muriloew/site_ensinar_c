@@ -818,23 +818,23 @@ def montar_desafios_teoricos(conteudo, plano, aplicacao, semente):
             "id": "cuidado",
             "pergunta": f"Qual cuidado ajuda ao estudar {conteudo}?",
             "alternativas": _alternativas_teoricas(cuidado, [
-                f"{conteudo} dispensa testes quando o codigo compila.",
-                f"{conteudo} sempre funciona igual em qualquer situacao.",
-                "O compilador corrige automaticamente qualquer erro de logica.",
+                f"{conteudo} dispensa testes quando o código compila.",
+                f"{conteudo} sempre funciona igual em qualquer situação.",
+                "O compilador corrige automaticamente qualquer erro de lógica.",
             ]),
             "resposta": cuidado,
             "explicacao": cuidado,
         },
         {
             "id": "pratica",
-            "pergunta": f"Qual pratica combina com esta licao sobre {conteudo}?",
+            "pergunta": f"Qual prática combina com esta lição sobre {conteudo}?",
             "alternativas": _alternativas_teoricas(aplicacao, [
-                "Usar recursos de modulos futuros antes de entender a base.",
+                "Usar recursos de módulos futuros antes de entender a base.",
                 "Responder sem executar nem conferir o resultado.",
-                "Remover a funcao main para deixar o codigo menor.",
+                "Remover a função main para deixar o código menor.",
             ]),
             "resposta": aplicacao,
-            "explicacao": "A pratica correta reforca o conceito estudado antes de seguir para o proximo passo.",
+            "explicacao": "A prática correta reforça o conceito estudado antes de seguir para o próximo passo.",
         },
     ]
 

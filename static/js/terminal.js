@@ -198,6 +198,15 @@ function compilarReal(licaoId, tipo = "licao") {
     );
 }
 
+function restaurarCodigoInicial() {
+    const inicial = document.getElementById("codigoInicial");
+    const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
+    if (!inicial || !codigo) return;
+    if (confirm("Trocar o código atual pelo código inicial do exercício?")) {
+        definirCodigoNoEditor(codigo, inicial.value);
+    }
+}
+
 function limparTerminalReal() {
     cancelarExecucao();
     const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");

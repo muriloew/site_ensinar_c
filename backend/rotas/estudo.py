@@ -1,6 +1,6 @@
 """Jornada de módulos, página da lição, exercício de código, desafios teóricos e conclusão."""
 
-from datetime import date
+from datetime import date, datetime
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
@@ -10,12 +10,25 @@ from backend.aluno.situacao import SituacaoAluno
 from backend.aluno.teoria import atualizar_resposta_teorica, preparar_desafios_teoricos_view
 from backend.banco.conexao import transacao
 from backend.compilador.correcao import normalizar_texto
-from backend.conteudo.trilha import modulo_por_id
+from backend.conteudo import referencia
+from backend.conteudo.trilha import licoes_vizinhas, modulo_por_id, url_da_licao
 from backend.sessao import usuario_logado
 
 bp = Blueprint("estudo", __name__)
 
 XP_POR_LICAO = 50
+TAMANHO_MAXIMO_ANOTACAO = 5000
+
+
+def _link_da_licao(situacao, par):
+    modulo, licao = par
+    if not licao:
+        return None
+    return {
+        "titulo": licao["titulo"],
+        "url": url_da_licao(modulo, licao),
+        "liberada": situacao.modulo_acessivel(modulo["id"]),
+    }
 
 
 @bp.route("/modulos")
@@ -42,6 +55,12 @@ def modulos():
     )
 
 
+@bp.route("/referencia")
+def consulta_rapida():
+    # Aberta também para visitantes: serve como material de consulta durante os estudos.
+    return render_template("estudo/referencia.html", ref=referencia)
+
+
 @bp.route("/estudar/<int:modulo_id>")
 def estudar(modulo_id):
     usuario = usuario_logado()
@@ -64,6 +83,12 @@ def estudar(modulo_id):
             "SELECT 1 FROM favoritos_usuario WHERE usuario_id = ? AND licao_id = ?",
             (usuario["id"], licao["id"]),
         ).fetchone() is not None
+        anotacao = conn.execute(
+            "SELECT texto FROM anotacoes_usuario WHERE usuario_id = ? AND licao_id = ?",
+            (usuario["id"], licao["id"]),
+        ).fetchone()
+
+    anterior, proxima = licoes_vizinhas(licao["id"])
 
     estado_teorico = preparar_desafios_teoricos_view(
         licao,
@@ -79,6 +104,10 @@ def estudar(modulo_id):
         desafios_teoricos_corretos=estado_teorico["corretos"],
         total_desafios_teoricos=estado_teorico["total"],
         favorita=favorita,
+        anotacao=anotacao["texto"] if anotacao else "",
+        posicao=modulo["licoes"].index(licao) + 1,
+        anterior=_link_da_licao(situacao, anterior),
+        proxima=_link_da_licao(situacao, proxima),
     )
 
 
@@ -148,6 +177,37 @@ def salvar_rascunho_exercicio():
             (usuario["id"], licao["id"], modulo["id"], str(dados.get("codigo", "")), str(date.today())),
         )
     return jsonify({"ok": True, "mensagem": "Rascunho salvo."})
+
+
+@bp.route("/api/anotacoes/<int:licao_id>", methods=["POST"])
+def salvar_anotacao(licao_id):
+    usuario = usuario_logado()
+    if not usuario:
+        return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
+
+    _, licao, erro = SituacaoAluno(usuario["id"]).licao_acessivel(licao_id)
+    if erro:
+        mensagem, status = erro
+        return jsonify({"ok": False, "mensagem": mensagem}), status
+
+    texto = str((request.get_json(silent=True) or {}).get("texto", ""))[:TAMANHO_MAXIMO_ANOTACAO]
+    with transacao() as conn:
+        if texto.strip():
+            conn.execute(
+                """
+                INSERT INTO anotacoes_usuario (usuario_id, licao_id, texto, atualizado_em)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(usuario_id, licao_id)
+                DO UPDATE SET texto = excluded.texto, atualizado_em = excluded.atualizado_em
+                """,
+                (usuario["id"], licao["id"], texto, datetime.now().isoformat(timespec="seconds")),
+            )
+        else:
+            conn.execute(
+                "DELETE FROM anotacoes_usuario WHERE usuario_id = ? AND licao_id = ?",
+                (usuario["id"], licao["id"]),
+            )
+    return jsonify({"ok": True, "mensagem": "Anotação salva."})
 
 
 @bp.route("/verificar", methods=["POST"])
@@ -266,4 +326,11 @@ def concluir(licao_id):
             agendar_primeira_revisao(conn, usuario["id"], licao_id)
         sincronizar_conquistas(conn, usuario["id"])
 
-    return jsonify({"ok": True, "mensagem": f"Lição concluída! +{XP_POR_LICAO} XP"})
+    # Depois de concluir, o aluno segue direto para a próxima lição que já estiver liberada.
+    _, proxima = licoes_vizinhas(licao_id)
+    link = _link_da_licao(SituacaoAluno(usuario["id"]), proxima)
+    return jsonify({
+        "ok": True,
+        "mensagem": f"Lição concluída! +{XP_POR_LICAO} XP",
+        "proxima": link["url"] if link and link["liberada"] else "/modulos",
+    })

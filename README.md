@@ -18,6 +18,7 @@ backend/
     exemplos.py                 Programa de exemplo de cada lição
     exercicios.py               Exercícios simplificados, lições só teóricas e testes ocultos
     desafios_diarios.py         Geração e sorteio dos desafios diários
+    referencia.py               Textos da consulta rápida (formatos, tipos, erros do GCC, glossário)
   aluno/                        Regras sobre o progresso do aluno
     situacao.py                 Lições concluídas, módulos liberados, próxima lição
     gamificacao.py              XP, nível, sequência, missões e conquistas
@@ -32,13 +33,16 @@ backend/
     historico.py                Histórico das últimas execuções
   rotas/                        Páginas do site, uma área por arquivo
     publico.py                  Início, cadastro, login        -> templates/publico/
+    conta.py                    Configurações da conta         -> templates/conta/
     painel.py                   Painel, perfil, metas, simulado -> templates/painel/
     estudo.py                   Módulos, lição, exercício       -> templates/estudo/
     desafio_diario.py           Desafio diário                  -> templates/desafio_diario/
     revisao.py                  Revisão e favoritos             -> templates/revisao/
     compilador.py               Prática livre e histórico       -> templates/compilador/
+    professor.py                Painel do professor             -> templates/professor/
   sessao.py                     Usuário logado na requisição
   seguranca.py                  Token CSRF e limite de tentativas de login
+  usuarios.py                   Regras da conta: validação, senha, exclusão, professor
 templates/layout/               Página base, menu e partes do editor
 static/css/style.css            Visual de todo o site (tema escuro)
 static/css/tema-claro.css       Cores do tema claro
@@ -56,9 +60,13 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para muda
 
 ## Recursos
 
-- Cadastro com e-mail único, login e progresso salvo no banco de dados
+- Cadastro com confirmação de senha, login com "continuar conectado" e progresso salvo no banco de dados
+- Configurações: editar nome e e-mail, trocar senha, tema, tamanho da letra do editor, baixar os dados e excluir a conta
+- Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
-- Teoria, pontos-chave, erro comum e exemplo compilável em cada lição
+- Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
+- Navegação entre lições, anotações pessoais por lição e passagem direta para a próxima lição ao concluir
+- Consulta rápida aberta a todos: formatos do printf/scanf, tipos, operadores, funções, erros do GCC traduzidos e glossário
 - Três desafios teóricos por lição e exercício de código com correção automática, incluindo testes ocultos
 - Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre
@@ -145,6 +153,7 @@ Os relatórios e capturas ficam na pasta temporária `ensinar-c-layout` do siste
 - `DATABASE_URL`: endereço do PostgreSQL. Sem ela, o site usa SQLite local.
 - `DB_PATH`: caminho do SQLite local; o padrão é `instance/ensinar_c.db`.
 - `DB_POOL_MAX`: máximo de conexões abertas com o PostgreSQL; o padrão é 5.
+- `ADMIN_EMAILS`: e-mails (separados por vírgula) que veem o painel do professor em `/professor`. Cada professor cria a conta normalmente pelo cadastro.
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
 - `MAX_COMPILER_JOBS`: compilações simultâneas; no Render gratuito use `1`.
 - `COMPILER_MAX_PROCESSES`: máximo de processos por compilação ou programa; o padrão é 8.

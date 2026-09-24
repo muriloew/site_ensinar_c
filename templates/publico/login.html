@@ -4,7 +4,7 @@
 {% block content %}
 <section class="auth-page">
     <form class="auth-card" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <a class="brand auth-brand" href="/">
             <span class="brand-icon">C</span>
             <strong>Ensinar C</strong>
@@ -13,15 +13,27 @@
         <h1>Entrar</h1>
         <p>Acesse sua conta para continuar estudando.</p>
 
-        {% if erro %}<div class="alert">{{ erro }}</div>{% endif %}
+        {% if erro %}<div class="alert" role="alert">{{ erro }}</div>{% endif %}
 
-        <label>E-mail</label>
-        <input type="email" name="email" required>
+        <label for="email">E-mail</label>
+        <input id="email" type="email" name="email" value="{{ email or '' }}" autocomplete="email" required>
 
-        <label>Senha</label>
-        <input type="password" name="senha" required>
+        <label for="senha">Senha</label>
+        <input id="senha" type="password" name="senha" autocomplete="current-password" required>
+
+        <label class="auth-check"><input type="checkbox" data-mostrar-senha> Mostrar senha</label>
+        <label class="auth-check"><input type="checkbox" name="lembrar" value="1" checked> Continuar conectado neste computador</label>
 
         <button class="btn btn-primary" type="submit">Entrar</button>
+
+        <details class="auth-help">
+            <summary>Esqueceu a senha?</summary>
+            {% if ha_professor %}
+            <p>Peça ao professor responsável para redefinir sua senha. Você vai receber uma senha temporária e poderá criar outra em Configurações.</p>
+            {% else %}
+            <p>Fale com o responsável pelo site para redefinir sua senha.</p>
+            {% endif %}
+        </details>
 
         <p class="auth-link">Não tem conta? <a href="/cadastro">Criar cadastro</a></p>
     </form>

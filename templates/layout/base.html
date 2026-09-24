@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <title>{% block title %}Ensinar C{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Aprenda a linguagem C com lições em 21 módulos, exercícios corrigidos automaticamente e compilador no navegador.">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <script>
         // Aplica o tema antes de desenhar a página, evitando piscar o tema errado.
         try {
@@ -32,9 +34,12 @@
         <a href="/revisao">↻ Revisão</a>
         <a href="/favoritos">★ Favoritos</a>
         <a href="/simulado">📝 Simulado</a>
+        <a href="/referencia">📖 Consulta rápida</a>
         <a href="/compilador">💻 Prática livre</a>
         <a href="/historico-codigos">⌛ Histórico</a>
         <a href="/perfil">👤 Perfil</a>
+        <a href="/configuracoes">⚙️ Configurações</a>
+        {% if professor %}<a href="/professor">🧑‍🏫 Professor</a>{% endif %}
         <button type="button" class="theme-toggle" data-alternar-tema>◐ Tema claro</button>
         <a href="/sair" class="sair">↩ Sair</a>
     </nav>

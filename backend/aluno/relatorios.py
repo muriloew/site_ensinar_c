@@ -166,4 +166,5 @@ def dados_backup(conn, usuario_id):
         ),
         "favoritos": linhas("SELECT * FROM favoritos_usuario WHERE usuario_id = ? ORDER BY id DESC"),
         "revisoes": linhas("SELECT * FROM revisoes_usuario WHERE usuario_id = ? ORDER BY proxima_revisao"),
+        "anotacoes": linhas("SELECT * FROM anotacoes_usuario WHERE usuario_id = ? ORDER BY licao_id"),
     }

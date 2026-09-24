@@ -2,6 +2,7 @@
 
 from flask import Blueprint, redirect, render_template, request, url_for
 
+from backend.aluno.situacao import SituacaoAluno
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import encontrar_licao
 from backend.sessao import usuario_logado
@@ -20,10 +21,12 @@ def compilador():
 
     codigo_inicial = CODIGO_INICIAL
     titulo = "Compilador Online"
-    _, licao = encontrar_licao(request.args.get("licao_id", type=int))
-    if licao:
-        codigo_inicial = licao["codigo_minimo"]
-        titulo = f"Compilador - {licao['titulo']}"
+    exemplo = request.args.get("exemplo", type=int)
+    if exemplo:
+        _, licao, erro = SituacaoAluno(usuario["id"]).licao_acessivel(exemplo)
+        if not erro:
+            codigo_inicial = licao["codigo"]
+            titulo = f"Exemplo - {licao['titulo']}"
 
     with transacao() as conn:
         historico = conn.execute(

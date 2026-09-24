@@ -46,6 +46,7 @@
             <div class="success-box">Desafio diário já concluído hoje.</div>
         {% endif %}
 
+        <textarea id="codigoInicial" hidden aria-hidden="true" tabindex="-1">{{ desafio.codigo_inicial }}</textarea>
         <textarea id="editorCodigo" data-tipo="diario" class="code-editor large">{{ codigo }}</textarea>
         <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
 
@@ -53,6 +54,7 @@
             <button class="btn btn-primary" onclick="compilarReal(null, 'diario')">⚙️ Compilar</button>
             <button class="btn btn-ghost" onclick="abrirTerminalReal()">Abrir terminal</button>
             <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
+            <button class="btn btn-ghost" type="button" onclick="restaurarCodigoInicial()">Restaurar código inicial</button>
             <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
         </div>
 

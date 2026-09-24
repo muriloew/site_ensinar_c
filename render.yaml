@@ -11,6 +11,9 @@ services:
       # Endereço do PostgreSQL (Neon ou outro). Preencha no painel do Render; nunca no Git.
       - key: DATABASE_URL
         sync: false
+      # E-mails dos professores (separados por vírgula) que acessam /professor.
+      - key: ADMIN_EMAILS
+        sync: false
       - key: COMPILER_BACKEND
         value: local
       - key: COMPILER_RUNNER_USER

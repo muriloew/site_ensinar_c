@@ -340,3 +340,14 @@ python app.py
 - Dicas progressivas específicas de cada lição e desafio diário, liberadas a cada tentativa sem sucesso.
 - Tema claro com botão no menu; segue a preferência do sistema até o aluno escolher.
 - GitHub Actions roda os testes com SQLite e PostgreSQL e monta a imagem Docker a cada push.
+
+
+## Versão 29 — Conta, professor, lições e consulta rápida
+
+- Cadastro com confirmação de senha, validação de e-mail e opção "mostrar senha"; login com "continuar conectado" por 30 dias.
+- Página **Configurações**: editar nome e e-mail (trocar o e-mail pede a senha), trocar senha, tema, tamanho da letra do editor, baixar os dados e excluir a conta com todo o progresso.
+- **Painel do professor** (`/professor`, liberado pela variável `ADMIN_EMAILS`): resumo da turma, tabela de alunos, exercícios com mais tentativas sem sucesso e senha temporária para alunos que esqueceram a senha, com troca obrigatória no primeiro acesso.
+- Lições: posição no módulo, lição anterior e próxima, ir direto para a próxima ao concluir, copiar o exemplo, executar o exemplo no compilador, anotações pessoais e botão "Restaurar código inicial" nos exercícios e desafios.
+- **Consulta rápida** (`/referencia`), aberta também a visitantes, com busca: formatos do printf/scanf, tipos e tamanhos, operadores por prioridade, sequências de escape, funções mais usadas, mensagens do GCC traduzidas e glossário.
+- Acentos corrigidos nas perguntas dos desafios teóricos e nas mensagens do compilador (as respostas corretas não mudaram).
+- Ícone do site, descrição para buscadores e cabeçalhos de segurança (nosniff, proteção contra exibição em frames de outros sites).
