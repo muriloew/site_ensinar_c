@@ -148,6 +148,28 @@ def codigo_inicial(conteudo):
     )
 
 
+def montar_dicas(plano, regra):
+    """Três dicas da mais geral à mais direta; o aluno vê uma nova a cada tentativa errada."""
+    termos = regra.get("codigo_contem", [])
+    recursos = (
+        "O código precisa usar: " + ", ".join(termos) + "."
+        if termos
+        else "Releia o objetivo e confira se usou todos os comandos pedidos."
+    )
+
+    teste = (regra.get("testes") or [None])[0]
+    esperado = (teste or regra).get("saida_contem", [])
+    if teste and esperado:
+        entrada = teste.get("entrada", "").strip()
+        saida = f'Teste: digitando "{entrada}", a saída deve mostrar "{" / ".join(esperado)}".'
+    elif esperado:
+        saida = f'A saída deve mostrar exatamente: "{" / ".join(esperado)}".'
+    else:
+        saida = "Execute o programa e compare a saída, letra por letra, com o que o objetivo pede."
+
+    return [f"Cuidado comum: {plano['cuidado']}", recursos, saida]
+
+
 def enunciado_exercicio(conteudo, plano):
     if conteudo in LICOES_SO_TEORIA:
         return LICOES_SO_TEORIA[conteudo]

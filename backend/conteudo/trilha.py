@@ -5,6 +5,7 @@ from backend.conteudo.exercicios import (
     LICOES_SO_TEORIA,
     codigo_inicial,
     enunciado_exercicio,
+    montar_dicas,
     regra_correcao,
 )
 from backend.conteudo.licoes import PLANOS_LICOES, montar_desafios_teoricos
@@ -181,6 +182,7 @@ def _montar_licao(licao_id, conteudo, modulo_id):
         pontos_chave.append(f"Aplicação prática: {exercicio}")
     pontos_chave.append("Compile com avisos habilitados e teste também valores de fronteira.")
 
+    correcao = regra_correcao(conteudo, plano)
     desafios = montar_desafios_teoricos(
         conteudo, plano, aplicacao=exercicio, semente=f"{modulo_id}-{licao_id}"
     )
@@ -197,7 +199,8 @@ def _montar_licao(licao_id, conteudo, modulo_id):
         "resposta": desafios[0]["resposta"],
         "exercicio_codigo": exercicio,
         "codigo_minimo": codigo_inicial(conteudo),
-        "correcao": regra_correcao(conteudo, plano),
+        "correcao": correcao,
+        "dicas": montar_dicas(plano, correcao),
         "pratica_codigo": pratica,
         "desafios_teoricos": desafios,
     }

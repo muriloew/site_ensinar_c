@@ -63,6 +63,8 @@
                 Execute o código para receber a correção automática.
             {% endif %}
         </div>
+
+        {% with dicas=desafio.dicas, chave="desafio-" ~ desafio.id %}{% include "layout/dicas_progressivas.html" %}{% endwith %}
     </section>
     {% endif %}
 </div>

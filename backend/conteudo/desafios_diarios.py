@@ -55,6 +55,7 @@ def gerar_desafios_diarios(modulos, quantidade_por_modulo=10):
                     f"Esta atividade revisa: {licao['titulo']}."
                 ),
                 "correcao": licao.get("correcao", {"saida_obrigatoria": True}),
+                "dicas": licao.get("dicas", []),
             })
 
     return desafios

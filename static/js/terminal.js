@@ -58,20 +58,26 @@ function definirCompilacaoEmAndamento(ocupado) {
         });
 }
 
-// Depois de 3 tentativas sem sucesso na mesma página, mostra a dica do exercício.
+// Cada tentativa sem sucesso libera mais uma dica do exercício (a contagem fica no navegador).
+let tentativasSemLocalStorage = 0;
+
 function registrarTentativaCodigo(falhou) {
-    const chave = "tentativas_codigo_" + window.location.pathname;
-    let total = 0;
+    const painel = document.getElementById("dicasProgressivas");
+    if (!painel) return;
+
+    const chave = "tentativas_" + painel.dataset.chave;
+    let total;
     try {
-        total = Number(localStorage.getItem(chave) || "0");
-        if (falhou) {
-            total += 1;
-            localStorage.setItem(chave, String(total));
-        }
+        total = Number(localStorage.getItem(chave) || "0") + (falhou ? 1 : 0);
+        if (falhou) localStorage.setItem(chave, String(total));
     } catch (erro) {
-        total = falhou ? 1 : 0;
+        tentativasSemLocalStorage += falhou ? 1 : 0;
+        total = tentativasSemLocalStorage;
     }
-    if (total >= 3) document.getElementById("dicaTentativas")?.classList.remove("hidden-hint");
+
+    const dicas = painel.querySelectorAll("li");
+    dicas.forEach((dica, indice) => { dica.hidden = indice >= total; });
+    painel.hidden = total === 0;
 }
 
 function atualizarFeedbackCorrecao(correcao) {

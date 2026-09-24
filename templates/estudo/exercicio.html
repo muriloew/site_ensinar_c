@@ -61,9 +61,7 @@
             {% endif %}
         </div>
 
-        <div id="dicaTentativas" class="hint hidden-hint">
-            <strong>Dica:</strong> revise se você declarou as variáveis, usou scanf quando precisa ler dados e colocou ponto e vírgula no final dos comandos.
-        </div>
+        {% with dicas=licao.dicas, chave="licao-" ~ licao.id %}{% include "layout/dicas_progressivas.html" %}{% endwith %}
     </section>
 </div>
 
