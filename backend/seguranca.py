@@ -66,3 +66,5 @@ class LimiteTentativas:
 
 FALHAS_POR_EMAIL = LimiteTentativas(maximo=5, janela_segundos=15 * 60)
 FALHAS_POR_IP = LimiteTentativas(maximo=20, janela_segundos=15 * 60)
+PEDIDOS_SENHA_POR_EMAIL = LimiteTentativas(maximo=3, janela_segundos=60 * 60)
+PEDIDOS_SENHA_POR_IP = LimiteTentativas(maximo=10, janela_segundos=60 * 60)

@@ -42,7 +42,8 @@ backend/
     professor.py                Painel do professor             -> templates/professor/
   sessao.py                     Usuário logado na requisição
   seguranca.py                  Token CSRF e limite de tentativas de login
-  usuarios.py                   Regras da conta: validação, senha, exclusão, professor
+  usuarios.py                   Regras da conta: validação, senha, exclusão, professor, links de senha
+  envio_email.py                Envio de e-mails pela API do Brevo
 templates/layout/               Página base, menu e partes do editor
 static/css/style.css            Visual de todo o site (tema escuro)
 static/css/tema-claro.css       Cores do tema claro
@@ -61,6 +62,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para muda
 ## Recursos
 
 - Cadastro com confirmação de senha, login com "continuar conectado" e progresso salvo no banco de dados
+- "Esqueci minha senha" com link por e-mail válido por 1 hora (quando o e-mail estiver configurado)
 - Configurações: editar nome e e-mail, trocar senha, tema, tamanho da letra do editor, baixar os dados e excluir a conta
 - Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
@@ -114,6 +116,16 @@ $env:DATABASE_URL="postgresql://..."
 python scripts/migrar_sqlite_para_postgres.py instance/ensinar_c.db
 ```
 
+## E-mail para recuperar a senha (opcional)
+
+O Render gratuito bloqueia as portas de e-mail (SMTP), então o site envia pela API HTTPS do Brevo, que tem plano gratuito:
+
+1. Crie uma conta no Brevo e confirme o e-mail que vai aparecer como remetente (em *Senders*).
+2. Gere uma chave de API (em *SMTP & API* → *API Keys*).
+3. No Render, adicione `BREVO_API_KEY` com a chave e `EMAIL_REMETENTE` com o e-mail confirmado.
+
+Sem essas variáveis, a página "Esqueci minha senha" orienta o aluno a pedir ao professor uma senha temporária.
+
 ## Publicar no Render
 
 O serviço deve ser do tipo **Docker**, pois o compilador precisa de GCC, TCC e WebSocket. O `render.yaml` já aponta para o `Dockerfile`. Com o Auto-Deploy ativo, cada `git push` publica uma nova versão.
@@ -153,6 +165,7 @@ Os relatórios e capturas ficam na pasta temporária `ensinar-c-layout` do siste
 - `DATABASE_URL`: endereço do PostgreSQL. Sem ela, o site usa SQLite local.
 - `DB_PATH`: caminho do SQLite local; o padrão é `instance/ensinar_c.db`.
 - `DB_POOL_MAX`: máximo de conexões abertas com o PostgreSQL; o padrão é 5.
+- `BREVO_API_KEY` e `EMAIL_REMETENTE`: ativam o "Esqueci minha senha" por e-mail (veja abaixo). `EMAIL_REMETENTE_NOME` muda o nome do remetente; o padrão é Ensinar C.
 - `ADMIN_EMAILS`: e-mails (separados por vírgula) que veem o painel do professor em `/professor`. Cada professor cria a conta normalmente pelo cadastro.
 - `COMPILER_BACKEND=local`: usa o GCC instalado pelo Docker.
 - `MAX_COMPILER_JOBS`: compilações simultâneas; no Render gratuito use `1` (as outras esperam até `COMPILER_QUEUE_TIMEOUT` segundos na fila).

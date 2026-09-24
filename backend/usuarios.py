@@ -1,7 +1,10 @@
 """Regras da conta: validação do cadastro, senha, exclusão da conta e acesso de professor."""
 
+import hashlib
 import os
 import re
+import secrets
+from datetime import datetime, timedelta, timezone
 
 from werkzeug.security import generate_password_hash
 
@@ -24,7 +27,10 @@ TABELAS_DO_USUARIO = (
     "favoritos_usuario",
     "revisoes_usuario",
     "anotacoes_usuario",
+    "redefinicoes_senha",
 )
+
+VALIDADE_LINK_SENHA = timedelta(hours=1)
 
 
 def validar_nome(nome):
@@ -74,3 +80,38 @@ def emails_professores():
 
 def eh_professor(usuario):
     return bool(usuario) and usuario["email"] in emails_professores()
+
+
+def _agora():
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _hash_token(token):
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def criar_link_redefinicao(conn, usuario_id):
+    """Cria um código de uso único; no banco fica só o hash, nunca o código do link."""
+    conn.execute("UPDATE redefinicoes_senha SET usado = 1 WHERE usuario_id = ?", (usuario_id,))
+    token = secrets.token_urlsafe(32)
+    expira = (datetime.now(timezone.utc) + VALIDADE_LINK_SENHA).isoformat(timespec="seconds")
+    conn.execute(
+        "INSERT INTO redefinicoes_senha (usuario_id, token_hash, expira_em, criado_em) VALUES (?, ?, ?, ?)",
+        (usuario_id, _hash_token(token), expira, _agora()),
+    )
+    return token
+
+
+def usuario_do_link(conn, token):
+    linha = conn.execute(
+        """
+        SELECT usuario_id FROM redefinicoes_senha
+        WHERE token_hash = ? AND usado = 0 AND expira_em > ?
+        """,
+        (_hash_token(token), _agora()),
+    ).fetchone()
+    return linha["usuario_id"] if linha else None
+
+
+def encerrar_links_redefinicao(conn, usuario_id):
+    conn.execute("UPDATE redefinicoes_senha SET usado = 1 WHERE usuario_id = ?", (usuario_id,))

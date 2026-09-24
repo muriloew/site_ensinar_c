@@ -56,6 +56,7 @@ class LearningFlowTest(unittest.TestCase):
     def setUp(self):
         conn = self.conectar()
         for tabela in (
+            "redefinicoes_senha",
             "anotacoes_usuario",
             "recompensas_diarias",
             "atividades_estudo",
@@ -680,6 +681,54 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn(f"Exemplo - {licao['titulo']}", compilador)
         bloqueado = self.client.get(f"/compilador?exemplo={self.MODULOS[3]['licoes'][0]['id']}").get_data(as_text=True)
         self.assertIn("Compilador Online", bloqueado)
+
+    def test_recuperar_senha_por_email(self):
+        import re
+        from unittest.mock import Mock
+
+        from backend.seguranca import PEDIDOS_SENHA_POR_EMAIL, PEDIDOS_SENHA_POR_IP
+        from backend.usuarios import criar_link_redefinicao
+
+        visitante = self.site.app.test_client()
+        self.assertIn("não está configurado", visitante.get("/esqueci-senha").get_data(as_text=True))
+
+        enviados = []
+
+        def envio_falso(url, headers, json, timeout):
+            enviados.append(json)
+            return Mock(ok=True)
+
+        config = {"BREVO_API_KEY": "chave-teste", "EMAIL_REMETENTE": "site@example.com"}
+        try:
+            with patch.dict(os.environ, config), patch("backend.envio_email.requests.post", side_effect=envio_falso):
+                desconhecido = visitante.post("/esqueci-senha", data={"email": "ninguem@example.com"})
+                conhecido = visitante.post("/esqueci-senha", data={"email": "aluno@example.com"})
+                self.assertIn("Receba um link por e-mail", visitante.get("/login").get_data(as_text=True))
+        finally:
+            for chave in ("email:ninguem@example.com", "email:aluno@example.com"):
+                PEDIDOS_SENHA_POR_EMAIL.esquecer(chave)
+            PEDIDOS_SENHA_POR_IP.esquecer("ip:127.0.0.1")
+
+        self.assertIn("Se houver uma conta", desconhecido.get_data(as_text=True))
+        self.assertIn("Se houver uma conta", conhecido.get_data(as_text=True))
+        self.assertEqual(len(enviados), 1)
+        self.assertEqual(enviados[0]["to"][0]["email"], "aluno@example.com")
+        link = re.search(r"https?://[^/]+(/redefinir-senha/\S+)", enviados[0]["textContent"]).group(1)
+
+        self.assertEqual(visitante.get(link).status_code, 200)
+        self.assertEqual(visitante.post(link, data={"nova_senha": "curta", "confirmar_senha": "curta"}).status_code, 400)
+        salva = visitante.post(link, data={"nova_senha": "senha-nova-1", "confirmar_senha": "senha-nova-1"})
+        self.assertIn("senha=redefinida", salva.location)
+        self.assertEqual(visitante.get(link).status_code, 400)
+        entrada = visitante.post("/login", data={"email": "aluno@example.com", "senha": "senha-nova-1"})
+        self.assertIn("/dashboard", entrada.location)
+
+        conn = self.conectar()
+        vencido = criar_link_redefinicao(conn, 1)
+        conn.execute("UPDATE redefinicoes_senha SET expira_em = '2000-01-01T00:00:00+00:00' WHERE usado = 0")
+        conn.commit()
+        conn.close()
+        self.assertEqual(visitante.get(f"/redefinir-senha/{vencido}").status_code, 400)
 
 
 if __name__ == "__main__":

@@ -150,6 +150,16 @@ TABELAS = (
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS redefinicoes_senha (
+        id {chave},
+        usuario_id INTEGER NOT NULL,
+        token_hash TEXT NOT NULL UNIQUE,
+        expira_em TEXT NOT NULL,
+        usado INTEGER DEFAULT 0,
+        criado_em TEXT
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS revisoes_usuario (
         id {chave},
         usuario_id INTEGER NOT NULL,

@@ -1,0 +1,35 @@
+{% extends "layout/base.html" %}
+{% block title %}Esqueci minha senha - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+    <form class="auth-card" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <a class="brand auth-brand" href="/">
+            <span class="brand-icon">C</span>
+            <strong>Ensinar C</strong>
+        </a>
+
+        <h1>Esqueci minha senha</h1>
+
+        {% if not email_ativo %}
+            <p>O envio de e-mails não está configurado neste site.</p>
+            {% if ha_professor %}
+            <p>Peça ao professor responsável para redefinir sua senha: você recebe uma senha temporária e cria outra em Configurações.</p>
+            {% else %}
+            <p>Fale com o responsável pelo site para redefinir sua senha.</p>
+            {% endif %}
+        {% elif enviado %}
+            <div class="success-box" role="status">{{ enviado }}</div>
+        {% else %}
+            <p>Informe o e-mail da sua conta. Vamos enviar um link para você criar uma senha nova.</p>
+            {% if erro %}<div class="alert" role="alert">{{ erro }}</div>{% endif %}
+            <label for="email">E-mail</label>
+            <input id="email" type="email" name="email" autocomplete="email" required>
+            <button class="btn btn-primary" type="submit">Enviar link</button>
+        {% endif %}
+
+        <p class="auth-link"><a href="/login">Voltar para o login</a></p>
+    </form>
+</section>
+{% endblock %}

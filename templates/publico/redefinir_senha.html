@@ -1,0 +1,29 @@
+{% extends "layout/base.html" %}
+{% block title %}Criar senha nova - Ensinar C{% endblock %}
+
+{% block content %}
+<section class="auth-page">
+    <form class="auth-card" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <a class="brand auth-brand" href="/">
+            <span class="brand-icon">C</span>
+            <strong>Ensinar C</strong>
+        </a>
+
+        <h1>Criar senha nova</h1>
+
+        {% if invalido %}
+            <div class="alert" role="alert">Este link não vale mais: ele expira em 1 hora e só pode ser usado uma vez.</div>
+            <p class="auth-link"><a href="/esqueci-senha">Pedir outro link</a></p>
+        {% else %}
+            {% if erro %}<div class="alert" role="alert">{{ erro }}</div>{% endif %}
+            <label for="nova_senha">Nova senha <span class="small-muted">(mínimo de 8 caracteres)</span></label>
+            <input id="nova_senha" type="password" name="nova_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+            <label for="confirmar_senha">Confirme a nova senha</label>
+            <input id="confirmar_senha" type="password" name="confirmar_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+            <label class="auth-check"><input type="checkbox" data-mostrar-senha> Mostrar senha</label>
+            <button class="btn btn-primary" type="submit">Salvar senha nova</button>
+        {% endif %}
+    </form>
+</section>
+{% endblock %}

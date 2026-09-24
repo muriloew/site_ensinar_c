@@ -14,6 +14,11 @@ services:
       # E-mails dos professores (separados por vírgula) que acessam /professor.
       - key: ADMIN_EMAILS
         sync: false
+      # Envio do link "esqueci minha senha" pela API do Brevo (opcional).
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_REMETENTE
+        sync: false
       - key: COMPILER_BACKEND
         value: local
       - key: COMPILER_RUNNER_USER
