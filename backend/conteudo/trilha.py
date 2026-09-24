@@ -2,6 +2,8 @@
 
 from backend.conteudo.aprofundamento import APROFUNDAMENTO
 from backend.conteudo.exemplos import EXEMPLOS
+from backend.conteudo.exemplos_teoricos import ARQUIVOS_BUILD
+from backend.conteudo.exemplos_teoricos import EXEMPLOS as EXEMPLOS_TEORICOS
 from backend.conteudo.exercicios import (
     LICOES_SO_TEORIA,
     codigo_inicial,
@@ -9,8 +11,10 @@ from backend.conteudo.exercicios import (
     montar_dicas,
     regra_correcao,
 )
+from backend.conteudo.guias_projetos import GUIAS_PROJETOS
 from backend.conteudo.licoes import PLANOS_LICOES, montar_desafios_teoricos
 from backend.conteudo.solucoes import SOLUCOES
+from backend.conteudo.teoria_ampliada import LEITURAS
 
 TRILHA = (
     {
@@ -168,15 +172,33 @@ TRILHA = (
     },
 )
 
+# Lições que mostram também o exemplo complementar em vários arquivos (com Makefile).
+LICOES_COM_ARQUIVOS_BUILD = {".h", ".c", "include guards", "linking", "makefile"}
+
+
+def _exemplo(conteudo, leitura):
+    """Código do exemplo, sua execução e o passo a passo que corresponde a esse código."""
+    teorico = EXEMPLOS_TEORICOS.get(conteudo)
+    if teorico:
+        return teorico["codigo"], teorico, leitura["passos"]
+    extra = APROFUNDAMENTO[conteudo]
+    entrada = extra["entrada"] or ""
+    execucao = {
+        "entrada": entrada,
+        "saida": extra["saida"],
+        "casos": [{"entrada": entrada, "saida": extra["saida"], "retorno": 0}],
+    }
+    return EXEMPLOS[conteudo], execucao, extra["passos"] or leitura["passos"]
+
+
 def _montar_licao(licao_id, conteudo, modulo_id):
     plano = PLANOS_LICOES[conteudo]
     pratica = conteudo not in LICOES_SO_TEORIA
     exercicio = enunciado_exercicio(conteudo, plano)
+    leitura = LEITURAS[conteudo]
+    codigo, execucao, passos = _exemplo(conteudo, leitura)
 
-    pontos_chave = [plano["fundamento"]]
-    if pratica:
-        pontos_chave.append(f"Aplicação prática: {exercicio}")
-    pontos_chave.append("Compile com avisos habilitados e teste também valores de fronteira.")
+    pontos_chave = [plano["fundamento"], f"Nesta lição: {exercicio}"]
 
     correcao = regra_correcao(conteudo, plano)
     desafios = montar_desafios_teoricos(
@@ -192,8 +214,12 @@ def _montar_licao(licao_id, conteudo, modulo_id):
         "conteudo": plano["teoria"],
         "pontos_chave": pontos_chave,
         "erro_comum": plano["cuidado"],
-        "codigo": EXEMPLOS[conteudo],
+        "leitura": leitura,
+        "codigo": codigo,
+        "exemplo_execucao": execucao,
+        "passos_exemplo": passos,
         "aprofundamento": APROFUNDAMENTO[conteudo],
+        "arquivos_build": ARQUIVOS_BUILD if conteudo in LICOES_COM_ARQUIVOS_BUILD else None,
         "pergunta": desafios[0]["pergunta"],
         "alternativas": desafios[0]["alternativas"],
         "resposta": desafios[0]["resposta"],
@@ -216,6 +242,17 @@ def _montar_trilha():
             licoes.append(_montar_licao(proximo_id, conteudo, modulo["id"]))
             proximo_id += 1
         modulos.append({**modulo, "licoes": licoes})
+
+    # Roteiros dos projetos: cada conceito para revisar vira um link para a lição correspondente.
+    por_titulo = {
+        licao["titulo"]: {"titulo": licao["titulo"], "modulo_id": modulo["id"], "id": licao["id"]}
+        for modulo in modulos for licao in modulo["licoes"]
+    }
+    for modulo in modulos:
+        for licao in modulo["licoes"]:
+            guia = GUIAS_PROJETOS.get(licao["titulo"])
+            if guia:
+                licao["guia_projeto"] = {**guia, "revisar": [por_titulo[titulo] for titulo in guia["revisar"]]}
     return modulos
 
 

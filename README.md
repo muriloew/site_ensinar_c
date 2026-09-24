@@ -15,8 +15,11 @@ backend/
   conteudo/                     O que o aluno estuda
     trilha.py                   Os 21 módulos e a montagem de cada lição
     licoes.py                   Teoria, cuidados e desafio de cada lição
-    exemplos.py                 Programa de exemplo de cada lição
-    aprofundamento.py           Passo a passo e saída do exemplo, "Indo além" e desenho da memória
+    teoria_ampliada.py          Leitura de cada lição: objetivo, "Como funciona", passo a passo e autoavaliação
+    exemplos.py                 Programa de exemplo de 70 lições
+    exemplos_teoricos.py        Exemplo, entrada e saída das outras 21 lições e o projeto em vários arquivos
+    aprofundamento.py           "Indo além", desenho da memória e saída dos exemplos de exemplos.py
+    guias_projetos.py           Roteiros dos 7 projetos do módulo 21
     exercicios.py               Exercícios simplificados, lições só teóricas e testes ocultos
     solucoes.py                 Solução comentada de cada exercício (liberada após a aprovação)
     desafios_diarios.py         Geração e sorteio dos desafios diários
@@ -59,7 +62,7 @@ tests/                          Testes automáticos (Python) e de navegador (Pla
 .github/workflows/testes.yml    Roda os testes e o build do Docker a cada push no GitHub
 ```
 
-Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para mudar o programa de exemplo, `backend/conteudo/exemplos.py` e a saída correspondente em `backend/conteudo/aprofundamento.py` (o teste `tests/test_conteudo.py` compila cada exemplo e confere a saída).
+Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend/conteudo/teoria_ampliada.py`. O programa de exemplo fica em `backend/conteudo/exemplos.py` (com a saída em `aprofundamento.py`) ou em `exemplos_teoricos.py`; o teste `tests/test_theory_content.py` compila todos os exemplos e confere se a saída mostrada na página é a real.
 
 ## Recursos
 
@@ -69,7 +72,9 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para muda
 - Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
-- Aprofundamento em todas as lições: saída do exemplo, passo a passo linha a linha, "Indo além" e desenho da memória nas lições de arrays, strings, ponteiros e alocação
+- Leitura de cada lição: objetivo, "Como funciona", passo a passo e saída do exemplo, ligação com os projetos e pergunta de autoavaliação
+- "Indo além" em todas as lições e desenho da memória nas lições de arrays, strings, ponteiros e alocação
+- Roteiro dos projetos do módulo 21, com conceitos para revisar, etapas e casos de teste, e exemplo de projeto em vários arquivos com Makefile
 - Navegação entre lições, anotações pessoais por lição e passagem direta para a próxima lição ao concluir
 - Consulta rápida aberta a todos: formatos do printf/scanf, tipos, operadores, funções, erros do GCC traduzidos e glossário
 - Três desafios teóricos por lição e exercício de código com correção automática, incluindo testes ocultos

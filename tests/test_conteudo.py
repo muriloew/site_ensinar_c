@@ -1,55 +1,40 @@
-import os
-import shutil
-import subprocess
-import tempfile
 import unittest
 
 from backend.conteudo.aprofundamento import APROFUNDAMENTO
 from backend.conteudo.exemplos import EXEMPLOS
+from backend.conteudo.exemplos_teoricos import EXEMPLOS as EXEMPLOS_TEORICOS
 from backend.conteudo.trilha import MODULOS
 
-
-def _sem_espacos_no_fim(texto):
-    return "\n".join(linha.rstrip() for linha in texto.strip().splitlines())
+LICOES = [licao for modulo in MODULOS for licao in modulo["licoes"]]
 
 
 class ConteudoTest(unittest.TestCase):
+    """A compilação e a saída de cada exemplo são conferidas em test_theory_content.py."""
+
+    def test_cada_licao_tem_um_unico_exemplo(self):
+        titulos = {licao["titulo"] for licao in LICOES}
+        self.assertEqual(set(EXEMPLOS) | set(EXEMPLOS_TEORICOS), titulos)
+        self.assertFalse(set(EXEMPLOS) & set(EXEMPLOS_TEORICOS))
+
     def test_toda_licao_tem_aprofundamento(self):
-        for modulo in MODULOS:
-            for licao in modulo["licoes"]:
+        for licao in LICOES:
+            with self.subTest(licao=licao["titulo"]):
+                extra = APROFUNDAMENTO[licao["titulo"]]
+                self.assertGreater(len(extra["alem"]), 150)
+                # Exemplos de exemplos.py precisam da saída; os de exemplos_teoricos.py já trazem a sua.
+                self.assertEqual(extra["saida"] is None, licao["titulo"] in EXEMPLOS_TEORICOS)
+                self.assertGreaterEqual(len(licao["passos_exemplo"]), 2)
+                # Crases abertas e fechadas: senão o texto aparece quebrado na página.
+                for texto in licao["passos_exemplo"] + [extra["alem"]]:
+                    self.assertEqual(texto.count("`") % 2, 0, texto)
+
+    def test_passo_a_passo_proprio_so_quando_o_exemplo_mudou(self):
+        for licao in LICOES:
+            extra = APROFUNDAMENTO[licao["titulo"]]
+            if extra["passos"]:
                 with self.subTest(licao=licao["titulo"]):
-                    extra = licao["aprofundamento"]
-                    self.assertGreaterEqual(len(extra["passos"]), 2)
-                    self.assertTrue(extra["saida"].strip())
-                    self.assertGreater(len(extra["alem"]), 150)
-                    # Crases abertas e fechadas: senão o texto aparece quebrado na página.
-                    for texto in extra["passos"] + [extra["alem"]]:
-                        self.assertEqual(texto.count("`") % 2, 0, texto)
-
-    @unittest.skipUnless(shutil.which("gcc"), "precisa do gcc instalado")
-    def test_exemplos_compilam_sem_avisos_e_mostram_a_saida_documentada(self):
-        for titulo, codigo in EXEMPLOS.items():
-            extra = APROFUNDAMENTO[titulo]
-            with self.subTest(licao=titulo), tempfile.TemporaryDirectory() as pasta:
-                arquivo = os.path.join(pasta, "exemplo.c")
-                with open(arquivo, "w", encoding="utf-8") as saida:
-                    saida.write(codigo)
-                compilacao = subprocess.run(
-                    ["gcc", "-std=c11", "-Wall", "-Wextra", "-pedantic", "-Werror",
-                     arquivo, "-o", os.path.join(pasta, "exemplo"), "-lm"],
-                    capture_output=True, text=True,
-                )
-                self.assertEqual(compilacao.returncode, 0, compilacao.stderr)
-
-                entrada = extra["entrada"]
-                execucao = subprocess.run(
-                    [os.path.join(pasta, "exemplo")], cwd=pasta, capture_output=True, text=True,
-                    input=f"{entrada}\n" if entrada else "", timeout=5,
-                )
-                self.assertEqual(execucao.returncode, 0)
-                # Na página, a saída mostra também o que foi digitado, como no terminal.
-                esperado = extra["saida"].replace(f"{entrada}\n", "", 1) if entrada else extra["saida"]
-                self.assertEqual(_sem_espacos_no_fim(execucao.stdout), _sem_espacos_no_fim(esperado))
+                    self.assertNotIn(licao["titulo"], EXEMPLOS_TEORICOS)
+                    self.assertEqual(licao["passos_exemplo"], extra["passos"])
 
 
 if __name__ == "__main__":
