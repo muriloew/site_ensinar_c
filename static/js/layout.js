@@ -7,6 +7,22 @@ window.cabecalhosEnvio = function (extras = {}) {
 (function () {
     "use strict";
 
+    const botaoTema = document.querySelector("[data-alternar-tema]");
+    function mostrarTema() {
+        const claro = document.documentElement.dataset.theme === "claro";
+        botaoTema.textContent = claro ? "◐ Tema escuro" : "◐ Tema claro";
+        botaoTema.setAttribute("aria-pressed", String(claro));
+    }
+    if (botaoTema) {
+        mostrarTema();
+        botaoTema.addEventListener("click", () => {
+            const novo = document.documentElement.dataset.theme === "claro" ? "escuro" : "claro";
+            document.documentElement.dataset.theme = novo;
+            try { localStorage.setItem("tema", novo); } catch (erro) { /* vale só nesta página */ }
+            mostrarTema();
+        });
+    }
+
     const menu = document.querySelector('.sidebar nav');
     if (menu) {
         const caminho = /^\/(estudar|exercicio)\//.test(location.pathname)

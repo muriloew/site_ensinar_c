@@ -5,8 +5,17 @@
     <title>{% block title %}Ensinar C{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <script>
+        // Aplica o tema antes de desenhar a página, evitando piscar o tema errado.
+        try {
+            const tema = localStorage.getItem("tema")
+                || (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
+            document.documentElement.dataset.theme = tema;
+        } catch (erro) { /* sem armazenamento, fica o tema escuro */ }
+    </script>
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tema-claro.css') }}">
 </head>
 <body>
 {% if usuario %}
@@ -26,6 +35,7 @@
         <a href="/compilador">💻 Prática livre</a>
         <a href="/historico-codigos">⌛ Histórico</a>
         <a href="/perfil">👤 Perfil</a>
+        <button type="button" class="theme-toggle" data-alternar-tema>◐ Tema claro</button>
         <a href="/sair" class="sair">↩ Sair</a>
     </nav>
 </aside>
