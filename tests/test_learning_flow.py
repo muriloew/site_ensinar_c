@@ -20,6 +20,10 @@ class LearningFlowTest(unittest.TestCase):
     def setUpClass(cls):
         cls.temp_dir = tempfile.TemporaryDirectory()
         os.environ["DB_PATH"] = str(Path(cls.temp_dir.name) / "test.db")
+        # Os testes apagam as tabelas: nunca usam a DATABASE_URL real, só TEST_DATABASE_URL.
+        os.environ.pop("DATABASE_URL", None)
+        if os.environ.get("TEST_DATABASE_URL"):
+            os.environ["DATABASE_URL"] = os.environ["TEST_DATABASE_URL"]
         sys.path.insert(0, str(PROJECT_DIR))
 
         cls.site = importlib.import_module("app")
@@ -213,8 +217,11 @@ class LearningFlowTest(unittest.TestCase):
         )
         conn = self.conectar()
         historico = conn.execute(
-            "SELECT contexto, entrada, saida, aprovado FROM compilador_historico WHERE usuario_id = ?",
-            (1,),
+            """
+            SELECT contexto, entrada, saida, aprovado FROM compilador_historico
+            WHERE usuario_id = ? AND codigo = ?
+            """,
+            (1, "int main(void) { return 0; }"),
         ).fetchone()
         conn.close()
         self.assertEqual(historico["contexto"], "livre")

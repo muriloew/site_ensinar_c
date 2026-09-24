@@ -8,6 +8,7 @@ TEMP = TemporaryDirectory(prefix="ensinar-c-browser-")
 HERE = Path(TEMP.name)
 PROJECT = Path(__file__).resolve().parents[2]
 os.environ["DB_PATH"] = str(HERE / "review.db")
+os.environ.pop("DATABASE_URL", None)  # o servidor de teste usa sempre um SQLite temporário
 sys.path.insert(0, str(PROJECT))
 
 import app as site
