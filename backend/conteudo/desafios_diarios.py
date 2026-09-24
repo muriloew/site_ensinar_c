@@ -56,6 +56,7 @@ def gerar_desafios_diarios(modulos, quantidade_por_modulo=10):
                 ),
                 "correcao": licao.get("correcao", {"saida_obrigatoria": True}),
                 "dicas": licao.get("dicas", []),
+                "solucao": licao.get("solucao"),
             })
 
     return desafios

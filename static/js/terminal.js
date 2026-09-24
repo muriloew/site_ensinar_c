@@ -87,6 +87,16 @@ function atualizarFeedbackCorrecao(correcao) {
     feedback.classList.remove("success", "warning");
     feedback.classList.add(correcao.ok ? "success" : "warning");
     if (!correcao.ok) registrarTentativaCodigo(true);
+    if (correcao.solucao) mostrarSolucaoComentada(correcao.solucao);
+}
+
+function mostrarSolucaoComentada(solucao) {
+    const conteudo = document.getElementById("solucaoConteudo");
+    if (!conteudo) return;
+    document.getElementById("solucaoExplicacao").textContent = solucao.explicacao || "";
+    document.getElementById("solucaoCodigo").textContent = solucao.codigo || "";
+    document.getElementById("solucaoBloqueada").hidden = true;
+    conteudo.hidden = false;
 }
 
 function campoEntradaTerminal() {

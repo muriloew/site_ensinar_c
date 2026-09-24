@@ -31,6 +31,13 @@ PROCESSOS_TERMINAL_LOCK = threading.RLock()
 MENSAGEM_DESAFIO_BLOQUEADO = "Conclua o módulo 1 para desbloquear os desafios diários."
 
 
+def _com_solucao(validacao, atividade):
+    """Só envia a solução de referência junto de uma correção aprovada."""
+    if validacao["ok"] and atividade.get("solucao"):
+        return {**validacao, "solucao": atividade["solucao"]}
+    return validacao
+
+
 def salvar_execucao_licao(usuario_id, licao_id, codigo, entrada, saida, execucao_ok, build_log="", origem=""):
     modulo, licao, erro = SituacaoAluno(usuario_id).licao_acessivel(licao_id, exigir_pratica=True)
     if erro:
@@ -63,7 +70,7 @@ def salvar_execucao_licao(usuario_id, licao_id, codigo, entrada, saida, execucao
         )
         if validacao["ok"]:
             registrar_atividade(conn, usuario_id)
-    return validacao
+    return _com_solucao(validacao, licao)
 
 
 def salvar_execucao_desafio(usuario_id, codigo, entrada, saida, execucao_ok, build_log="", origem=""):
@@ -97,7 +104,7 @@ def salvar_execucao_desafio(usuario_id, codigo, entrada, saida, execucao_ok, bui
         )
         if validacao["ok"]:
             registrar_atividade(conn, usuario_id)
-    return validacao
+    return _com_solucao(validacao, desafio)
 
 
 def salvar_execucao_livre(usuario_id, codigo, entrada, saida, execucao_ok, build_log="", origem=""):

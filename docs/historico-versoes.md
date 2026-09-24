@@ -351,3 +351,13 @@ python app.py
 - **Consulta rápida** (`/referencia`), aberta também a visitantes, com busca: formatos do printf/scanf, tipos e tamanhos, operadores por prioridade, sequências de escape, funções mais usadas, mensagens do GCC traduzidas e glossário.
 - Acentos corrigidos nas perguntas dos desafios teóricos e nas mensagens do compilador (as respostas corretas não mudaram).
 - Ícone do site, descrição para buscadores e cabeçalhos de segurança (nosniff, proteção contra exibição em frames de outros sites).
+
+
+## Versão 30 — Turma, senha por e-mail, soluções e aprofundamento
+
+- Compilador para a turma: compilar entra em uma fila curta e o programa aberto no terminal ocupa uma vaga separada (4 por padrão, `MAX_INTERACTIVE_PROGRAMS`). Um aluno parado no `scanf` não bloqueia mais os outros; quando as vagas acabam, a mensagem pede para fechar o terminal ou aguardar.
+- **Esqueci minha senha**: link por e-mail válido por 1 hora e de uso único, enviado pela API do Brevo (`BREVO_API_KEY` e `EMAIL_REMETENTE`). No banco fica só o hash do link. Sem o e-mail configurado, a página orienta a pedir uma senha temporária ao professor.
+- **Solução comentada** para os 87 exercícios de código e para os desafios diários. Ela só aparece depois que a correção automática aprova o código do aluno (ou a lição já foi concluída) e se abre na hora, sem recarregar a página. Todas as soluções compilam sem avisos e passam na própria correção automática (teste `tests/test_solucoes.py`).
+- **Aprofundamento** nas 91 lições: saída do exemplo, passo a passo do código, "Indo além" com detalhes, armadilhas e ferramentas, e tabela "Como fica a memória" nas lições de arrays, strings, ponteiros, alocação, unions e listas.
+- Exemplos novos onde várias lições repetiam o mesmo programa: if, else, do while, for, criando função, parâmetros, retorno, protótipos, memória, structs, typedef, .h e validação. O exemplo de malloc passa a conferir `NULL`.
+- O teste `tests/test_conteudo.py` compila os 91 exemplos com `-Werror` e confere se a saída mostrada na página é a real.

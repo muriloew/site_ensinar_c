@@ -126,7 +126,7 @@ def exercicio(licao_id):
     with transacao() as conn:
         registro = conn.execute(
             """
-            SELECT codigo_usuario, codigo_validado, feedback_codigo
+            SELECT codigo_usuario, codigo_validado, feedback_codigo, concluida
             FROM progresso WHERE usuario_id = ? AND licao_id = ?
             """,
             (usuario["id"], licao_id),
@@ -139,6 +139,7 @@ def exercicio(licao_id):
         codigo_salvo=(registro and registro["codigo_usuario"]) or licao["codigo_minimo"],
         codigo_validado=registro["codigo_validado"] if registro else 0,
         feedback_codigo=(registro and registro["feedback_codigo"]) or "",
+        solucao_liberada=bool(registro and (registro["codigo_validado"] or registro["concluida"])),
     )
 
 

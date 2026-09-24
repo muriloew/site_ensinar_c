@@ -469,6 +469,36 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIsNone(registro["feedback_codigo"])
         self.assertIsNone(registro["saida_codigo"])
 
+    def test_solucao_comentada_so_aparece_depois_da_aprovacao(self):
+        modulo = self.MODULOS[1]
+        licao = modulo["licoes"][0]
+        trecho_solucao = licao["solucao"]["explicacao"]
+        conn = self.conectar()
+        conn.execute(
+            "INSERT INTO progresso (usuario_id, licao_id, modulo_id) VALUES (?, ?, ?)",
+            (1, licao["id"], modulo["id"]),
+        )
+        conn.commit()
+        conn.close()
+
+        bloqueada = self.client.get(f"/exercicio/{licao['id']}").get_data(as_text=True)
+        self.assertIn("Solução comentada", bloqueada)
+        self.assertIn("Libera quando a correção automática aprovar", bloqueada)
+        self.assertNotIn(trecho_solucao, bloqueada)
+
+        reprovado = {"ok": False, "mensagem": "Ainda não"}
+        with patch.object(self.terminal, "avaliar_codigo", return_value=reprovado):
+            resultado = self.terminal.salvar_execucao_licao(1, licao["id"], "x", "", "", True)
+        self.assertNotIn("solucao", resultado)
+
+        aprovado = {"ok": True, "mensagem": "Aprovado"}
+        with patch.object(self.terminal, "avaliar_codigo", return_value=aprovado):
+            resultado = self.terminal.salvar_execucao_licao(1, licao["id"], "x", "", "", True)
+        self.assertEqual(resultado["solucao"], licao["solucao"])
+
+        liberada = self.client.get(f"/exercicio/{licao['id']}").get_data(as_text=True)
+        self.assertIn(trecho_solucao, liberada)
+
     def test_comentario_nao_satisfaz_correcao_e_erro_nao_aprova(self):
         falhas = self.correcao.validar_regras_estaticas(
             "int main(void) { /* scanf */ return 0; }",

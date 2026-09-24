@@ -66,9 +66,48 @@
                 <button class="btn btn-ghost btn-small" type="button" data-copiar-codigo>Copiar código</button>
                 <a class="btn btn-ghost btn-small" href="/compilador?exemplo={{ licao.id }}">Executar no compilador</a>
             </div>
-            {% if licao.explicacao_codigo %}
-            <p class="code-explanation">{{ licao.explicacao_codigo }}</p>
+            {% set extra = licao.aprofundamento %}
+            <div class="example-output">
+                <strong>Saída do exemplo</strong>
+                {% if extra.entrada %}<span class="small-muted">(digitando {{ extra.entrada }} e Enter)</span>{% endif %}
+                <pre>{{ extra.saida }}</pre>
+            </div>
+
+            <div class="theory-section">
+                <h3>Passo a passo do exemplo</h3>
+                <ol class="walkthrough">
+                    {% for passo in extra.passos %}
+                    <li>{{ passo|codigo_inline }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+
+            {% if extra.memoria %}
+            <div class="theory-section">
+                <h3>Como fica a memória</h3>
+                <p class="small-muted">{{ extra.memoria.legenda }} Os endereços são fictícios, só para ilustrar.</p>
+                <div class="table-scroll">
+                    <table class="memory-table">
+                        <thead><tr><th>Nome</th><th>Endereço</th><th>Conteúdo</th><th>Observação</th></tr></thead>
+                        <tbody>
+                            {% for linha in extra.memoria.linhas %}
+                            <tr>
+                                <td><code>{{ linha.nome }}</code></td>
+                                <td><code>{{ linha.endereco }}</code></td>
+                                <td><code>{{ linha.conteudo }}</code></td>
+                                <td>{{ linha.observacao }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
             {% endif %}
+
+            <div class="deep-dive">
+                <strong>Indo além</strong>
+                <p>{{ extra.alem|codigo_inline }}</p>
+            </div>
 
             <section class="lesson-theory-challenges">
                 <div class="lesson-theory-head">

@@ -1,5 +1,6 @@
 """Os 21 módulos da trilha de C e a montagem de cada lição."""
 
+from backend.conteudo.aprofundamento import APROFUNDAMENTO
 from backend.conteudo.exemplos import EXEMPLOS
 from backend.conteudo.exercicios import (
     LICOES_SO_TEORIA,
@@ -9,6 +10,7 @@ from backend.conteudo.exercicios import (
     regra_correcao,
 )
 from backend.conteudo.licoes import PLANOS_LICOES, montar_desafios_teoricos
+from backend.conteudo.solucoes import SOLUCOES
 
 TRILHA = (
     {
@@ -166,12 +168,6 @@ TRILHA = (
     },
 )
 
-EXPLICACAO_EXEMPLO = (
-    "Observe a ordem das declarações, os tipos usados e como a saída confirma o resultado. "
-    "O exemplo é completo, compatível com C11 e pode ser compilado como um único arquivo."
-)
-
-
 def _montar_licao(licao_id, conteudo, modulo_id):
     plano = PLANOS_LICOES[conteudo]
     pratica = conteudo not in LICOES_SO_TEORIA
@@ -186,14 +182,18 @@ def _montar_licao(licao_id, conteudo, modulo_id):
     desafios = montar_desafios_teoricos(
         conteudo, plano, aplicacao=exercicio, semente=f"{modulo_id}-{licao_id}"
     )
+    solucao = None
+    if pratica:
+        codigo_solucao, explicacao_solucao = SOLUCOES[conteudo]
+        solucao = {"codigo": codigo_solucao, "explicacao": explicacao_solucao}
     return {
         "id": licao_id,
         "titulo": conteudo,
         "conteudo": plano["teoria"],
         "pontos_chave": pontos_chave,
         "erro_comum": plano["cuidado"],
-        "explicacao_codigo": EXPLICACAO_EXEMPLO,
         "codigo": EXEMPLOS[conteudo],
+        "aprofundamento": APROFUNDAMENTO[conteudo],
         "pergunta": desafios[0]["pergunta"],
         "alternativas": desafios[0]["alternativas"],
         "resposta": desafios[0]["resposta"],
@@ -202,6 +202,7 @@ def _montar_licao(licao_id, conteudo, modulo_id):
         "correcao": correcao,
         "dicas": montar_dicas(plano, correcao),
         "pratica_codigo": pratica,
+        "solucao": solucao,
         "desafios_teoricos": desafios,
     }
 

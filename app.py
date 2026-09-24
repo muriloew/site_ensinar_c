@@ -1,10 +1,12 @@
 """Ponto de entrada do site Ensinar C. O Gunicorn carrega o objeto `app` deste arquivo."""
 
 import os
+import re
 import secrets
 from datetime import timedelta
 
 from flask import Flask, render_template
+from markupsafe import Markup, escape
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.banco.tabelas import criar_tabelas
@@ -57,6 +59,11 @@ def criar_app():
             "total_licoes": TOTAL_LICOES,
             "csrf_token": token_csrf,
         }
+
+    @app.template_filter("codigo_inline")
+    def codigo_inline(texto):
+        """Mostra os trechos entre crases do conteúdo das lições como código."""
+        return Markup(re.sub(r"`([^`]+)`", r"<code>\1</code>", str(escape(texto))))
 
     @app.errorhandler(404)
     def pagina_nao_encontrada(_erro):

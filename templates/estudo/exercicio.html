@@ -64,6 +64,7 @@
         </div>
 
         {% with dicas=licao.dicas, chave="licao-" ~ licao.id %}{% include "layout/dicas_progressivas.html" %}{% endwith %}
+        {% with solucao=licao.solucao, liberada=solucao_liberada %}{% include "layout/solucao_comentada.html" %}{% endwith %}
     </section>
 </div>
 

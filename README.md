@@ -16,7 +16,9 @@ backend/
     trilha.py                   Os 21 módulos e a montagem de cada lição
     licoes.py                   Teoria, cuidados e desafio de cada lição
     exemplos.py                 Programa de exemplo de cada lição
+    aprofundamento.py           Passo a passo e saída do exemplo, "Indo além" e desenho da memória
     exercicios.py               Exercícios simplificados, lições só teóricas e testes ocultos
+    solucoes.py                 Solução comentada de cada exercício (liberada após a aprovação)
     desafios_diarios.py         Geração e sorteio dos desafios diários
     referencia.py               Textos da consulta rápida (formatos, tipos, erros do GCC, glossário)
   aluno/                        Regras sobre o progresso do aluno
@@ -57,7 +59,7 @@ tests/                          Testes automáticos (Python) e de navegador (Pla
 .github/workflows/testes.yml    Roda os testes e o build do Docker a cada push no GitHub
 ```
 
-Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para mudar o programa de exemplo, `backend/conteudo/exemplos.py`.
+Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para mudar o programa de exemplo, `backend/conteudo/exemplos.py` e a saída correspondente em `backend/conteudo/aprofundamento.py` (o teste `tests/test_conteudo.py` compila cada exemplo e confere a saída).
 
 ## Recursos
 
@@ -67,11 +69,13 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py`; para muda
 - Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
+- Aprofundamento em todas as lições: saída do exemplo, passo a passo linha a linha, "Indo além" e desenho da memória nas lições de arrays, strings, ponteiros e alocação
 - Navegação entre lições, anotações pessoais por lição e passagem direta para a próxima lição ao concluir
 - Consulta rápida aberta a todos: formatos do printf/scanf, tipos, operadores, funções, erros do GCC traduzidos e glossário
 - Três desafios teóricos por lição e exercício de código com correção automática, incluindo testes ocultos
 - Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
-- Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre
+- Solução comentada de todos os 87 exercícios, liberada só depois que a correção aprova o código do aluno
+- Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre; vários alunos podem ficar com o programa aberto ao mesmo tempo
 - 200 desafios diários, sorteados só entre os módulos já liberados
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
 - Perfil com relatório por módulo, metas diárias e semanais e calendário de atividade
@@ -138,7 +142,7 @@ python -m unittest discover -s tests -v
 
 O GitHub Actions roda esses testes com SQLite e PostgreSQL e monta a imagem Docker a cada push.
 
-Os testes usam um SQLite temporário e **ignoram** a `DATABASE_URL`, porque apagam as tabelas. Para testá-los em um PostgreSQL descartável, use `TEST_DATABASE_URL`. O teste de compilação real é ignorado quando o GCC não está instalado.
+Os testes usam um SQLite temporário e **ignoram** a `DATABASE_URL`, porque apagam as tabelas. Para testá-los em um PostgreSQL descartável, use `TEST_DATABASE_URL`. Os testes que compilam de verdade (exemplos das lições, soluções comentadas e terminal) são ignorados quando o GCC não está instalado.
 
 Testes de navegador (Playwright), com Chrome ou Edge instalado:
 
