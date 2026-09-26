@@ -19,7 +19,15 @@ TABELAS = (
         melhor_sequencia INTEGER DEFAULT 0,
         ultima_atividade TEXT,
         protecoes_sequencia INTEGER DEFAULT 1,
-        senha_temporaria INTEGER DEFAULT 0
+        senha_temporaria INTEGER DEFAULT 0,
+        sessao_versao INTEGER DEFAULT 0
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS preferencias_usuario (
+        usuario_id INTEGER PRIMARY KEY,
+        dados TEXT NOT NULL,
+        atualizado_em TEXT
     )
     """,
     """
@@ -204,6 +212,7 @@ COLUNAS_ADICIONADAS = (
     ("usuarios", "ultima_atividade", "TEXT"),
     ("usuarios", "protecoes_sequencia", "INTEGER DEFAULT 1"),
     ("usuarios", "senha_temporaria", "INTEGER DEFAULT 0"),
+    ("usuarios", "sessao_versao", "INTEGER DEFAULT 0"),
     ("desafios_diarios", "desafio_id", "TEXT"),
     ("desafios_diarios", "entrada_codigo", "TEXT"),
     ("desafios_diarios", "codigo_validado", "INTEGER DEFAULT 0"),

@@ -39,7 +39,7 @@ backend/
   rotas/                        Páginas do site, uma área por arquivo
     publico.py                  Início, cadastro, login        -> templates/publico/
     conta.py                    Configurações da conta         -> templates/conta/
-    painel.py                   Painel, perfil, metas, simulado -> templates/painel/
+    painel.py                   Painel, acompanhamento, metas, simulado -> templates/painel/
     estudo.py                   Módulos, lição, exercício       -> templates/estudo/
     desafio_diario.py           Desafio diário                  -> templates/desafio_diario/
     revisao.py                  Revisão e favoritos             -> templates/revisao/
@@ -48,6 +48,7 @@ backend/
   sessao.py                     Usuário logado na requisição
   seguranca.py                  Token CSRF e limite de tentativas de login
   usuarios.py                   Regras da conta: validação, senha, exclusão, professor, links de senha
+  preferencias.py               Preferências da conta (aparência, editor, dicas) e seus valores aceitos
   envio_email.py                Envio de e-mails pela API do Brevo
 templates/layout/               Página base, menu e partes do editor
 static/css/style.css            Visual de todo o site (tema escuro)
@@ -68,7 +69,8 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 
 - Cadastro com confirmação de senha, login com "continuar conectado" e progresso salvo no banco de dados
 - "Esqueci minha senha" com link por e-mail válido por 1 hora (quando o e-mail estiver configurado)
-- Configurações: editar nome e e-mail, trocar senha, tema, tamanho da letra do editor, baixar os dados e excluir a conta
+- Configurações salvas na conta, valendo em qualquer aparelho: tema claro, escuro ou igual ao sistema, tamanho do texto das lições, cor do avatar, reduzir animações, editor de código (letra, indentação, fechar parênteses, quebrar linhas e lista de atalhos), modo das dicas (automáticas, quando pedir ou desligadas) e confirmação antes de limpar o código
+- Segurança da conta: trocar senha (desconecta os outros aparelhos), "sair de todos os outros aparelhos", apagar o histórico de códigos, baixar os dados e excluir a conta
 - Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
@@ -83,7 +85,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre; vários alunos podem ficar com o programa aberto ao mesmo tempo
 - 200 desafios diários, sorteados só entre os módulos já liberados
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
-- Perfil com relatório por módulo, metas diárias e semanais e calendário de atividade
+- Acompanhamento com relatório por módulo, metas diárias e semanais e calendário de atividade
 - Simulado, revisão espaçada, favoritos e histórico das 100 últimas execuções
 - Download do progresso em JSON
 - Telas ajustadas para celular, tablet e computador, com tema claro e escuro

@@ -15,4 +15,9 @@ def usuario_logado():
         with transacao() as conn:
             g.usuario = conn.execute("SELECT * FROM usuarios WHERE id = ?", (usuario_id,)).fetchone()
         g.usuario_id_carregado = usuario_id
+
+    # Troca de senha ou "sair dos outros aparelhos" aumentam a versão e invalidam sessões antigas.
+    if g.usuario is None or session.get("sessao_versao", 0) != (g.usuario["sessao_versao"] or 0):
+        session.clear()
+        g.usuario = None
     return g.usuario

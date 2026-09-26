@@ -1,5 +1,15 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR"{% if usuario %}
+      data-tema-escolhido="{{ preferencias.tema }}"
+      data-texto-licao="{{ preferencias.texto_licao }}"
+      data-cor-avatar="{{ preferencias.cor_avatar }}"
+      data-fonte-editor="{{ preferencias.fonte_editor }}"
+      data-tab-editor="{{ preferencias.tab_editor }}"
+      data-quebrar-linhas="{{ preferencias.quebrar_linhas }}"
+      data-fechar-parenteses="{{ preferencias.fechar_parenteses }}"
+      data-dicas="{{ preferencias.dicas }}"
+      data-confirmar-limpar="{{ preferencias.confirmar_limpar }}"
+      {% if preferencias.reduzir_animacoes == "sim" %}data-reduzir-animacoes{% endif %}{% endif %}>
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}Ensinar C{% endblock %}</title>
@@ -9,11 +19,17 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <script>
         // Aplica o tema antes de desenhar a página, evitando piscar o tema errado.
-        try {
-            const tema = localStorage.getItem("tema")
-                || (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
-            document.documentElement.dataset.theme = tema;
-        } catch (erro) { /* sem armazenamento, fica o tema escuro */ }
+        // Logado, vale a escolha salva na conta; sem login, a última escolha feita neste navegador.
+        (function () {
+            const raiz = document.documentElement;
+            let escolha = raiz.dataset.temaEscolhido;
+            try {
+                if (escolha) localStorage.setItem("tema", escolha === "sistema" ? "" : escolha);
+                else escolha = localStorage.getItem("tema");
+            } catch (erro) { /* sem armazenamento, segue a conta ou o sistema */ }
+            raiz.dataset.theme = escolha === "claro" || escolha === "escuro" ? escolha
+                : (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
+        })();
     </script>
     {% block head %}{% endblock %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -37,10 +53,9 @@
         <a href="/referencia">📖 Consulta rápida</a>
         <a href="/compilador">💻 Prática livre</a>
         <a href="/historico-codigos">⌛ Histórico</a>
-        <a href="/perfil">👤 Perfil</a>
+        <a href="/acompanhamento">📈 Acompanhamento</a>
         <a href="/configuracoes">⚙️ Configurações</a>
         {% if professor %}<a href="/professor">🧑‍🏫 Professor</a>{% endif %}
-        <button type="button" class="theme-toggle" data-alternar-tema>◐ Tema claro</button>
         <a href="/sair" class="sair">↩ Sair</a>
     </nav>
 </aside>

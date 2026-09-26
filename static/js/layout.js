@@ -7,53 +7,77 @@ window.cabecalhosEnvio = function (extras = {}) {
 (function () {
     "use strict";
 
-    function lerPreferencia(chave) {
-        try { return localStorage.getItem(chave) || ""; } catch (erro) { return ""; }
-    }
+    const raiz = document.documentElement;
 
-    function salvarPreferencia(chave, valor) {
-        try {
-            if (valor) localStorage.setItem(chave, valor);
-            else localStorage.removeItem(chave);
-            return true;
-        } catch (erro) {
-            return false;
-        }
-    }
-
-    const botaoTema = document.querySelector("[data-alternar-tema]");
     function aplicarTema(escolha) {
-        const tema = escolha || (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
-        document.documentElement.dataset.theme = tema;
-        if (botaoTema) {
-            botaoTema.textContent = tema === "claro" ? "◐ Tema escuro" : "◐ Tema claro";
-            botaoTema.setAttribute("aria-pressed", String(tema === "claro"));
-        }
+        raiz.dataset.temaEscolhido = escolha;
+        raiz.dataset.theme = escolha === "claro" || escolha === "escuro" ? escolha
+            : (matchMedia("(prefers-color-scheme: light)").matches ? "claro" : "escuro");
+        try { localStorage.setItem("tema", escolha === "sistema" ? "" : escolha); } catch (erro) { /* só nesta página */ }
     }
-    aplicarTema(lerPreferencia("tema"));
-    botaoTema?.addEventListener("click", () => {
-        const novo = document.documentElement.dataset.theme === "claro" ? "escuro" : "claro";
-        salvarPreferencia("tema", novo);
-        aplicarTema(novo);
-        const seletor = document.querySelector('[data-preferencia="tema"]');
-        if (seletor) seletor.value = novo;
+
+    // Com "Igual ao sistema", acompanha a troca de claro/escuro feita no aparelho.
+    matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", () => {
+        if ((raiz.dataset.temaEscolhido || "sistema") === "sistema") aplicarTema("sistema");
     });
 
-    // Página de configurações: preferências guardadas no navegador.
-    const statusPreferencia = document.querySelector("[data-preferencia-status]");
-    document.querySelectorAll("[data-preferencia]").forEach((seletor) => {
-        const chave = seletor.dataset.preferencia;
-        seletor.value = lerPreferencia(chave) || (chave === "tema" ? "sistema" : "");
-        seletor.addEventListener("change", () => {
-            const valor = seletor.value === "sistema" ? "" : seletor.value;
-            const salvo = salvarPreferencia(chave, valor);
-            if (chave === "tema") aplicarTema(valor);
-            if (statusPreferencia) {
-                statusPreferencia.textContent = salvo
-                    ? "Preferência salva."
-                    : "O navegador bloqueou o armazenamento; a escolha vale só nesta página.";
+    // Configurações: cada mudança é salva na conta na hora e já aparece na página.
+    function aplicarPreferencias(preferencias) {
+        aplicarTema(preferencias.tema);
+        raiz.dataset.textoLicao = preferencias.texto_licao;
+        raiz.dataset.corAvatar = preferencias.cor_avatar;
+        raiz.dataset.fonteEditor = preferencias.fonte_editor;
+        raiz.dataset.tabEditor = preferencias.tab_editor;
+        raiz.dataset.quebrarLinhas = preferencias.quebrar_linhas;
+        raiz.dataset.fecharParenteses = preferencias.fechar_parenteses;
+        raiz.dataset.dicas = preferencias.dicas;
+        raiz.dataset.confirmarLimpar = preferencias.confirmar_limpar;
+        raiz.toggleAttribute("data-reduzir-animacoes", preferencias.reduzir_animacoes === "sim");
+        const previa = document.querySelector(".editor-preview");
+        if (previa) {
+            previa.style.fontSize = `${Number(preferencias.fonte_editor) || 15}px`;
+            const recuo = " ".repeat(Number(preferencias.tab_editor));
+            previa.textContent = previa.textContent.replace(/^ +/gm, recuo);
+        }
+    }
+
+    const formPreferencias = document.querySelector("[data-preferencias-automaticas]");
+    if (formPreferencias) {
+        const status = formPreferencias.querySelector("[data-preferencia-status]");
+        formPreferencias.classList.add("salvamento-automatico");
+        let pedido = 0;
+        formPreferencias.addEventListener("change", async () => {
+            const numero = ++pedido;
+            if (status) status.textContent = "Salvando...";
+            try {
+                const resposta = await fetch(formPreferencias.action || location.pathname, {
+                    method: "POST",
+                    body: new FormData(formPreferencias),
+                    headers: window.cabecalhosEnvio({"Accept": "application/json"}),
+                });
+                const dados = await resposta.json();
+                if (!resposta.ok || !dados.ok) throw new Error("falha");
+                if (numero !== pedido) return;
+                aplicarPreferencias(dados.preferencias);
+                if (status) status.textContent = "✓ Salvo na sua conta.";
+            } catch (erro) {
+                if (status) status.textContent = "Não foi possível salvar agora. Verifique a conexão e tente de novo.";
             }
         });
+    }
+
+    document.querySelector("[data-zerar-dicas]")?.addEventListener("click", () => {
+        let apagadas = 0;
+        try {
+            Object.keys(localStorage).filter((chave) => chave.startsWith("tentativas_")).forEach((chave) => {
+                localStorage.removeItem(chave);
+                apagadas++;
+            });
+        } catch (erro) { /* navegador sem armazenamento: não há dicas guardadas */ }
+        const status = document.querySelector("[data-zerar-dicas-status]");
+        if (status) status.textContent = apagadas
+            ? "Pronto: as dicas voltam a aparecer só depois de novas tentativas."
+            : "Não havia dicas liberadas neste aparelho.";
     });
 
     // Formulários com data-confirmar pedem confirmação antes de enviar.

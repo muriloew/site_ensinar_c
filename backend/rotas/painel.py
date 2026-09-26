@@ -98,7 +98,13 @@ def resgatar_recompensa_diaria(missao_id):
 
 
 @bp.route("/perfil")
-def perfil():
+def perfil_antigo():
+    # Endereço antigo, guardado em favoritos e links: leva para a página nova.
+    return redirect(url_for("painel.acompanhamento"), code=301)
+
+
+@bp.route("/acompanhamento")
+def acompanhamento():
     usuario = usuario_logado()
     if not usuario:
         return redirect(url_for("publico.login"))
@@ -117,7 +123,7 @@ def perfil():
         calendario = calendario_atividade(conn, usuario_id)
 
     return render_template(
-        "painel/perfil.html",
+        "painel/acompanhamento.html",
         concluidas=situacao.total_concluidas,
         porcentagem=_porcentagem_geral(situacao),
         desempenho=desempenho,
@@ -138,7 +144,7 @@ def metas():
 
     with transacao() as conn:
         salvar_metas(conn, usuario["id"], request.form)
-    return redirect(url_for("painel.perfil"))
+    return redirect(url_for("painel.acompanhamento", _anchor="metas"))
 
 
 @bp.route("/backup-progresso")
