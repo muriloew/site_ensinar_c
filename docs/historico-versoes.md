@@ -362,3 +362,15 @@ python app.py
 - **Indo além** nas 91 lições, com detalhes, armadilhas e ferramentas, e tabela "Como fica a memória" nas lições de arrays, strings, ponteiros, alocação, unions e listas.
 - Exemplos novos onde várias lições repetiam o mesmo programa: else, do while, criando função, parâmetros, retorno, memória, structs, typedef e .h, cada um com passo a passo próprio.
 - O teste `tests/test_theory_content.py` compila os 91 exemplos com `-Werror` e confere se a saída mostrada na página é a real.
+
+
+## Versão 31 — Configurações e Acompanhamento
+
+- **Perfil** passa a se chamar **Acompanhamento** (`/acompanhamento`); o endereço antigo `/perfil` continua funcionando e leva para a página nova.
+- **Configurações** reorganizadas em seções: Conta, Segurança, Aparência, Editor de código, Estudo e Seus dados, com menu de atalhos.
+- As preferências agora ficam salvas na conta (tabela `preferencias_usuario`) e valem em qualquer aparelho; cada mudança é salva na hora e já aparece na página.
+- Aparência: tema claro, escuro ou igual ao sistema (o botão de tema saiu do menu e foi para Configurações), tamanho do texto das lições, cor do avatar e opção de reduzir animações.
+- Editor de código: tamanho da letra, 2 ou 4 espaços de indentação, fechar parênteses automaticamente, quebrar linhas longas, prévia ao vivo e lista de atalhos.
+- Estudo: dicas automáticas, só quando o aluno pedir (botão "Ver uma dica") ou desligadas; pergunta antes de limpar o código do editor; botão para esconder as dicas já liberadas.
+- Segurança: "Sair de todos os outros aparelhos"; trocar a senha também desconecta os outros aparelhos, mas não quem trocou.
+- Seus dados: apagar o histórico de códigos, além de baixar os dados e excluir a conta.

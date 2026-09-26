@@ -11,7 +11,9 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from backend.banco.tabelas import criar_tabelas
 from backend.compilador.terminal import socketio
+from backend.banco.conexao import transacao
 from backend.conteudo.trilha import TOTAL_LICOES
+from backend.preferencias import PADROES, ler_preferencias
 from backend.rotas import registrar_rotas
 from backend.seguranca import token_csrf, verificar_csrf
 from backend.sessao import usuario_logado
@@ -53,8 +55,13 @@ def criar_app():
     @app.context_processor
     def dados_do_menu():
         usuario = usuario_logado()
+        preferencias = dict(PADROES)
+        if usuario:
+            with transacao() as conn:
+                preferencias = ler_preferencias(conn, usuario["id"])
         return {
             "usuario": usuario,
+            "preferencias": preferencias,
             "professor": eh_professor(usuario),
             "total_licoes": TOTAL_LICOES,
             "csrf_token": token_csrf,

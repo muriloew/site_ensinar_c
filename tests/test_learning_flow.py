@@ -56,6 +56,7 @@ class LearningFlowTest(unittest.TestCase):
     def setUp(self):
         conn = self.conectar()
         for tabela in (
+            "preferencias_usuario",
             "redefinicoes_senha",
             "anotacoes_usuario",
             "recompensas_diarias",
@@ -82,6 +83,7 @@ class LearningFlowTest(unittest.TestCase):
         conn.close()
 
         with self.client.session_transaction() as sessao:
+            sessao.clear()
             sessao["usuario_id"] = 1
 
     def responder_licao(self, licao):
@@ -158,7 +160,7 @@ class LearningFlowTest(unittest.TestCase):
     def test_paginas_principais_renderizam(self):
         for rota in (
             "/dashboard",
-            "/perfil",
+            "/acompanhamento",
             "/simulado",
             "/modulos",
             "/compilador",
@@ -637,7 +639,8 @@ class LearningFlowTest(unittest.TestCase):
         self.definir_senha_do_aluno("senha-antiga")
         pagina = self.client.get("/configuracoes").get_data(as_text=True)
         self.assertIn("Configurações", pagina)
-        self.assertIn('data-preferencia="tema"', pagina)
+        self.assertIn('name="tema"', pagina)
+        self.assertIn("Sair de todos os outros aparelhos", pagina)
 
         sem_senha = self.client.post("/configuracoes", data={"acao": "perfil", "nome": "Novo Nome", "email": "novo@example.com"})
         self.assertIn("confirme sua senha atual", sem_senha.get_data(as_text=True))
@@ -664,6 +667,92 @@ class LearningFlowTest(unittest.TestCase):
         favoritos = conn.execute("SELECT COUNT(*) AS total FROM favoritos_usuario").fetchone()["total"]
         conn.close()
         self.assertEqual((restantes, favoritos), (0, 0))
+
+    def test_preferencias_ficam_na_conta_e_mudam_a_pagina(self):
+        padrao = self.client.get("/configuracoes").get_data(as_text=True)
+        self.assertIn('data-tema-escolhido="sistema"', padrao)
+        self.assertIn('data-dicas="automaticas"', padrao)
+
+        resposta = self.client.post(
+            "/configuracoes",
+            data={
+                "acao": "preferencias", "tema": "claro", "texto_licao": "grande", "cor_avatar": "verde",
+                "fonte_editor": "18", "tab_editor": "2", "dicas": "pedir",
+                "reduzir_animacoes__presente": "1", "reduzir_animacoes": "sim",
+                "fechar_parenteses__presente": "1",  # caixa desmarcada: só o campo oculto chega
+            },
+            headers={"Accept": "application/json"},
+        )
+        self.assertEqual(resposta.status_code, 200)
+        salvas = resposta.get_json()["preferencias"]
+        self.assertEqual((salvas["tema"], salvas["fechar_parenteses"], salvas["quebrar_linhas"]), ("claro", "nao", "nao"))
+
+        # Valor desconhecido é ignorado e mantém o que estava salvo.
+        self.client.post("/configuracoes", data={"acao": "preferencias", "tema": "neon", "dicas": "todas"})
+        pagina = self.client.get("/modulos").get_data(as_text=True)
+        for atributo in (
+            'data-tema-escolhido="claro"', 'data-texto-licao="grande"', 'data-cor-avatar="verde"',
+            'data-fonte-editor="18"', 'data-tab-editor="2"', 'data-dicas="pedir"',
+            'data-fechar-parenteses="nao"', "data-reduzir-animacoes",
+        ):
+            self.assertIn(atributo, pagina)
+
+        # Sem JavaScript, o formulário salva e volta para a seção certa.
+        sem_js = self.client.post("/configuracoes", data={"acao": "preferencias", "tema": "escuro", "secao": "aparencia"})
+        self.assertEqual(sem_js.status_code, 302)
+        self.assertIn("salvo=preferencias", sem_js.location)
+        self.assertTrue(sem_js.location.endswith("#aparencia"))
+
+        # As preferências saem junto com a conta.
+        self.definir_senha_do_aluno("senha-antiga")
+        self.client.post("/configuracoes", data={"acao": "excluir", "confirmacao": "EXCLUIR", "senha_atual": "senha-antiga"})
+        conn = self.conectar()
+        restantes = conn.execute("SELECT COUNT(*) AS total FROM preferencias_usuario").fetchone()["total"]
+        conn.close()
+        self.assertEqual(restantes, 0)
+
+    def test_sair_dos_outros_aparelhos_e_troca_de_senha(self):
+        self.definir_senha_do_aluno("senha-antiga")
+        outro_aparelho = self.site.app.test_client()
+        with outro_aparelho.session_transaction() as sessao:
+            sessao["usuario_id"] = 1
+        self.assertEqual(outro_aparelho.get("/dashboard").status_code, 200)
+
+        self.client.post("/configuracoes", data={"acao": "sair_outros"})
+        self.assertEqual(self.client.get("/dashboard").status_code, 200)
+        self.assertIn("/login", outro_aparelho.get("/dashboard").location)
+
+        # Quem entra de novo recebe a versão atual; trocar a senha desconecta os outros, mas não quem trocou.
+        entrar = outro_aparelho.post("/login", data={"email": "aluno@example.com", "senha": "senha-antiga"})
+        self.assertEqual(entrar.status_code, 302)
+        self.assertEqual(outro_aparelho.get("/dashboard").status_code, 200)
+        self.client.post("/configuracoes", data={
+            "acao": "senha", "senha_atual": "senha-antiga", "nova_senha": "senha-nova-1", "confirmar_senha": "senha-nova-1",
+        })
+        self.assertEqual(self.client.get("/dashboard").status_code, 200)
+        self.assertIn("/login", outro_aparelho.get("/dashboard").location)
+
+    def test_limpar_historico_e_pagina_de_acompanhamento(self):
+        conn = self.conectar()
+        conn.execute(
+            "INSERT INTO compilador_historico (usuario_id, codigo, criado_em) VALUES (1, ?, ?)",
+            ("int main(void){return 0;}", "2026-09-26 10:00:00"),
+        )
+        conn.commit()
+        conn.close()
+        self.assertIn("Você tem 1 execução guardada", self.client.get("/configuracoes").get_data(as_text=True))
+        self.client.post("/configuracoes", data={"acao": "limpar_historico"})
+        conn = self.conectar()
+        total = conn.execute("SELECT COUNT(*) AS total FROM compilador_historico").fetchone()["total"]
+        conn.close()
+        self.assertEqual(total, 0)
+
+        antigo = self.client.get("/perfil")
+        self.assertEqual(antigo.status_code, 301)
+        self.assertTrue(antigo.location.endswith("/acompanhamento"))
+        pagina = self.client.get("/acompanhamento").get_data(as_text=True)
+        self.assertIn("<h1>Acompanhamento</h1>", pagina)
+        self.assertIn('href="/acompanhamento">📈 Acompanhamento</a>', pagina)
 
     def test_professor_ve_turma_e_redefine_senha(self):
         self.assertEqual(self.client.get("/professor").status_code, 404)

@@ -25,7 +25,10 @@ bp = Blueprint("publico", __name__)
 
 def _iniciar_sessao(usuario_id, lembrar):
     session.clear()
+    with transacao() as conn:
+        versao = conn.execute("SELECT sessao_versao FROM usuarios WHERE id = ?", (usuario_id,)).fetchone()
     session["usuario_id"] = usuario_id
+    session["sessao_versao"] = (versao and versao["sessao_versao"]) or 0
     session.permanent = lembrar
 
 

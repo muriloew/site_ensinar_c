@@ -1,111 +1,254 @@
 {% extends "layout/base.html" %}
 {% block title %}Configurações - Ensinar C{% endblock %}
 
+{% macro caixa(nome, texto, ajuda="") -%}
+<label class="settings-check">
+    <input type="hidden" name="{{ nome }}__presente" value="1">
+    <input type="checkbox" name="{{ nome }}" value="sim" {% if preferencias[nome] == "sim" %}checked{% endif %}>
+    <span>{{ texto }}{% if ajuda %}<small class="small-muted">{{ ajuda }}</small>{% endif %}</span>
+</label>
+{%- endmacro %}
+
+{% macro opcoes(nome, itens, classe="choice-grid") -%}
+<div class="{{ classe }}" role="radiogroup">
+    {% for valor, titulo, detalhe in itens %}
+    <label class="choice-card">
+        <input type="radio" name="{{ nome }}" value="{{ valor }}" {% if preferencias[nome] == valor %}checked{% endif %}>
+        <span class="choice-body">
+            <strong>{{ titulo }}</strong>
+            {% if detalhe %}<small>{{ detalhe }}</small>{% endif %}
+        </span>
+    </label>
+    {% endfor %}
+</div>
+{%- endmacro %}
+
 {% block content %}
 <div class="topbar">
     <div>
         <h1>Configurações</h1>
-        <p>Seu perfil, sua senha, suas preferências e seus dados.</p>
+        <p>Sua conta, segurança, aparência do site, editor de código, estudo e seus dados.</p>
     </div>
-    <a class="btn btn-ghost" href="/perfil">Ver perfil</a>
+    <a class="btn btn-ghost" href="/acompanhamento">Ver acompanhamento</a>
 </div>
 
 {% if aviso %}<div class="alert" role="alert">{{ aviso }}</div>{% endif %}
-{% if request.args.get("salvo") == "perfil" %}<div class="success-box" role="status">Perfil atualizado.</div>{% endif %}
-{% if request.args.get("salvo") == "senha" %}<div class="success-box" role="status">Senha alterada.</div>{% endif %}
+{% set salvo = request.args.get("salvo") %}
+{% if salvo == "perfil" %}<div class="success-box" role="status">Dados da conta atualizados.</div>{% endif %}
+{% if salvo == "senha" %}<div class="success-box" role="status">Senha alterada. Os outros aparelhos precisarão entrar de novo.</div>{% endif %}
+{% if salvo == "preferencias" %}<div class="success-box" role="status">Preferências salvas.</div>{% endif %}
+{% if salvo == "sessoes" %}<div class="success-box" role="status">Pronto: os outros aparelhos foram desconectados. Este continua conectado.</div>{% endif %}
+{% if salvo == "historico" %}<div class="success-box" role="status">Histórico de códigos apagado.</div>{% endif %}
 
-<div class="settings-grid">
-    <section class="card settings-card" id="perfil">
-        <h2>Perfil</h2>
-        <div class="settings-identity">
-            <div class="profile-avatar-large">{{ usuario.nome[0] }}</div>
-            <div>
-                <strong>{{ usuario.nome }}</strong>
-                <p class="small-muted">{{ usuario.email }}</p>
+<div class="settings-layout">
+    <nav class="settings-nav" aria-label="Seções das configurações">
+        <a href="#conta">👤 Conta</a>
+        <a href="#seguranca">🔒 Segurança</a>
+        <a href="#aparencia">🎨 Aparência</a>
+        <a href="#editor">⌨️ Editor de código</a>
+        <a href="#estudo">📚 Estudo</a>
+        <a href="#dados">💾 Seus dados</a>
+    </nav>
+
+    <div class="settings-sections">
+        <section class="card settings-card" id="conta">
+            <h2>Conta</h2>
+            <div class="settings-identity">
+                <div class="profile-avatar-large">{{ usuario.nome[0] }}</div>
+                <div>
+                    <strong>{{ usuario.nome }}</strong>
+                    <p class="small-muted">{{ usuario.email }}{% if professor %} · professor{% endif %}</p>
+                </div>
             </div>
-        </div>
-        {% if erro_perfil %}<div class="alert" role="alert">{{ erro_perfil }}</div>{% endif %}
-        <form method="post" class="settings-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="acao" value="perfil">
-            <label>Nome
-                <input type="text" name="nome" value="{{ usuario.nome }}" maxlength="60" autocomplete="name" required>
-            </label>
-            <label>E-mail
-                <input type="email" name="email" value="{{ usuario.email }}" maxlength="120" autocomplete="email" required>
-            </label>
-            <label>Senha atual <span class="small-muted">(só para trocar o e-mail)</span>
-                <input type="password" name="senha_atual" autocomplete="current-password">
-            </label>
-            <button class="btn btn-primary" type="submit">Salvar perfil</button>
-        </form>
-    </section>
-
-    <section class="card settings-card" id="senha">
-        <h2>Senha</h2>
-        {% if erro_senha %}<div class="alert" role="alert">{{ erro_senha }}</div>{% endif %}
-        <form method="post" class="settings-form">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="acao" value="senha">
-            <label>Senha atual
-                <input type="password" name="senha_atual" autocomplete="current-password" required>
-            </label>
-            <label>Nova senha <span class="small-muted">(mínimo de 8 caracteres)</span>
-                <input type="password" name="nova_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
-            </label>
-            <label>Confirme a nova senha
-                <input type="password" name="confirmar_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
-            </label>
-            <label class="settings-check"><input type="checkbox" data-mostrar-senha> Mostrar senhas</label>
-            <button class="btn btn-primary" type="submit">Alterar senha</button>
-        </form>
-    </section>
-
-    <section class="card settings-card" id="preferencias">
-        <h2>Preferências</h2>
-        <p class="small-muted">Ficam salvas neste navegador.</p>
-        <div class="settings-form">
-            <label>Tema
-                <select data-preferencia="tema">
-                    <option value="sistema">Igual ao sistema</option>
-                    <option value="escuro">Escuro</option>
-                    <option value="claro">Claro</option>
-                </select>
-            </label>
-            <label>Tamanho da letra do editor de código
-                <select data-preferencia="fonte_editor">
-                    <option value="">Normal</option>
-                    <option value="16">Média</option>
-                    <option value="18">Grande</option>
-                    <option value="20">Muito grande</option>
-                </select>
-            </label>
-            <p class="small-muted" data-preferencia-status role="status"></p>
-        </div>
-        <p>Metas diárias e semanais de estudo: <a class="text-link" href="/perfil#metas">ajustar no perfil</a>.</p>
-    </section>
-
-    <section class="card settings-card" id="dados">
-        <h2>Seus dados</h2>
-        <p>Baixe uma cópia de todo o seu progresso, respostas e códigos em formato JSON.</p>
-        <a class="btn btn-ghost" href="/backup-progresso">Baixar meus dados</a>
-
-        <div class="danger-zone">
-            <h3>Excluir conta</h3>
-            <p>Apaga sua conta e todo o progresso. Não é possível desfazer.</p>
-            {% if erro_excluir %}<div class="alert" role="alert">{{ erro_excluir }}</div>{% endif %}
+            {% if erro_perfil %}<div class="alert" role="alert">{{ erro_perfil }}</div>{% endif %}
             <form method="post" class="settings-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="acao" value="excluir">
-                <label>Digite EXCLUIR
-                    <input type="text" name="confirmacao" autocomplete="off" required>
+                <input type="hidden" name="acao" value="perfil">
+                <label>Nome
+                    <input type="text" name="nome" value="{{ usuario.nome }}" maxlength="60" autocomplete="name" required>
                 </label>
+                <label>E-mail
+                    <input type="email" name="email" value="{{ usuario.email }}" maxlength="120" autocomplete="email" required>
+                </label>
+                <label>Senha atual <span class="small-muted">(só para trocar o e-mail)</span>
+                    <input type="password" name="senha_atual" autocomplete="current-password">
+                </label>
+                <button class="btn btn-primary" type="submit">Salvar dados da conta</button>
+            </form>
+        </section>
+
+        <section class="card settings-card" id="seguranca">
+            <h2>Segurança</h2>
+            <h3>Trocar senha</h3>
+            {% if erro_senha %}<div class="alert" role="alert">{{ erro_senha }}</div>{% endif %}
+            <form method="post" class="settings-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="acao" value="senha">
                 <label>Senha atual
                     <input type="password" name="senha_atual" autocomplete="current-password" required>
                 </label>
-                <button class="btn btn-danger" type="submit">Excluir minha conta</button>
+                <label>Nova senha <span class="small-muted">(mínimo de 8 caracteres)</span>
+                    <input type="password" name="nova_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+                </label>
+                <label>Confirme a nova senha
+                    <input type="password" name="confirmar_senha" minlength="8" maxlength="128" autocomplete="new-password" required>
+                </label>
+                <label class="settings-check"><input type="checkbox" data-mostrar-senha> <span>Mostrar senhas</span></label>
+                <button class="btn btn-primary" type="submit">Alterar senha</button>
             </form>
-        </div>
-    </section>
+
+            <div class="settings-block">
+                <h3>Aparelhos conectados</h3>
+                <p>Entrou em um computador da escola ou de outra pessoa e esqueceu de sair? Desconecte todos os outros aparelhos; este continua conectado.</p>
+                <form method="post" data-confirmar="Desconectar todos os outros aparelhos?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="acao" value="sair_outros">
+                    <button class="btn btn-ghost" type="submit">Sair de todos os outros aparelhos</button>
+                </form>
+            </div>
+        </section>
+
+        <form method="post" class="settings-preferences" data-preferencias-automaticas>
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="acao" value="preferencias">
+
+            <section class="card settings-card" id="aparencia">
+                <h2>Aparência</h2>
+                <p class="small-muted">Estas escolhas ficam salvas na sua conta e valem em qualquer aparelho.</p>
+
+                <h3>Tema</h3>
+                {{ opcoes("tema", [
+                    ("sistema", "🖥️ Igual ao sistema", "Segue o modo claro ou escuro do aparelho"),
+                    ("claro", "☀️ Claro", "Fundo branco, bom em lugares iluminados"),
+                    ("escuro", "🌙 Escuro", "Fundo escuro, cansa menos a vista à noite"),
+                ]) }}
+
+                <h3>Tamanho do texto das lições</h3>
+                {{ opcoes("texto_licao", [
+                    ("normal", "Aa Normal", ""),
+                    ("grande", "Aa Grande", ""),
+                    ("muito_grande", "Aa Muito grande", ""),
+                ], "choice-grid choice-grid-texto") }}
+
+                <h3>Cor do avatar</h3>
+                <div class="avatar-colors" role="radiogroup" aria-label="Cor do avatar">
+                    {% for cor, nome in [("azul", "Azul"), ("verde", "Verde"), ("roxo", "Roxo"), ("laranja", "Laranja"), ("rosa", "Rosa"), ("cinza", "Cinza")] %}
+                    <label class="avatar-color avatar-color-{{ cor }}" title="{{ nome }}">
+                        <input type="radio" name="cor_avatar" value="{{ cor }}" {% if preferencias.cor_avatar == cor %}checked{% endif %}>
+                        <span aria-hidden="true">{{ usuario.nome[0] }}</span>
+                        <span class="sr-only">{{ nome }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
+
+                <h3>Movimento</h3>
+                {{ caixa("reduzir_animacoes", "Reduzir animações", "Desliga transições e efeitos de movimento do site.") }}
+                <button class="btn btn-primary settings-save" type="submit" name="secao" value="aparencia">Salvar aparência</button>
+            </section>
+
+            <section class="card settings-card" id="editor">
+                <h2>Editor de código</h2>
+                <div class="settings-form">
+                    <label>Tamanho da letra
+                        <select name="fonte_editor">
+                            {% for valor, nome in [("normal", "Normal"), ("16", "Média"), ("18", "Grande"), ("20", "Muito grande")] %}
+                            <option value="{{ valor }}" {% if preferencias.fonte_editor == valor %}selected{% endif %}>{{ nome }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>Espaços por nível de indentação (tecla Tab)
+                        <select name="tab_editor">
+                            <option value="4" {% if preferencias.tab_editor == "4" %}selected{% endif %}>4 espaços (padrão do curso)</option>
+                            <option value="2" {% if preferencias.tab_editor == "2" %}selected{% endif %}>2 espaços</option>
+                        </select>
+                    </label>
+                    {{ caixa("fechar_parenteses", "Fechar parênteses, colchetes e aspas automaticamente") }}
+                    {{ caixa("quebrar_linhas", "Quebrar linhas longas", "A linha continua embaixo em vez de rolar para o lado.") }}
+                </div>
+                <pre class="editor-preview" aria-label="Prévia do editor" style="font-size: {{ preferencias.fonte_editor if preferencias.fonte_editor != 'normal' else 15 }}px">#include &lt;stdio.h&gt;
+
+int main(void) {
+{{ " " * (preferencias.tab_editor|int) }}printf("Ola, C!\n");
+{{ " " * (preferencias.tab_editor|int) }}return 0;
+}</pre>
+
+                <details class="settings-block">
+                    <summary>Atalhos do editor</summary>
+                    <dl class="shortcut-list">
+                        <div><dt><kbd>Ctrl</kbd> + <kbd>Enter</kbd></dt><dd>Compilar e executar</dd></div>
+                        <div><dt><kbd>Ctrl</kbd> + <kbd>S</kbd></dt><dd>Salvar o rascunho agora</dd></div>
+                        <div><dt><kbd>Ctrl</kbd> + <kbd>Espaço</kbd></dt><dd>Sugestões de palavras do C</dd></div>
+                        <div><dt><kbd>Ctrl</kbd> + <kbd>/</kbd></dt><dd>Comentar ou descomentar as linhas</dd></div>
+                        <div><dt><kbd>Alt</kbd> + <kbd>↑</kbd> / <kbd>↓</kbd></dt><dd>Mover a linha para cima ou para baixo</dd></div>
+                        <div><dt><kbd>Shift</kbd> + <kbd>Alt</kbd> + <kbd>↓</kbd></dt><dd>Duplicar a linha</dd></div>
+                        <div><dt><kbd>Tab</kbd> / <kbd>Shift</kbd> + <kbd>Tab</kbd></dt><dd>Aumentar ou diminuir a indentação</dd></div>
+                    </dl>
+                    <p class="small-muted">No Mac, use <kbd>Cmd</kbd> no lugar de <kbd>Ctrl</kbd>.</p>
+                </details>
+                <button class="btn btn-primary settings-save" type="submit" name="secao" value="editor">Salvar editor</button>
+            </section>
+
+            <section class="card settings-card" id="estudo">
+                <h2>Estudo</h2>
+                <h3>Dicas dos exercícios</h3>
+                {{ opcoes("dicas", [
+                    ("automaticas", "Automáticas", "Uma dica nova aparece a cada tentativa sem sucesso"),
+                    ("pedir", "Quando eu pedir", "Um botão mostra a próxima dica só se você quiser"),
+                    ("desligadas", "Desligadas", "Nenhuma dica: desafio total"),
+                ]) }}
+                <h3>Exercícios</h3>
+                {{ caixa("confirmar_limpar", "Perguntar antes de limpar o código do editor", "Evita apagar o código sem querer ao clicar em Limpar.") }}
+                <button class="btn btn-primary settings-save" type="submit" name="secao" value="estudo">Salvar estudo</button>
+
+                <div class="settings-block">
+                    <h3>Metas</h3>
+                    <p>As metas diárias e semanais ficam junto do seu progresso: <a class="text-link" href="/acompanhamento#metas">ajustar metas no Acompanhamento</a>.</p>
+                </div>
+                <div class="settings-block">
+                    <h3>Recomeçar as dicas</h3>
+                    <p>As dicas já liberadas ficam guardadas neste aparelho. Para tentar os exercícios de novo sem elas:</p>
+                    <button class="btn btn-ghost" type="button" data-zerar-dicas>Esconder as dicas já liberadas</button>
+                    <p class="small-muted" data-zerar-dicas-status role="status"></p>
+                </div>
+            </section>
+            <p class="small-muted settings-autosave" data-preferencia-status role="status" aria-live="polite"></p>
+        </form>
+
+        <section class="card settings-card" id="dados">
+            <h2>Seus dados</h2>
+            <div class="settings-block">
+                <h3>Baixar uma cópia</h3>
+                <p>Todo o seu progresso, respostas e códigos em um arquivo JSON.</p>
+                <a class="btn btn-ghost" href="/backup-progresso">Baixar meus dados</a>
+            </div>
+
+            <div class="settings-block">
+                <h3>Histórico de códigos</h3>
+                <p>Você tem {{ total_historico }} execuç{{ "ão" if total_historico == 1 else "ões" }} guardada{{ "" if total_historico == 1 else "s" }} no <a class="text-link" href="/historico-codigos">Histórico</a>. Apagar não muda seu progresso nas lições.</p>
+                <form method="post" data-confirmar="Apagar todo o histórico de códigos? Não é possível desfazer.">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="acao" value="limpar_historico">
+                    <button class="btn btn-ghost" type="submit" {% if not total_historico %}disabled{% endif %}>Apagar histórico de códigos</button>
+                </form>
+            </div>
+
+            <div class="danger-zone">
+                <h3>Excluir conta</h3>
+                <p>Apaga sua conta e todo o progresso. Não é possível desfazer.</p>
+                {% if erro_excluir %}<div class="alert" role="alert">{{ erro_excluir }}</div>{% endif %}
+                <form method="post" class="settings-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="acao" value="excluir">
+                    <label>Digite EXCLUIR
+                        <input type="text" name="confirmacao" autocomplete="off" required>
+                    </label>
+                    <label>Senha atual
+                        <input type="password" name="senha_atual" autocomplete="current-password" required>
+                    </label>
+                    <button class="btn btn-danger" type="submit">Excluir minha conta</button>
+                </form>
+            </div>
+        </section>
+    </div>
 </div>
 {% endblock %}

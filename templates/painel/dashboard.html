@@ -121,7 +121,7 @@
     <div class="card"><span>XP</span><strong>{{ usuario.xp }}</strong><p>experiência total</p></div>
     <div class="card"><span>C</span><strong>{{ concluidas }}</strong><p>lições concluídas</p></div>
     <div class="card"><span>A</span><strong>{{ conquistas|length }}</strong><p>conquistas</p></div>
-    <a class="card stat-link" href="/perfil"><span>{{ usuario.nivel }}</span><strong>{{ liga.nome }}</strong><p>ver perfil</p></a>
+    <a class="card stat-link" href="/acompanhamento"><span>{{ usuario.nivel }}</span><strong>{{ liga.nome }}</strong><p>ver acompanhamento</p></a>
 </section>
 
 <section class="content-grid game-content-grid">
@@ -171,7 +171,7 @@
         <section class="card">
             <div class="section-head compact">
                 <h3>Conquistas recentes</h3>
-                <a href="/perfil">Coleção</a>
+                <a href="/acompanhamento">Coleção</a>
             </div>
             <div class="achievement-list">
                 {% for c in conquistas[:4] %}

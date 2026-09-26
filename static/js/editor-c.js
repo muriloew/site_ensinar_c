@@ -175,17 +175,20 @@
         textarea.parentNode.insertBefore(frame, textarea);
         frame.appendChild(textarea);
 
+        // Preferências da conta (Configurações > Editor de código), gravadas no <html> pela página.
+        const preferencias = document.documentElement.dataset;
+        const espacosTab = Number(preferencias.tabEditor) || 4;
         const editor = CodeMirror.fromTextArea(textarea, {
             mode: "text/x-csrc",
             theme: "material-darker",
             lineNumbers: true,
             matchBrackets: true,
-            autoCloseBrackets: true,
+            autoCloseBrackets: preferencias.fecharParenteses !== "nao",
             styleActiveLine: true,
-            indentUnit: 4,
-            tabSize: 4,
+            indentUnit: espacosTab,
+            tabSize: espacosTab,
             indentWithTabs: false,
-            lineWrapping: false,
+            lineWrapping: preferencias.quebrarLinhas === "sim",
             extraKeys: {
                 "Ctrl-Enter": executarAtalho,
                 "Cmd-Enter": executarAtalho,
@@ -226,10 +229,8 @@
             if (salvo && salvo.trim()) editor.setValue(salvo);
         }
 
-        try {
-            const fonte = Number(localStorage.getItem("fonte_editor"));
-            if (fonte) editor.getWrapperElement().style.fontSize = `${fonte}px`;
-        } catch (erro) { /* tamanho padrão */ }
+        const fonte = Number(preferencias.fonteEditor);
+        if (fonte) editor.getWrapperElement().style.fontSize = `${fonte}px`;
 
         montarInterface(textarea, editor);
         if (typeof ResizeObserver !== "undefined") {

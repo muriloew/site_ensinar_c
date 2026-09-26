@@ -41,7 +41,7 @@ async function entrar(context) {
             });
             results.push({route,width,height,...data});
             if (data.scrollWidth > width + 1 || data.overflow.length || data.sidebarHidden) console.log(JSON.stringify(results.at(-1)));
-            if ([320,768,1120,1366].includes(width) && ['/dashboard','/perfil','/compilador','/estudar/2?licao=6'].includes(route)) {
+            if ([320,768,1120,1366].includes(width) && ['/dashboard','/acompanhamento','/configuracoes','/compilador','/estudar/2?licao=6'].includes(route)) {
                 await page.screenshot({path:path.join(out, route.split('?')[0].replaceAll('/','-') + '-' + width + '.png'),fullPage:false});
             }
             if(route === '/compilador' || route === '/desafio-diario') {
@@ -66,7 +66,7 @@ async function entrar(context) {
         for(const route of ['/','/login','/cadastro']) for(const [w,h] of [screens[0],screens[2],screens[6],screens[10]]) await check(route,w,h);
         const login = await entrar(context);
         if (!login.ok() || !login.url().endsWith('/dashboard')) throw Error('Login failed: ' + login.url());
-        for(const route of ['/dashboard','/modulos','/perfil','/estudar/2?licao=6','/exercicio/6','/desafio-diario','/compilador','/favoritos','/revisao','/simulado','/historico-codigos']) {
+        for(const route of ['/dashboard','/modulos','/acompanhamento','/configuracoes','/estudar/2?licao=6','/exercicio/6','/desafio-diario','/compilador','/favoritos','/revisao','/simulado','/historico-codigos']) {
             for(const [w,h] of screens) await check(route,w,h);
         }
         await fs.writeFile(path.join(out,'report.json'),JSON.stringify({results,errors:[...new Set(errors)],failures},null,2));

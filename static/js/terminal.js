@@ -58,26 +58,64 @@ function definirCompilacaoEmAndamento(ocupado) {
         });
 }
 
-// Cada tentativa sem sucesso libera mais uma dica do exercício (a contagem fica no navegador).
+// Dicas do exercício, conforme a preferência da conta: "automaticas" (uma nova a cada tentativa
+// sem sucesso), "pedir" (só pelo botão) ou "desligadas". A contagem fica no navegador.
 let tentativasSemLocalStorage = 0;
+
+function modoDicas() {
+    return document.documentElement.dataset.dicas || "automaticas";
+}
+
+function somarDicasLiberadas(chave, quantidade) {
+    try {
+        const total = Number(localStorage.getItem(chave) || "0") + quantidade;
+        if (quantidade) localStorage.setItem(chave, String(total));
+        return total;
+    } catch (erro) {
+        tentativasSemLocalStorage += quantidade;
+        return tentativasSemLocalStorage;
+    }
+}
+
+function mostrarDicas(painel, total) {
+    const modo = modoDicas();
+    const dicas = painel.querySelectorAll("li");
+    dicas.forEach((dica, indice) => { dica.hidden = indice >= total; });
+
+    const botao = painel.querySelector("[data-proxima-dica]");
+    const explicacao = painel.querySelector("[data-explicacao-dicas]");
+    if (modo === "desligadas") {
+        painel.hidden = true;
+    } else if (modo === "pedir") {
+        painel.hidden = false;
+        if (explicacao) explicacao.textContent = "(aparecem só quando você pedir)";
+        if (botao) {
+            botao.hidden = total >= dicas.length;
+            botao.textContent = total ? "Ver mais uma dica" : "Ver uma dica";
+        }
+    } else {
+        painel.hidden = total === 0;
+        if (botao) botao.hidden = true;
+    }
+}
 
 function registrarTentativaCodigo(falhou) {
     const painel = document.getElementById("dicasProgressivas");
     if (!painel) return;
+    const liberar = falhou && modoDicas() === "automaticas" ? 1 : 0;
+    mostrarDicas(painel, somarDicasLiberadas("tentativas_" + painel.dataset.chave, liberar));
+}
 
-    const chave = "tentativas_" + painel.dataset.chave;
-    let total;
-    try {
-        total = Number(localStorage.getItem(chave) || "0") + (falhou ? 1 : 0);
-        if (falhou) localStorage.setItem(chave, String(total));
-    } catch (erro) {
-        tentativasSemLocalStorage += falhou ? 1 : 0;
-        total = tentativasSemLocalStorage;
-    }
+function pedirDica() {
+    const painel = document.getElementById("dicasProgressivas");
+    if (painel) mostrarDicas(painel, somarDicasLiberadas("tentativas_" + painel.dataset.chave, 1));
+}
 
-    const dicas = painel.querySelectorAll("li");
-    dicas.forEach((dica, indice) => { dica.hidden = indice >= total; });
-    painel.hidden = total === 0;
+// Preferência "Perguntar antes de limpar o código do editor".
+function podeLimparCodigo(campo) {
+    if (!campo || !obterCodigoDoEditor(campo).trim()) return true;
+    if (document.documentElement.dataset.confirmarLimpar === "nao") return true;
+    return confirm("Apagar todo o código do editor?");
 }
 
 function atualizarFeedbackCorrecao(correcao) {
@@ -218,8 +256,9 @@ function restaurarCodigoInicial() {
 }
 
 function limparTerminalReal() {
-    cancelarExecucao();
     const codigo = document.getElementById("codigoExercicio") || document.getElementById("editorCodigo");
+    if (!podeLimparCodigo(codigo)) return;
+    cancelarExecucao();
     const saida = document.getElementById("terminalSaidaReal");
     const input = document.getElementById("terminalInputReal");
     const build = document.getElementById("buildExercicio");
@@ -271,8 +310,9 @@ function compilarCompiladorInterativo() {
 }
 
 function limparCompilador() {
-    cancelarExecucao();
     const codigo = document.getElementById("codigoCompilador");
+    if (!podeLimparCodigo(codigo)) return;
+    cancelarExecucao();
     const saida = document.getElementById("saidaCompilador");
     const build = document.getElementById("buildCompilador");
     const input = document.getElementById("terminalInputCompilador");

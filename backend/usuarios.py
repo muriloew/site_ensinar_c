@@ -28,6 +28,7 @@ TABELAS_DO_USUARIO = (
     "revisoes_usuario",
     "anotacoes_usuario",
     "redefinicoes_senha",
+    "preferencias_usuario",
 )
 
 VALIDADE_LINK_SENHA = timedelta(hours=1)
@@ -58,10 +59,22 @@ def validar_nova_senha(senha, confirmacao):
 
 
 def definir_senha(conn, usuario_id, senha, temporaria=False):
+    """Troca a senha e encerra as sessões abertas com a senha antiga em outros aparelhos."""
     conn.execute(
-        "UPDATE usuarios SET senha = ?, senha_temporaria = ? WHERE id = ?",
+        """
+        UPDATE usuarios
+        SET senha = ?, senha_temporaria = ?, sessao_versao = COALESCE(sessao_versao, 0) + 1
+        WHERE id = ?
+        """,
         (generate_password_hash(senha), 1 if temporaria else 0, usuario_id),
     )
+
+
+def encerrar_outras_sessoes(conn, usuario_id):
+    conn.execute(
+        "UPDATE usuarios SET sessao_versao = COALESCE(sessao_versao, 0) + 1 WHERE id = ?", (usuario_id,)
+    )
+    return conn.execute("SELECT sessao_versao FROM usuarios WHERE id = ?", (usuario_id,)).fetchone()["sessao_versao"]
 
 
 def excluir_usuario(conn, usuario_id):
