@@ -25,22 +25,43 @@
     </section>
     {% else %}
     <section class="card daily-card">
-        <span class="daily-icon">🎯</span>
+        <span class="daily-icon" aria-hidden="true">🎯</span>
         <p class="daily-module-label">Módulo {{ desafio.modulo_id }} · {{ desafio.modulo_titulo }}</p>
-        <h2>{{ desafio.titulo }}</h2>
-        <p>{{ desafio.descricao }}</p>
-        <p class="small-muted">
-            {% if modulo_maximo_diario == 2 %}
-                Seu progresso liberou os 10 desafios do módulo 2.
-            {% else %}
-                Seu progresso liberou desafios dos módulos 2 a {{ modulo_maximo_diario }}.
+        <div class="daily-title-row">
+            <h2>{{ desafio.titulo }}</h2>
+            <span class="daily-level daily-level-{{ desafio.nivel|lower|replace('á', 'a')|replace('é', 'e') }}">{{ desafio.nivel }}</span>
+        </div>
+        <p class="daily-statement">{{ desafio.enunciado }}</p>
+
+        {% if desafio.exemplo %}
+        <div class="daily-example">
+            {% if desafio.exemplo[0] %}
+            <div>
+                <strong>Entrada de exemplo</strong>
+                <pre>{{ desafio.exemplo[0] }}</pre>
+            </div>
             {% endif %}
-            Há {{ total_desafios_disponiveis }} desafios disponíveis no sorteio diário.
+            <div>
+                <strong>Saída esperada</strong>
+                <pre>{{ desafio.exemplo[1] }}</pre>
+            </div>
+        </div>
+        {% endif %}
+
+        <p class="small-muted">
+            Mensagens extras, como "Digite um número:", são permitidas: a correção automática testa o programa
+            com outras entradas e procura as respostas pedidas.
+            Precisa relembrar? <a href="{{ url_for('estudo.estudar', modulo_id=desafio.modulo_id, licao=desafio.licao_id) }}">Revise a lição {{ desafio.assunto }}</a>.
         </p>
 
-        <div class="hint">
-            <strong>Dica:</strong> {{ desafio.dica }}
-        </div>
+        <p class="small-muted daily-progress">
+            {% if modulo_maximo_diario == 2 %}
+                Seu progresso liberou os {{ total_desafios_disponiveis }} desafios do módulo 2.
+            {% else %}
+                Seu progresso liberou {{ total_desafios_disponiveis }} desafios, dos módulos 2 a {{ modulo_maximo_diario }}.
+            {% endif %}
+            Você já concluiu {{ total_desafios_concluidos }}. O sorteio de cada dia prioriza os que você ainda não fez.
+        </p>
 
         {% if concluido %}
             <div class="success-box">Desafio diário já concluído hoje.</div>
@@ -55,7 +76,7 @@
             <button class="btn btn-ghost" onclick="abrirTerminalReal()">Abrir terminal</button>
             <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
             <button class="btn btn-ghost" type="button" onclick="restaurarCodigoInicial()">Restaurar código inicial</button>
-            <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
+            <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +{{ xp_por_desafio }} XP</button>
         </div>
 
         <div id="feedbackCorrecao" class="correction-feedback {% if codigo_validado %}success{% elif feedback_codigo %}warning{% endif %}">

@@ -7,7 +7,6 @@ from flask import Blueprint, jsonify, redirect, render_template, request, url_fo
 from backend.aluno.gamificacao import adicionar_xp, registrar_atividade, sincronizar_conquistas
 from backend.aluno.situacao import SituacaoAluno
 from backend.banco.conexao import transacao
-from backend.conteudo.desafios_diarios import desafio_por_id, escolher_desafio_do_dia
 from backend.sessao import usuario_logado
 
 bp = Blueprint("desafio_diario", __name__)
@@ -23,7 +22,8 @@ def desafio_diario():
         return redirect(url_for("publico.login"))
 
     hoje = str(date.today())
-    disponiveis, modulo_maximo = SituacaoAluno(usuario["id"]).desafios_disponiveis()
+    situacao = SituacaoAluno(usuario["id"])
+    disponiveis, modulo_maximo = situacao.desafios_disponiveis()
     if not disponiveis:
         return render_template(
             "desafio_diario/desafio_diario.html",
@@ -31,18 +31,13 @@ def desafio_diario():
             modulo_maximo_diario=modulo_maximo,
         )
 
+    # O mesmo método decide o desafio na página, no rascunho, na compilação e na conclusão.
+    desafio = situacao.desafio_do_dia(hoje)
     with transacao() as conn:
         registro = conn.execute(
             "SELECT * FROM desafios_diarios WHERE usuario_id = ? AND data = ?",
             (usuario["id"], hoje),
         ).fetchone()
-
-    # Mantém o desafio já começado hoje, mesmo que o sorteio mude com novos módulos liberados.
-    desafio = None
-    if registro and registro["desafio_id"]:
-        desafio = desafio_por_id(disponiveis, registro["desafio_id"])
-    if not desafio:
-        desafio = escolher_desafio_do_dia(disponiveis, hoje)
 
     mesmo_desafio = bool(registro) and registro["desafio_id"] == desafio["id"]
     return render_template(
@@ -56,6 +51,8 @@ def desafio_diario():
         desafio_bloqueado=False,
         modulo_maximo_diario=modulo_maximo,
         total_desafios_disponiveis=len(disponiveis),
+        total_desafios_concluidos=situacao.desafios_concluidos_disponiveis(),
+        xp_por_desafio=XP_POR_DESAFIO,
     )
 
 
@@ -104,18 +101,18 @@ def concluir_desafio_diario():
     if not usuario:
         return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
 
-    disponiveis, _ = SituacaoAluno(usuario["id"]).desafios_disponiveis()
-    if not disponiveis:
+    hoje = str(date.today())
+    desafio = SituacaoAluno(usuario["id"]).desafio_do_dia(hoje)
+    if not desafio:
         return jsonify({"ok": False, "mensagem": MENSAGEM_BLOQUEADO}), 403
 
-    hoje = str(date.today())
     with transacao() as conn:
         registro = conn.execute(
             "SELECT * FROM desafios_diarios WHERE usuario_id = ? AND data = ?",
             (usuario["id"], hoje),
         ).fetchone()
 
-        if not registro or not registro["codigo_usuario"] or not desafio_por_id(disponiveis, registro["desafio_id"]):
+        if not registro or not registro["codigo_usuario"] or registro["desafio_id"] != desafio["id"]:
             return jsonify({"ok": False, "mensagem": "Execute um código antes de concluir o desafio diário."})
         if registro["codigo_validado"] != 1:
             return jsonify({

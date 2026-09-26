@@ -375,3 +375,12 @@ python app.py
 - Segurança: "Sair de todos os outros aparelhos"; trocar a senha também desconecta os outros aparelhos, mas não quem trocou.
 - Seus dados: apagar o histórico de códigos, além de baixar os dados e excluir a conta.
 - **Acesso de professor:** as contas de `ADMIN_EMAILS` veem todos os módulos concluídos e liberados (lições, exercícios e desafios diários de todos os módulos), com as soluções comentadas visíveis. Nada é gravado no progresso, e essas contas ficam fora das estatísticas do painel da turma.
+
+
+## Versão 32 — Desafios diários revisados
+
+- Os antigos 200 desafios diários eram só os 87 exercícios das lições repetidos (até 5 vezes) com uma frase genérica na frente, e a solução mostrada era a mesma da lição. Eles foram reescritos como **100 desafios próprios, 5 por módulo** (do 2 ao 21), cada um ligado a uma lição do próprio módulo: enunciado, nível (Fácil, Médio ou Desafiador), exemplo de entrada e saída, código inicial, 3 dicas, correção com vários testes e solução comentada. O catálogo fica em `backend/conteudo/catalogo_desafios.py`.
+- Há problemas novos de verdade (troco, relógio digital, ano bissexto, palíndromo, pilha de parênteses, árvore de busca, caixa eletrônico, jogo da velha...) e, no módulo 16, desafios de "encontre o erro" em que o código inicial tem um bug para corrigir.
+- O sorteio de cada dia prioriza os desafios que o aluno ainda não concluiu; a página mostra quantos ele já fez e um link para revisar a lição do assunto.
+- Correção: se o aluno liberava um módulo novo no meio do dia, a página continuava mostrando o desafio começado, mas o rascunho e a compilação passavam a gravar outro desafio. Agora página, rascunho, compilação e conclusão usam o mesmo desafio do dia.
+- O teste `tests/test_desafios_diarios.py` compila as 100 soluções com `-Werror`, passa cada uma na própria correção, confere se o exemplo mostrado bate com a saída real e garante que o código inicial ainda não resolve o desafio.

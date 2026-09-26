@@ -22,7 +22,8 @@ backend/
     guias_projetos.py           Roteiros dos 7 projetos do módulo 21
     exercicios.py               Exercícios simplificados, lições só teóricas e testes ocultos
     solucoes.py                 Solução comentada de cada exercício (liberada após a aprovação)
-    desafios_diarios.py         Geração e sorteio dos desafios diários
+    catalogo_desafios.py        Os 100 desafios diários (enunciado, testes, dicas e solução)
+    desafios_diarios.py         Sorteio do desafio do dia
     referencia.py               Textos da consulta rápida (formatos, tipos, erros do GCC, glossário)
   aluno/                        Regras sobre o progresso do aluno
     situacao.py                 Lições concluídas, módulos liberados, próxima lição
@@ -84,7 +85,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
 - Solução comentada de todos os 87 exercícios, liberada só depois que a correção aprova o código do aluno
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre; vários alunos podem ficar com o programa aberto ao mesmo tempo
-- 200 desafios diários, sorteados só entre os módulos já liberados
+- 100 desafios diários próprios (5 por módulo, com nível, exemplo e solução comentada), sorteados só entre os módulos já liberados e priorizando os que o aluno ainda não fez
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
 - Acompanhamento com relatório por módulo, metas diárias e semanais e calendário de atividade
 - Simulado, revisão espaçada, favoritos e histórico das 100 últimas execuções
