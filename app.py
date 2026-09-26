@@ -5,7 +5,7 @@ import re
 import secrets
 from datetime import timedelta
 
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from markupsafe import Markup, escape
 from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -54,11 +54,17 @@ def criar_app():
 
     @app.context_processor
     def dados_do_menu():
-        usuario = usuario_logado()
+        # Se o banco falhar aqui, a página (inclusive a de erro) ainda aparece, como se ninguém estivesse logado.
+        usuario = None
         preferencias = dict(PADROES)
-        if usuario:
-            with transacao() as conn:
-                preferencias = ler_preferencias(conn, usuario["id"])
+        try:
+            usuario = usuario_logado()
+            if usuario:
+                with transacao() as conn:
+                    preferencias = ler_preferencias(conn, usuario["id"])
+        except Exception:
+            app.logger.exception("Falha ao ler o usuário para montar o menu")
+            usuario = None
         return {
             "usuario": usuario,
             "preferencias": preferencias,
@@ -75,6 +81,17 @@ def criar_app():
     @app.errorhandler(404)
     def pagina_nao_encontrada(_erro):
         return render_template("publico/erro.html", mensagem="Página não encontrada."), 404
+
+    @app.errorhandler(500)
+    def erro_interno(erro):
+        # O código aparece para o usuário e no log do Render junto com a causa, para achar o erro rápido.
+        codigo = secrets.token_hex(3).upper()
+        app.logger.error(
+            "ERRO %s em %s %s", codigo, request.method, request.path,
+            exc_info=getattr(erro, "original_exception", None) or erro,
+        )
+        mensagem = "Tivemos um problema ao abrir esta página. Tente recarregar em alguns segundos."
+        return render_template("publico/erro.html", mensagem=mensagem, codigo_erro=codigo), 500
 
     registrar_rotas(app)
 

@@ -754,6 +754,28 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn("<h1>Acompanhamento</h1>", pagina)
         self.assertIn('href="/acompanhamento">📈 Acompanhamento</a>', pagina)
 
+    def test_erro_interno_mostra_pagina_amigavel_com_codigo(self):
+        from backend.rotas import publico
+
+        def banco_fora_do_ar():
+            raise RuntimeError("banco fora do ar")
+
+        app = self.site.app
+        app.config["PROPAGATE_EXCEPTIONS"] = False
+        try:
+            # Falha na rota e também no menu: mesmo assim a página de erro aparece.
+            with patch.object(publico, "usuario_logado", banco_fora_do_ar), \
+                    patch.object(self.site, "usuario_logado", banco_fora_do_ar), \
+                    self.assertLogs(app.logger, level="ERROR") as registro:
+                resposta = self.client.get("/")
+        finally:
+            app.config["PROPAGATE_EXCEPTIONS"] = None
+        pagina = resposta.get_data(as_text=True)
+        self.assertEqual(resposta.status_code, 500)
+        self.assertIn("Tivemos um problema ao abrir esta página", pagina)
+        codigo = pagina.split("Código do erro: <strong>")[1].split("<")[0]
+        self.assertTrue(any(f"ERRO {codigo} em GET /" in linha for linha in registro.output))
+
     def test_professor_ve_turma_e_redefine_senha(self):
         conn = self.conectar()
         conn.execute(

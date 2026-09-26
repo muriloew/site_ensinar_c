@@ -7,6 +7,7 @@
     <div>
         <h1>Algo deu errado</h1>
         <p>{{ mensagem }}</p>
+        {% if codigo_erro %}<p class="small-muted">Código do erro: <strong>{{ codigo_erro }}</strong>. Se continuar, informe este código ao professor.</p>{% endif %}
     </div>
 </div>
 <section class="card">
