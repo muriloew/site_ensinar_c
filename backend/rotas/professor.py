@@ -8,7 +8,7 @@ from flask import Blueprint, abort, render_template
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import TOTAL_LICOES, encontrar_licao
 from backend.sessao import usuario_logado
-from backend.usuarios import definir_senha, eh_professor
+from backend.usuarios import definir_senha, eh_professor, emails_professores
 
 bp = Blueprint("professor", __name__)
 
@@ -43,6 +43,8 @@ def _dados_da_turma(conn):
     ).fetchall()
 
     semana = (date.today() - timedelta(days=6)).isoformat()
+    professores = emails_professores()
+    alunos = [aluno for aluno in alunos if aluno["email"] not in professores]
     lista = [
         {
             "id": aluno["id"],

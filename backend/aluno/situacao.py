@@ -7,6 +7,9 @@ from backend.conteudo.desafios_diarios import (
     escolher_desafio_do_dia,
 )
 from backend.conteudo.trilha import MODULOS, encontrar_licao, modulo_por_id
+from backend.usuarios import eh_professor
+
+TODAS_AS_LICOES = frozenset(licao["id"] for modulo in MODULOS for licao in modulo["licoes"])
 
 
 class SituacaoAluno:
@@ -14,15 +17,25 @@ class SituacaoAluno:
 
     def __init__(self, usuario_id, conn=None):
         self.usuario_id = usuario_id
-        consulta = "SELECT licao_id, modulo_id, concluida FROM progresso WHERE usuario_id = ?"
         if conn is None:
             with transacao() as nova_conexao:
-                linhas = nova_conexao.execute(consulta, (usuario_id,)).fetchall()
+                self._carregar(nova_conexao)
         else:
-            linhas = conn.execute(consulta, (usuario_id,)).fetchall()
+            self._carregar(conn)
 
+    def _carregar(self, conn):
+        linhas = conn.execute(
+            "SELECT licao_id, modulo_id, concluida FROM progresso WHERE usuario_id = ?", (self.usuario_id,)
+        ).fetchall()
         self.concluidas = {linha["licao_id"] for linha in linhas if linha["concluida"] == 1}
         self.modulos_iniciados = {linha["modulo_id"] for linha in linhas}
+
+        # Professores (ADMIN_EMAILS) veem a trilha inteira concluída para revisar qualquer conteúdo.
+        usuario = conn.execute("SELECT email FROM usuarios WHERE id = ?", (self.usuario_id,)).fetchone()
+        self.professor = eh_professor(usuario)
+        if self.professor:
+            self.concluidas = set(TODAS_AS_LICOES)
+            self.modulos_iniciados = {modulo["id"] for modulo in MODULOS}
 
     @property
     def total_concluidas(self):
