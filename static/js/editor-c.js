@@ -213,7 +213,7 @@
         editor.on("change", () => {
             editor.save();
             textarea.dispatchEvent(new Event("input", {bubbles: true}));
-            if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("licao_id")) {
+            if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("exemplo")) {
                 clearTimeout(editor._timerPraticaLivre);
                 editor._timerPraticaLivre = setTimeout(() => {
                     salvarPraticaLivre(editor.getValue());
@@ -221,10 +221,15 @@
             }
         });
 
-        if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("licao_id")) {
+        if (textarea.id === "codigoCompilador" && !new URLSearchParams(location.search).has("exemplo")) {
             const salvo = lerPraticaLivre();
             if (salvo && salvo.trim()) editor.setValue(salvo);
         }
+
+        try {
+            const fonte = Number(localStorage.getItem("fonte_editor"));
+            if (fonte) editor.getWrapperElement().style.fontSize = `${fonte}px`;
+        } catch (erro) { /* tamanho padrão */ }
 
         montarInterface(textarea, editor);
         if (typeof ResizeObserver !== "undefined") {

@@ -1,0 +1,52 @@
+name: Testes
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  testes:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ensinar
+          POSTGRES_PASSWORD: ensinar
+          POSTGRES_DB: ensinar_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - name: Testes com SQLite
+        run: python -m unittest discover -s tests -v
+      - name: Testes com PostgreSQL
+        env:
+          TEST_DATABASE_URL: postgresql://ensinar:ensinar@localhost:5432/ensinar_teste
+        run: python -m unittest discover -s tests -v
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Monta a imagem usada no Render
+        run: docker build -t ensinar-c .
+      - name: Confere que o site inicia dentro da imagem
+        run: |
+          docker run -d --name site -p 10000:10000 -e SECRET_KEY=teste ensinar-c
+          for tentativa in $(seq 1 30); do
+            curl -fs http://127.0.0.1:10000/login > /dev/null && exit 0
+            sleep 1
+          done
+          docker logs site
+          exit 1

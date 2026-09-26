@@ -1,0 +1,65 @@
+{% extends "layout/base.html" %}
+{% block title %}Ensinar C - Início{% endblock %}
+
+{% block content %}
+<header class="public-nav">
+    <a class="brand" href="/">
+        <span class="brand-icon">C</span>
+        <strong>Ensinar C</strong>
+    </a>
+
+    <nav>
+        <a href="#recursos">Recursos</a>
+        <a href="/referencia">Consulta rápida</a>
+        <a href="/login">Entrar</a>
+        <a href="/cadastro" class="btn btn-primary">Começar agora</a>
+    </nav>
+</header>
+
+{% if conta_excluida %}
+<div class="public-notice success-box" role="status">Sua conta e todo o progresso foram excluídos.</div>
+{% endif %}
+
+<section class="hero">
+    <div class="hero-text">
+        <span class="pill">PLATAFORMA EDUCACIONAL</span>
+        <h1>Aprenda C programando de verdade</h1>
+        <p>Estude com módulos progressivos, desafios, editor de código, compilador, XP, ranking e progresso salvo.</p>
+
+        <div class="actions">
+            <a class="btn btn-primary" href="/cadastro">Começar agora →</a>
+            <a class="btn btn-ghost" href="/login">Já tenho conta</a>
+        </div>
+
+        <div class="stats-row">
+            <div><strong>21</strong><span>Módulos</span></div>
+            <div><strong>91</strong><span>Lições</span></div>
+            <div><strong>C</strong><span>Compilador</span></div>
+        </div>
+    </div>
+
+    <div class="code-window hero-code">
+        <div class="dots"><span></span><span></span><span></span></div>
+<pre><code>#include &lt;stdio.h&gt;
+
+int main() {
+    printf("Bem-vindo ao Ensinar C!\n");
+    return 0;
+}</code></pre>
+        <a class="play" href="/cadastro" aria-label="Começar a estudar">▶</a>
+    </div>
+</section>
+
+<section id="recursos" class="public-section">
+    <h2>Recursos principais</h2>
+
+    <div class="feature-grid">
+        <article class="card"><span>💾</span><h3>Conta salva</h3><p>Cadastro com e-mail único, login e progresso armazenado no banco.</p></article>
+        <article class="card"><span>⚙️</span><h3>Compilador</h3><p>Editor com GCC e terminal interativo: o scanf espera você digitar, como no computador.</p></article>
+        <article class="card"><span>🎯</span><h3>Desafio diário</h3><p>Atividade prática de código para reforçar o aprendizado.</p></article>
+        <article class="card"><span>📈</span><h3>Progresso</h3><p>Lições concluídas, XP, nível, conquistas e ranking.</p></article>
+        <article class="card"><span>💡</span><h3>Dicas e correção</h3><p>Correção automática com testes e uma dica nova a cada tentativa sem sucesso.</p></article>
+        <article class="card"><span>📖</span><h3>Consulta rápida</h3><p>Formatos do printf, tipos, operadores, funções e erros do GCC explicados. <a class="text-link" href="/referencia">Abrir</a></p></article>
+    </div>
+</section>
+{% endblock %}

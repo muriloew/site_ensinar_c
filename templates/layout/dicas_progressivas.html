@@ -1,0 +1,10 @@
+{% if dicas %}
+<div id="dicasProgressivas" class="hint progressive-hints" data-chave="{{ chave }}" hidden>
+    <strong>Dicas</strong> <span class="small-muted">(uma nova aparece a cada tentativa sem sucesso)</span>
+    <ol>
+        {% for dica in dicas %}
+        <li hidden>{{ dica }}</li>
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}

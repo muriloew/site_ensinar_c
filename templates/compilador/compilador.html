@@ -1,0 +1,70 @@
+{% extends "layout/base.html" %}
+{% block title %}{{ titulo }} - Ensinar C{% endblock %}
+{% block head %}{% include "layout/editor_head.html" %}{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>{{ titulo }}</h1>
+        <p>Escreva seu código e clique em Compilar apenas quando quiser executar.</p>
+    </div>
+</div>
+
+<div class="compiler-page">
+    <section class="compiler-editor card">
+        <div class="compiler-toolbar">
+            <button class="btn btn-primary" onclick="compilarCompiladorInterativo()">⚙️ Compilar</button>
+            <button class="btn btn-ghost" onclick="limparCompilador()">Limpar</button>
+            <button class="btn btn-ghost" onclick="abrirJanelaTerminal()">Abrir terminal</button>
+        </div>
+
+        <textarea id="codigoCompilador" class="code-editor compiler-code">{{ codigo_inicial }}</textarea>
+    </section>
+
+    <section class="compiler-side card">
+        <h2>Histórico recente</h2>
+        <div class="history-list">
+            {% for item in historico %}
+            <button onclick='carregarHistorico({{ item.codigo|tojson }})'>
+                Código salvo em {{ item.criado_em }}
+            </button>
+            {% else %}
+            <p class="small-muted">Nenhum código executado ainda.</p>
+            {% endfor %}
+        </div>
+        <a class="btn btn-ghost full" href="/historico-codigos">Ver histórico completo</a>
+    </section>
+</div>
+
+<div id="terminalModal" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>"compilador_online.exe"</span>
+            <button onclick="fecharJanelaTerminal()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="saidaCompilador" class="codeblocks-console">Nenhum código foi executado ainda. Clique em Compilar para iniciar.</pre>
+            <div id="entradaConsoleCompilador" class="compiler-console-prompt" hidden>
+                <span aria-hidden="true">&gt;</span>
+                <input id="terminalInputCompilador" class="terminal-real-input" type="text" autocomplete="off" spellcheck="false" aria-label="Entrada do programa" disabled>
+                <button type="button" class="terminal-send-button" onclick="enviarEntradaCompilador()">Enviar</button>
+            </div>
+
+            <details class="build-details" open>
+                <summary>Build log</summary>
+                <pre id="buildCompilador" class="build-log">Aguardando o usuário clicar em Compilar.</pre>
+            </details>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-primary" onclick="compilarCompiladorInterativo()">⚙️ Compilar</button>
+            <button class="btn btn-ghost" onclick="fecharJanelaTerminal()">Sair</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% include "layout/editor_scripts.html" %}
+{% endblock %}

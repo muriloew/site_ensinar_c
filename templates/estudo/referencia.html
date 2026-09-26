@@ -1,0 +1,125 @@
+{% extends "layout/base.html" %}
+{% block title %}Consulta rápida de C - Ensinar C{% endblock %}
+
+{% block content %}
+{% if not usuario %}
+<header class="public-nav">
+    <a class="brand" href="/"><span class="brand-icon">C</span><strong>Ensinar C</strong></a>
+    <nav><a href="/login">Entrar</a><a href="/cadastro" class="btn btn-primary">Começar agora</a></nav>
+</header>
+{% endif %}
+
+<div class="reference-page">
+    <div class="topbar">
+        <div>
+            <span class="page-kicker">Material de apoio</span>
+            <h1>Consulta rápida de C</h1>
+            <p>Formatos do printf e scanf, tipos, operadores, funções, erros do GCC e glossário.</p>
+        </div>
+    </div>
+
+    <section class="card search-panel reference-search">
+        <label for="buscaReferencia">Buscar na consulta</label>
+        <input id="buscaReferencia" type="search" placeholder="Exemplo: %lf, strcmp, segmentation" autocomplete="off">
+        <p class="small-muted" id="resultadoReferencia" role="status"></p>
+    </section>
+
+    <nav class="reference-toc" aria-label="Seções">
+        <a href="#formatos">Formatos</a>
+        <a href="#tipos">Tipos</a>
+        <a href="#operadores">Operadores</a>
+        <a href="#escapes">Sequências de escape</a>
+        <a href="#funcoes">Funções</a>
+        <a href="#erros">Erros do GCC</a>
+        <a href="#glossario">Glossário</a>
+    </nav>
+
+    <section class="card reference-section" id="formatos">
+        <h2>Formatos do printf e do scanf</h2>
+        <div class="table-scroll"><table class="teacher-table">
+            <thead><tr><th>Especificador</th><th>Para</th><th>Exemplo</th></tr></thead>
+            <tbody>
+                {% for especificador, uso, exemplo in ref.FORMATOS %}
+                <tr data-busca><td><code>{{ especificador }}</code></td><td>{{ uso }}</td><td><code>{{ exemplo }}</code></td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="card reference-section" id="tipos">
+        <h2>Tipos e tamanhos</h2>
+        <p class="small-muted">Valores típicos do GCC em Linux 64 bits (o compilador do site). Use <code>sizeof</code> para confirmar em outra máquina.</p>
+        <div class="table-scroll"><table class="teacher-table">
+            <thead><tr><th>Tipo</th><th>Tamanho</th><th>Faixa ou precisão</th></tr></thead>
+            <tbody>
+                {% for tipo, tamanho, faixa in ref.TIPOS %}
+                <tr data-busca><td><code>{{ tipo }}</code></td><td>{{ tamanho }}</td><td>{{ faixa }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="card reference-section" id="operadores">
+        <h2>Operadores (da maior para a menor prioridade)</h2>
+        <p class="small-muted">Na dúvida sobre a ordem das contas, use parênteses.</p>
+        <div class="table-scroll"><table class="teacher-table">
+            <thead><tr><th>Operadores</th><th>Significado</th><th>Associatividade</th></tr></thead>
+            <tbody>
+                {% for simbolos, nome, associatividade in ref.OPERADORES %}
+                <tr data-busca><td><code>{{ simbolos }}</code></td><td>{{ nome }}</td><td>{{ associatividade }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="card reference-section" id="escapes">
+        <h2>Sequências de escape</h2>
+        <div class="table-scroll"><table class="teacher-table">
+            <tbody>
+                {% for codigo, significado in ref.ESCAPES %}
+                <tr data-busca><td><code>{{ codigo }}</code></td><td>{{ significado }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="card reference-section" id="funcoes">
+        <h2>Funções mais usadas</h2>
+        {% for cabecalho, funcoes in ref.FUNCOES %}
+        <h3><code>{{ cabecalho }}</code></h3>
+        <div class="table-scroll"><table class="teacher-table">
+            <tbody>
+                {% for assinatura, descricao in funcoes %}
+                <tr data-busca><td><code>{{ assinatura }}</code></td><td>{{ descricao }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+        {% endfor %}
+    </section>
+
+    <section class="card reference-section" id="erros">
+        <h2>Mensagens do GCC traduzidas</h2>
+        <div class="table-scroll"><table class="teacher-table">
+            <thead><tr><th>Mensagem</th><th>O que significa</th><th>Como corrigir</th></tr></thead>
+            <tbody>
+                {% for mensagem, significado, correcao in ref.ERROS_GCC %}
+                <tr data-busca><td><code>{{ mensagem }}</code></td><td>{{ significado }}</td><td>{{ correcao }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="card reference-section" id="glossario">
+        <h2>Glossário</h2>
+        <dl class="glossary">
+            {% for termo, definicao in ref.GLOSSARIO %}
+            <div data-busca><dt>{{ termo }}</dt><dd>{{ definicao }}</dd></div>
+            {% endfor %}
+        </dl>
+    </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/estudo.js') }}"></script>
+{% endblock %}

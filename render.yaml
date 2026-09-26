@@ -8,12 +8,25 @@ services:
     envVars:
       - key: SECRET_KEY
         generateValue: true
+      # Endereço do PostgreSQL (Neon ou outro). Preencha no painel do Render; nunca no Git.
+      - key: DATABASE_URL
+        sync: false
+      # E-mails dos professores (separados por vírgula) que acessam /professor.
+      - key: ADMIN_EMAILS
+        sync: false
+      # Envio do link "esqueci minha senha" pela API do Brevo (opcional).
+      - key: BREVO_API_KEY
+        sync: false
+      - key: EMAIL_REMETENTE
+        sync: false
       - key: COMPILER_BACKEND
         value: local
       - key: COMPILER_RUNNER_USER
         value: compiler-runner
       - key: MAX_COMPILER_JOBS
         value: "1"
+      - key: MAX_INTERACTIVE_PROGRAMS
+        value: "4"
       - key: COMPILER_MAX_PROCESSES
         value: "8"
       - key: COMPILER_QUEUE_TIMEOUT

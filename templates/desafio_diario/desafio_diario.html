@@ -1,0 +1,118 @@
+{% extends "layout/base.html" %}
+{% block head %}{% include "layout/editor_head.html" %}{% endblock %}
+{% block title %}Desafio diário - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <h1>Desafio diário</h1>
+        <p>Complete o desafio do dia, teste no terminal real e ganhe XP ao passar na correção.</p>
+    </div>
+</div>
+
+<div class="daily-layout">
+    {% if desafio_bloqueado %}
+    <section class="card daily-card daily-locked-card">
+        <span class="daily-icon">🎯</span>
+        <h2>Desafios diários bloqueados</h2>
+        <p>Conclua o módulo 1 para liberar desafios diários. Assim o site evita mostrar exercícios com assuntos que você ainda não estudou.</p>
+
+        <div class="hint">
+            <strong>Próximo passo:</strong> termine as lições iniciais e volte aqui quando o módulo 2 estiver liberado.
+        </div>
+
+        <a class="btn btn-primary" href="/modulos">Voltar para os módulos</a>
+    </section>
+    {% else %}
+    <section class="card daily-card">
+        <span class="daily-icon">🎯</span>
+        <p class="daily-module-label">Módulo {{ desafio.modulo_id }} · {{ desafio.modulo_titulo }}</p>
+        <h2>{{ desafio.titulo }}</h2>
+        <p>{{ desafio.descricao }}</p>
+        <p class="small-muted">
+            {% if modulo_maximo_diario == 2 %}
+                Seu progresso liberou os 10 desafios do módulo 2.
+            {% else %}
+                Seu progresso liberou desafios dos módulos 2 a {{ modulo_maximo_diario }}.
+            {% endif %}
+            Há {{ total_desafios_disponiveis }} desafios disponíveis no sorteio diário.
+        </p>
+
+        <div class="hint">
+            <strong>Dica:</strong> {{ desafio.dica }}
+        </div>
+
+        {% if concluido %}
+            <div class="success-box">Desafio diário já concluído hoje.</div>
+        {% endif %}
+
+        <textarea id="codigoInicial" hidden aria-hidden="true" tabindex="-1">{{ desafio.codigo_inicial }}</textarea>
+        <textarea id="editorCodigo" data-tipo="diario" class="code-editor large">{{ codigo }}</textarea>
+        <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
+
+        <div class="editor-actions toolbar-codeblocks">
+            <button class="btn btn-primary" onclick="compilarReal(null, 'diario')">⚙️ Compilar</button>
+            <button class="btn btn-ghost" onclick="abrirTerminalReal()">Abrir terminal</button>
+            <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
+            <button class="btn btn-ghost" type="button" onclick="restaurarCodigoInicial()">Restaurar código inicial</button>
+            <button class="btn btn-primary" onclick="concluirDesafioDiario()">Concluir desafio +30 XP</button>
+        </div>
+
+        <div id="feedbackCorrecao" class="correction-feedback {% if codigo_validado %}success{% elif feedback_codigo %}warning{% endif %}">
+            {% if feedback_codigo %}
+                {{ feedback_codigo }}
+            {% else %}
+                Execute o código para receber a correção automática.
+            {% endif %}
+        </div>
+
+        {% with dicas=desafio.dicas, chave="desafio-" ~ desafio.id %}{% include "layout/dicas_progressivas.html" %}{% endwith %}
+        {% with solucao=desafio.solucao, liberada=(codigo_validado or concluido) %}{% include "layout/solucao_comentada.html" %}{% endwith %}
+    </section>
+    {% endif %}
+</div>
+
+{% if not desafio_bloqueado %}
+<div id="buildModal" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>Build log</span>
+            <button onclick="fecharBuildModal()">×</button>
+        </div>
+
+        <div class="codeblocks-body">
+            <pre id="buildExercicio" class="codeblocks-console">Aguardando compilação.</pre>
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharBuildModal()">Sair</button>
+        </div>
+    </div>
+</div>
+
+<div id="terminalModalExercicio" class="console-modal">
+    <div class="console-window codeblocks-window">
+        <div class="codeblocks-titlebar">
+            <span>"desafio_diario.exe"</span>
+            <button onclick="fecharTerminalReal()">×</button>
+        </div>
+
+        <div class="codeblocks-body terminal-real-body">
+            <pre id="terminalSaidaReal" class="codeblocks-console terminal-final-output">{{ saida }}</pre>
+            <input id="terminalInputReal" class="terminal-real-line" autocomplete="off" spellcheck="false" placeholder="Digite aqui e pressione Enter">
+        </div>
+
+        <div class="console-footer">
+            <button class="btn btn-ghost" onclick="fecharTerminalReal()">Sair</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not desafio_bloqueado %}
+{% include "layout/editor_scripts.html" %}
+<script src="{{ url_for('static', filename='js/estudo.js') }}"></script>
+{% endif %}
+{% endblock %}
