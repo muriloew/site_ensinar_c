@@ -72,6 +72,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - Configurações salvas na conta, valendo em qualquer aparelho: tema claro, escuro ou igual ao sistema, tamanho do texto das lições, cor do avatar, reduzir animações, editor de código (letra, indentação, fechar parênteses, quebrar linhas e lista de atalhos), modo das dicas (automáticas, quando pedir ou desligadas) e confirmação antes de limpar o código
 - Segurança da conta: trocar senha (desconecta os outros aparelhos), "sair de todos os outros aparelhos", apagar o histórico de códigos, baixar os dados e excluir a conta
 - Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
+- Acesso de professor: quem está em `ADMIN_EMAILS` vê a trilha inteira concluída e liberada, com as soluções comentadas visíveis, sem entrar nas estatísticas da turma
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
 - Leitura de cada lição: objetivo, "Como funciona", passo a passo e saída do exemplo, ligação com os projetos e pergunta de autoavaliação

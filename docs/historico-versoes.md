@@ -374,3 +374,4 @@ python app.py
 - Estudo: dicas automáticas, só quando o aluno pedir (botão "Ver uma dica") ou desligadas; pergunta antes de limpar o código do editor; botão para esconder as dicas já liberadas.
 - Segurança: "Sair de todos os outros aparelhos"; trocar a senha também desconecta os outros aparelhos, mas não quem trocou.
 - Seus dados: apagar o histórico de códigos, além de baixar os dados e excluir a conta.
+- **Acesso de professor:** as contas de `ADMIN_EMAILS` veem todos os módulos concluídos e liberados (lições, exercícios e desafios diários de todos os módulos), com as soluções comentadas visíveis. Nada é gravado no progresso, e essas contas ficam fora das estatísticas do painel da turma.

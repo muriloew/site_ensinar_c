@@ -755,19 +755,58 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn('href="/acompanhamento">📈 Acompanhamento</a>', pagina)
 
     def test_professor_ve_turma_e_redefine_senha(self):
+        conn = self.conectar()
+        conn.execute(
+            "INSERT INTO usuarios (id, nome, email, senha) VALUES (?, ?, ?, ?)",
+            (2, "Aluna Dois", "aluna@example.com", "senha"),
+        )
+        conn.commit()
+        conn.close()
+
         self.assertEqual(self.client.get("/professor").status_code, 404)
         with patch.dict(os.environ, {"ADMIN_EMAILS": "aluno@example.com"}):
             painel = self.client.get("/professor").get_data(as_text=True)
             self.assertIn("Acompanhamento da turma", painel)
-            self.assertIn("Aluno Teste", painel)
-            resposta = self.client.post("/professor/alunos/1/redefinir-senha").get_data(as_text=True)
+            self.assertIn("aluna@example.com", painel)
+            # A conta do professor não entra na lista nem nas médias da turma.
+            self.assertNotIn("<td>aluno@example.com</td>", painel)
+            self.assertEqual(painel.count("/redefinir-senha"), 1)
+            resposta = self.client.post("/professor/alunos/2/redefinir-senha").get_data(as_text=True)
         self.assertIn("Senha temporária", resposta)
 
         senha = resposta.split('class="temp-password">')[1].split("<")[0]
         visitante = self.site.app.test_client()
-        entrada = visitante.post("/login", data={"email": "aluno@example.com", "senha": senha})
+        entrada = visitante.post("/login", data={"email": "aluna@example.com", "senha": senha})
         self.assertIn("aviso=senha_temporaria", entrada.location)
         self.assertIn("senha temporária", visitante.get(entrada.location).get_data(as_text=True))
+
+    def test_professor_ve_a_trilha_inteira_concluida(self):
+        ultimo_modulo = self.MODULOS[-1]
+        ultima_licao = ultimo_modulo["licoes"][-1]
+        # Aluno comum: o último módulo está bloqueado.
+        bloqueado = self.client.get(f"/estudar/{ultimo_modulo['id']}?licao={ultima_licao['id']}")
+        self.assertEqual(bloqueado.status_code, 302)
+        self.assertEqual(self.SituacaoAluno(1).total_concluidas, 0)
+
+        with patch.dict(os.environ, {"ADMIN_EMAILS": "aluno@example.com"}):
+            situacao = self.SituacaoAluno(1)
+            self.assertEqual(situacao.total_concluidas, sum(len(m["licoes"]) for m in self.MODULOS))
+            self.assertTrue(situacao.proxima_licao()["concluido"])
+            _, modulo_maximo = situacao.desafios_disponiveis()
+            self.assertEqual(modulo_maximo, ultimo_modulo["id"])
+
+            aberto = self.client.get(f"/estudar/{ultimo_modulo['id']}?licao={ultima_licao['id']}")
+            self.assertEqual(aberto.status_code, 200)
+            self.assertIn("Acesso de professor", self.client.get("/modulos").get_data(as_text=True))
+            exercicio = self.client.get(f"/exercicio/{ultima_licao['id']}").get_data(as_text=True)
+            self.assertIn('<details id="solucaoConteudo">', exercicio)
+            self.assertIn('<p id="solucaoBloqueada" class="small-muted" hidden>', exercicio)
+
+        # Nada foi gravado no banco: o acesso vem só da lista ADMIN_EMAILS.
+        conn = self.conectar()
+        gravadas = conn.execute("SELECT COUNT(*) AS total FROM progresso").fetchone()["total"]
+        conn.close()
+        self.assertEqual(gravadas, 0)
 
     def test_navegacao_anotacoes_e_proxima_licao(self):
         licao = self.MODULOS[0]["licoes"][0]
