@@ -106,8 +106,8 @@ class LearningFlowTest(unittest.TestCase):
             self.assertTrue(ultimo_resultado["correta"])
         return ultimo_resultado
 
-    def test_catalogo_tem_perguntas_variadas_e_dez_desafios_por_modulo(self):
-        self.assertEqual(len(self.DESAFIOS_DIARIOS), 200)
+    def test_catalogo_tem_perguntas_variadas_e_cinco_desafios_por_modulo(self):
+        self.assertEqual(len(self.DESAFIOS_DIARIOS), 100)
         self.assertTrue(
             all(not licao["pratica_codigo"] for licao in self.MODULOS[0]["licoes"])
         )
@@ -117,7 +117,7 @@ class LearningFlowTest(unittest.TestCase):
                 item for item in self.DESAFIOS_DIARIOS
                 if item["modulo_id"] == modulo_id
             ]
-            self.assertEqual(len(desafios), 10)
+            self.assertEqual(len(desafios), 5)
 
         posicoes_corretas = []
         for modulo in self.MODULOS:
@@ -318,14 +318,14 @@ class LearningFlowTest(unittest.TestCase):
 
         desafios, modulo_maximo = self.SituacaoAluno(1).desafios_disponiveis()
         self.assertEqual(modulo_maximo, 2)
-        self.assertEqual(len(desafios), 10)
+        self.assertEqual(len(desafios), 5)
         self.assertTrue(all(item["modulo_id"] == 2 for item in desafios))
 
         pagina_liberada = self.client.get("/desafio-diario")
         html_liberado = pagina_liberada.get_data(as_text=True)
         self.assertNotIn("Desafios diários bloqueados", html_liberado)
         self.assertIn("Módulo 2", html_liberado)
-        self.assertIn("10 desafios do módulo 2", html_liberado)
+        self.assertIn("5 desafios do módulo 2", html_liberado)
 
         modulo_tres = self.MODULOS[2]["licoes"][0]
         acesso_modulo_tres = self.client.post(
@@ -337,6 +337,60 @@ class LearningFlowTest(unittest.TestCase):
             },
         )
         self.assertEqual(acesso_modulo_tres.status_code, 403)
+
+    def concluir_modulos(self, *modulo_ids):
+        conn = self.conectar()
+        for modulo in self.MODULOS:
+            if modulo["id"] in modulo_ids:
+                for licao in modulo["licoes"]:
+                    conn.execute(
+                        "INSERT INTO progresso (usuario_id, licao_id, modulo_id, concluida) VALUES (?, ?, ?, 1)",
+                        (1, licao["id"], modulo["id"]),
+                    )
+        conn.commit()
+        conn.close()
+
+    def test_desafio_diario_fica_o_mesmo_no_dia_e_varia_depois(self):
+        self.concluir_modulos(1)
+        hoje = date.today()
+        desafio = self.SituacaoAluno(1).desafio_do_dia(hoje.isoformat())
+        self.assertEqual(desafio["modulo_id"], 2)
+
+        html = self.client.get("/desafio-diario").get_data(as_text=True)
+        self.assertIn(desafio["titulo"], html)
+        self.assertIn(desafio["nivel"], html)
+        self.assertIn("Saída esperada", html)
+        self.assertIn("Você já concluiu 0", html)
+        self.assertNotIn(desafio["solucao"]["explicacao"], html)
+
+        rascunho = self.client.post("/api/desafio/salvar-rascunho", json={"codigo": "int main(void){}"})
+        self.assertTrue(rascunho.get_json()["ok"])
+
+        # Liberar um módulo novo no meio do dia não troca o desafio já começado.
+        self.concluir_modulos(2)
+        situacao = self.SituacaoAluno(1)
+        self.assertEqual(situacao.desafios_disponiveis()[1], 3)
+        self.assertEqual(situacao.desafio_do_dia(hoje.isoformat())["id"], desafio["id"])
+
+        antes = self.client.post("/concluir-desafio-diario").get_json()
+        self.assertFalse(antes["ok"])
+
+        aprovado = {"ok": True, "mensagem": "Aprovado"}
+        with patch.object(self.terminal, "avaliar_codigo", return_value=aprovado):
+            resultado = self.terminal.salvar_execucao_desafio(1, "codigo", "", "saida", True)
+        self.assertEqual(resultado["solucao"], desafio["solucao"])
+
+        conclusao = self.client.post("/concluir-desafio-diario").get_json()
+        self.assertTrue(conclusao["ok"])
+        html = self.client.get("/desafio-diario").get_data(as_text=True)
+        self.assertIn("Desafio diário já concluído hoje", html)
+        self.assertIn("Você já concluiu 1", html)
+        self.assertIn(desafio["solucao"]["explicacao"], html)
+
+        # Nos próximos dias o sorteio não repete o desafio já concluído.
+        for dias in range(1, 10):
+            outro = self.SituacaoAluno(1).desafio_do_dia(date.fromordinal(hoje.toordinal() + dias).isoformat())
+            self.assertNotEqual(outro["id"], desafio["id"])
 
     def test_resposta_invalida_e_progresso_antigo(self):
         licao = self.MODULOS[0]["licoes"][0]

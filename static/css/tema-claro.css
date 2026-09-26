@@ -61,3 +61,6 @@
     color: #ffffff;
 }
 
+:root[data-theme="claro"] .daily-level-facil { color: #15803d; }
+:root[data-theme="claro"] .daily-level-medio { color: #b45309; }
+:root[data-theme="claro"] .daily-level-desafiador { color: #b91c1c; }

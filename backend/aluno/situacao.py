@@ -1,8 +1,11 @@
 """Onde o aluno está na trilha: lições concluídas, módulos liberados e próxima lição."""
 
+from datetime import date
+
 from backend.banco.conexao import transacao
 from backend.conteudo.desafios_diarios import (
     DESAFIOS_DIARIOS,
+    desafio_por_id,
     desafios_disponiveis_por_progresso,
     escolher_desafio_do_dia,
 )
@@ -90,8 +93,42 @@ class SituacaoAluno:
         return desafios_disponiveis_por_progresso(DESAFIOS_DIARIOS, maximo), maximo
 
     def desafio_do_dia(self, data_texto=None):
+        """Desafio do dia: o que o aluno já começou nesta data ou um sorteado entre os que ainda não concluiu.
+
+        Página, rascunho, compilação e conclusão usam este mesmo método, então todos veem o mesmo desafio.
+        """
         desafios, _ = self.desafios_disponiveis()
-        return escolher_desafio_do_dia(desafios, data_texto)
+        if not desafios:
+            return None
+
+        data_texto = data_texto or date.today().isoformat()
+        with transacao() as conn:
+            linhas = conn.execute(
+                "SELECT data, desafio_id, concluido FROM desafios_diarios WHERE usuario_id = ?",
+                (self.usuario_id,),
+            ).fetchall()
+
+        registro_do_dia = next((linha for linha in linhas if linha["data"] == data_texto), None)
+        if registro_do_dia and registro_do_dia["desafio_id"]:
+            comecado = desafio_por_id(desafios, registro_do_dia["desafio_id"])
+            if comecado:
+                return comecado
+
+        concluidos = {
+            linha["desafio_id"] for linha in linhas if linha["concluido"] == 1 and linha["data"] != data_texto
+        }
+        return escolher_desafio_do_dia(desafios, data_texto, concluidos)
+
+    def desafios_concluidos_disponiveis(self):
+        """Quantos desafios diferentes, entre os liberados, o aluno já concluiu."""
+        desafios, _ = self.desafios_disponiveis()
+        ids = {desafio["id"] for desafio in desafios}
+        with transacao() as conn:
+            linhas = conn.execute(
+                "SELECT DISTINCT desafio_id FROM desafios_diarios WHERE usuario_id = ? AND concluido = 1",
+                (self.usuario_id,),
+            ).fetchall()
+        return len(ids & {linha["desafio_id"] for linha in linhas})
 
     def proxima_licao(self):
         for modulo in MODULOS:
