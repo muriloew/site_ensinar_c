@@ -4,13 +4,28 @@ Com a variável DATABASE_URL definida, usa PostgreSQL (produção). Sem ela, usa
 arquivo SQLite local, o que dispensa instalar um servidor de banco para estudar o código.
 """
 
+import logging
 import os
 import sqlite3
+import sys
 import threading
 from contextlib import contextmanager
 from functools import lru_cache
 
 CAMINHO_SQLITE_PADRAO = os.path.join("instance", "ensinar_c.db")
+
+# O Neon gratuito desliga o banco depois de alguns minutos parado e derruba as conexões
+# sem avisar. Sem limites de tempo, uma conexão morta fica pendurada em silêncio e as
+# páginas esperam até o pool desistir (PoolTimeout). Estes parâmetros fazem a conexão
+# morta falhar em segundos, para o pool descartá-la e abrir outra.
+PARAMETROS_CONEXAO = {
+    "connect_timeout": 10,  # segundos para abrir uma conexão
+    "tcp_user_timeout": 10000,  # milissegundos sem resposta do servidor até desistir
+    "keepalives": 1,
+    "keepalives_idle": 30,
+    "keepalives_interval": 10,
+    "keepalives_count": 3,
+}
 
 _pool = None
 _pool_url = None
@@ -103,6 +118,16 @@ class ConexaoPostgres:
         self._pool.putconn(conn)
 
 
+def _registrar_erros_do_pool():
+    """Mostra no log (Render) por que o pool não conseguiu conectar, em vez de só o PoolTimeout."""
+    registro = logging.getLogger("psycopg.pool")
+    if not registro.handlers:
+        saida = logging.StreamHandler(sys.stderr)
+        saida.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)s in %(name)s: %(message)s"))
+        registro.addHandler(saida)
+        registro.setLevel(logging.WARNING)
+
+
 def _obter_pool():
     global _pool, _pool_url
     url = os.environ["DATABASE_URL"].strip()
@@ -112,14 +137,16 @@ def _obter_pool():
 
             if _pool is not None:
                 _pool.close()
+            _registrar_erros_do_pool()
             _pool = ConnectionPool(
                 url,
                 min_size=1,
                 max_size=int(os.environ.get("DB_POOL_MAX", "5")),
-                kwargs={"row_factory": _linha_postgres, "prepare_threshold": None},
+                kwargs={"row_factory": _linha_postgres, "prepare_threshold": None, **PARAMETROS_CONEXAO},
                 # Serviços gratuitos encerram conexões ociosas; o teste evita usar uma já fechada.
                 check=ConnectionPool.check_connection,
-                max_idle=300,
+                # Fecha conexões paradas antes dos 5 minutos em que o Neon desliga o banco.
+                max_idle=120,
                 timeout=15,
                 open=True,
             )
