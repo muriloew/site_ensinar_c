@@ -3099,3 +3099,67 @@ kbd {
 }
 
 .daily-card .small-muted a { color: var(--blue); font-weight: 700; }
+
+/* Notificações */
+.menu-badge {
+    display: inline-block;
+    min-width: 20px;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--red);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    vertical-align: 1px;
+}
+
+.notification-list { display: grid; gap: 12px; }
+
+.notification-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--panel);
+    color: var(--text);
+}
+
+.notification-item:hover { border-color: var(--blue); }
+.notification-item.unread { border-left: 4px solid var(--blue); background: var(--panel-2); }
+.notification-icon { font-size: 22px; line-height: 1.2; }
+.notification-text { display: grid; gap: 4px; min-width: 0; }
+.notification-text span { color: var(--muted); overflow-wrap: anywhere; }
+.notification-text small { color: var(--muted); font-size: 13px; }
+.notification-item.unread .notification-text small { color: var(--blue); font-weight: 700; }
+
+.teacher-notice-form textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-weight: 400;
+    resize: vertical;
+}
+
+.teacher-notices { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 10px; }
+
+.teacher-notices li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.teacher-notices li div { display: grid; gap: 3px; min-width: 0; }
+.teacher-notices span { color: var(--muted); overflow-wrap: anywhere; }
+.teacher-notices small { color: var(--muted); font-size: 13px; }

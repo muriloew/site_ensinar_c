@@ -180,6 +180,30 @@ TABELAS = (
         UNIQUE(usuario_id, licao_id)
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS avisos (
+        id {chave},
+        autor_id INTEGER,
+        titulo TEXT NOT NULL,
+        mensagem TEXT NOT NULL,
+        link TEXT,
+        criado_em TEXT NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS notificacoes (
+        id {chave},
+        usuario_id INTEGER NOT NULL,
+        chave TEXT NOT NULL,
+        tipo TEXT NOT NULL,
+        titulo TEXT NOT NULL,
+        mensagem TEXT,
+        link TEXT,
+        criada_em TEXT NOT NULL,
+        lida INTEGER DEFAULT 0,
+        UNIQUE(usuario_id, chave)
+    )
+    """,
 )
 
 INDICES = (
@@ -189,6 +213,7 @@ INDICES = (
     "CREATE INDEX IF NOT EXISTS idx_historico_usuario_data ON compilador_historico(usuario_id, id DESC)",
     "CREATE INDEX IF NOT EXISTS idx_favoritos_usuario ON favoritos_usuario(usuario_id, licao_id)",
     "CREATE INDEX IF NOT EXISTS idx_revisoes_usuario_data ON revisoes_usuario(usuario_id, proxima_revisao)",
+    "CREATE INDEX IF NOT EXISTS idx_notificacoes_usuario_lida ON notificacoes(usuario_id, lida, id DESC)",
 )
 
 # Colunas que surgiram depois da primeira versão; bancos antigos as recebem ao iniciar o site.

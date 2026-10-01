@@ -15,6 +15,7 @@ OPCOES = {
     "fechar_parenteses": ("sim", ("sim", "nao")),
     "dicas": ("automaticas", ("automaticas", "pedir", "desligadas")),
     "confirmar_limpar": ("sim", ("sim", "nao")),
+    "lembretes": ("sim", ("sim", "nao")),
 }
 CAIXAS = {chave for chave, (_, aceitos) in OPCOES.items() if aceitos == ("sim", "nao")}
 PADROES = {chave: padrao for chave, (padrao, _) in OPCOES.items()}

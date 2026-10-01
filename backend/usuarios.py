@@ -27,6 +27,7 @@ TABELAS_DO_USUARIO = (
     "favoritos_usuario",
     "revisoes_usuario",
     "anotacoes_usuario",
+    "notificacoes",
     "redefinicoes_senha",
     "preferencias_usuario",
 )

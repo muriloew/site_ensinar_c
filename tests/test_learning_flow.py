@@ -58,6 +58,8 @@ class LearningFlowTest(unittest.TestCase):
     def setUp(self):
         conn = self.conectar()
         for tabela in (
+            "notificacoes",
+            "avisos",
             "preferencias_usuario",
             "redefinicoes_senha",
             "anotacoes_usuario",
@@ -857,6 +859,98 @@ class LearningFlowTest(unittest.TestCase):
         entrada = visitante.post("/login", data={"email": "aluna@example.com", "senha": senha})
         self.assertIn("aviso=senha_temporaria", entrada.location)
         self.assertIn("senha temporária", visitante.get(entrada.location).get_data(as_text=True))
+
+    def notificacoes_do_aluno(self, usuario_id=1):
+        conn = self.conectar()
+        linhas = conn.execute(
+            "SELECT id, tipo, titulo, link, lida FROM notificacoes WHERE usuario_id = ? ORDER BY id", (usuario_id,)
+        ).fetchall()
+        conn.close()
+        return linhas
+
+    def test_notificacoes_de_modulo_desafio_e_revisao(self):
+        # Aluno novo: só o módulo 1 está aberto, então ainda não há desafio diário nem módulo liberado.
+        pagina = self.client.get("/notificacoes").get_data(as_text=True)
+        self.assertIn("Nenhuma notificação por enquanto", pagina)
+        self.assertEqual(self.notificacoes_do_aluno(), [])
+
+        self.concluir_modulos(1)
+        conn = self.conectar()
+        conn.execute(
+            "INSERT INTO revisoes_usuario (usuario_id, licao_id, nivel, proxima_revisao) VALUES (1, 1, 0, ?)",
+            (str(self.hoje()),),
+        )
+        conn.commit()
+        conn.close()
+
+        pagina = self.client.get("/notificacoes").get_data(as_text=True)
+        self.assertIn("Módulo 2 liberado", pagina)
+        self.assertIn("Novo desafio diário", pagina)
+        self.assertIn("Você tem 1 lição para revisar hoje.", pagina)
+        self.assertEqual({linha["tipo"] for linha in self.notificacoes_do_aluno()}, {"modulo", "desafio", "revisao"})
+
+        # Voltar à página não cria repetidas, e o menu mostra quantas faltam ler.
+        self.client.get("/notificacoes")
+        self.assertEqual(len(self.notificacoes_do_aluno()), 3)
+        self.assertIn('class="menu-badge"', self.client.get("/referencia").get_data(as_text=True))
+
+        modulo = next(linha for linha in self.notificacoes_do_aluno() if linha["tipo"] == "modulo")
+        aberta = self.client.get(f"/notificacoes/{modulo['id']}")
+        self.assertEqual(aberta.status_code, 302)
+        self.assertEqual(aberta.location, "/estudar/2")
+        self.assertEqual(sum(1 for linha in self.notificacoes_do_aluno() if not linha["lida"]), 2)
+
+        self.client.post("/notificacoes/lidas")
+        self.assertTrue(all(linha["lida"] for linha in self.notificacoes_do_aluno()))
+        self.assertNotIn('class="menu-badge"', self.client.get("/referencia").get_data(as_text=True))
+
+        # Notificação de outro aluno não abre nem é marcada.
+        self.assertEqual(self.client.get("/notificacoes/99999").location, "/notificacoes")
+
+    def test_lembretes_desligados_mantem_modulos_e_avisos(self):
+        self.client.post("/configuracoes", data={"acao": "preferencias", "lembretes__presente": "1"})
+        self.concluir_modulos(1)
+        self.client.get("/notificacoes")
+        self.assertEqual([linha["tipo"] for linha in self.notificacoes_do_aluno()], ["modulo"])
+
+    def test_professor_envia_e_exclui_aviso(self):
+        conn = self.conectar()
+        conn.execute(
+            "INSERT INTO usuarios (id, nome, email, senha) VALUES (?, ?, ?, ?)",
+            (2, "Aluna Dois", "aluna@example.com", "senha"),
+        )
+        conn.commit()
+        conn.close()
+
+        aviso = {"titulo": "Aula de revisão", "mensagem": "Revisem ponteiros antes da prova.", "link": "/estudar/9"}
+        self.assertEqual(self.client.post("/professor/avisos", data=aviso).status_code, 404)
+        with patch.dict(os.environ, {"ADMIN_EMAILS": "aluno@example.com"}):
+            externo = self.client.post("/professor/avisos", data={**aviso, "link": "https://outro-site.com"})
+            self.assertEqual(externo.status_code, 400)
+            self.assertIn("página do próprio site", externo.get_data(as_text=True))
+            enviado = self.client.post("/professor/avisos", data=aviso)
+            self.assertIn("aviso=publicado", enviado.location)
+            painel = self.client.get("/professor?aviso=publicado").get_data(as_text=True)
+            self.assertIn("Aviso enviado para a turma.", painel)
+            self.assertIn("Aula de revisão", painel)
+
+        with self.client.session_transaction() as sessao:
+            sessao.clear()
+            sessao["usuario_id"] = 2
+        pagina = self.client.get("/notificacoes").get_data(as_text=True)
+        self.assertIn("Aula de revisão", pagina)
+        self.assertIn("Revisem ponteiros antes da prova.", pagina)
+        notificacao = self.notificacoes_do_aluno(2)[0]
+        self.assertEqual(self.client.get(f"/notificacoes/{notificacao['id']}").location, "/estudar/9")
+
+        with self.client.session_transaction() as sessao:
+            sessao["usuario_id"] = 1
+        conn = self.conectar()
+        aviso_id = conn.execute("SELECT id FROM avisos").fetchone()["id"]
+        conn.close()
+        with patch.dict(os.environ, {"ADMIN_EMAILS": "aluno@example.com"}):
+            self.client.post(f"/professor/avisos/{aviso_id}/excluir")
+        self.assertEqual(self.notificacoes_do_aluno(2), [])
 
     def test_professor_ve_a_trilha_inteira_concluida(self):
         ultimo_modulo = self.MODULOS[-1]

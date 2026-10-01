@@ -1,10 +1,11 @@
-"""Painel do professor: progresso da turma, exercícios difíceis e redefinição de senha."""
+"""Painel do professor: progresso da turma, exercícios difíceis, redefinição de senha e avisos para a turma."""
 
 import secrets
 from datetime import timedelta
 
-from flask import Blueprint, abort, render_template
+from flask import Blueprint, abort, redirect, render_template, request, url_for
 
+from backend.aluno import notificacoes
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import TOTAL_LICOES, encontrar_licao
 from backend.sessao import usuario_logado
@@ -84,14 +85,43 @@ def _dados_da_turma(conn):
     return resumo, lista, dificuldades[:10]
 
 
+def _pagina(conn, status=200, **extras):
+    resumo, alunos, dificuldades = _dados_da_turma(conn)
+    return render_template(
+        "professor/painel.html",
+        resumo=resumo,
+        alunos=alunos,
+        dificuldades=dificuldades,
+        total=TOTAL_LICOES,
+        avisos=notificacoes.avisos_recentes(conn),
+        **extras,
+    ), status
+
+
 @bp.route("/professor")
 def painel():
     _exigir_professor()
     with transacao() as conn:
-        resumo, alunos, dificuldades = _dados_da_turma(conn)
-    return render_template(
-        "professor/painel.html", resumo=resumo, alunos=alunos, dificuldades=dificuldades, total=TOTAL_LICOES
-    )
+        return _pagina(conn, aviso_publicado=request.args.get("aviso") == "publicado")
+
+
+@bp.route("/professor/avisos", methods=["POST"])
+def publicar_aviso():
+    professor = _exigir_professor()
+    formulario = {campo: request.form.get(campo, "") for campo in ("titulo", "mensagem", "link")}
+    with transacao() as conn:
+        erro = notificacoes.publicar_aviso(conn, professor["id"], **formulario)
+        if erro:
+            return _pagina(conn, 400, erro_aviso=erro, aviso_form=formulario)
+    return redirect(url_for("professor.painel", aviso="publicado") + "#avisos")
+
+
+@bp.route("/professor/avisos/<int:aviso_id>/excluir", methods=["POST"])
+def excluir_aviso(aviso_id):
+    _exigir_professor()
+    with transacao() as conn:
+        notificacoes.excluir_aviso(conn, aviso_id)
+    return redirect(url_for("professor.painel") + "#avisos")
 
 
 @bp.route("/professor/alunos/<int:aluno_id>/redefinir-senha", methods=["POST"])
@@ -104,12 +134,4 @@ def redefinir_senha(aluno_id):
             abort(404)
         # O aluno entra com esta senha e é levado a criar outra em Configurações.
         definir_senha(conn, aluno_id, senha, temporaria=True)
-        resumo, alunos, dificuldades = _dados_da_turma(conn)
-    return render_template(
-        "professor/painel.html",
-        resumo=resumo,
-        alunos=alunos,
-        dificuldades=dificuldades,
-        total=TOTAL_LICOES,
-        senha_nova={"nome": aluno["nome"], "email": aluno["email"], "senha": senha},
-    )
+        return _pagina(conn, senha_nova={"nome": aluno["nome"], "email": aluno["email"], "senha": senha})

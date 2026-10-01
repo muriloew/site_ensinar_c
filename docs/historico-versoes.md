@@ -391,3 +391,12 @@ python app.py
 - **Erro 500 intermitente corrigido:** depois de alguns minutos sem acessos, o Neon suspende o banco e as conexões guardadas morriam sem aviso. O pool de conexões travava, todas as páginas com login davam erro e o site só voltava quando o Render reiniciava. Agora o pool não guarda conexões paradas (fecha as que ficam 60 segundos sem uso), as conexões têm limite de tempo para abrir e detectam quando o servidor caiu, e, se o pool parar de entregar conexões, ele é descartado e recriado na hora. Os motivos das falhas e o estado do pool vão para o log do Render.
 - **Horário de Brasília:** o servidor do Render trabalha em UTC, então o dia do desafio diário, da sequência de estudos, das metas e das revisões virava às 21h. Agora todo o backend pega a data e a hora de `backend/relogio.py` (`relogio.hoje()` e `relogio.agora()`), no fuso `America/Sao_Paulo`. O pacote `tzdata` entrou no `requirements.txt` para o fuso funcionar também no Windows.
 - O teste `tests/test_relogio.py` confere que às 22h30 de Brasília (01h30 em UTC) ainda é o mesmo dia e que nenhum arquivo do backend volta a usar `date.today()` ou `datetime.now()`.
+
+
+## Versão 34 — Notificações
+
+- **Notificações no menu**, com um contador de não lidas: desafio diário novo, módulo liberado, revisões do dia e avisos do professor. A página `/notificacoes` lista as últimas 50; abrir uma notificação a marca como lida e leva à página dela, e há um botão para marcar todas como lidas.
+- As notificações automáticas são criadas enquanto o aluno usa o site, no máximo uma verificação por minuto, sem tarefas agendadas no servidor. Cada uma tem uma chave única por aluno (por exemplo `desafio:2026-10-01`), então não se repete.
+- **Avisos para a turma:** no painel do professor, um formulário envia um aviso (título, mensagem e link opcional para uma página do site) que aparece nas notificações de todos os alunos, inclusive de quem se cadastrar nos 30 dias seguintes. O professor pode excluir um aviso, e ele some das notificações.
+- Em Configurações → Estudo, "Lembretes de estudo" desliga os avisos de desafio do dia e de revisões; módulos liberados e avisos do professor continuam aparecendo.
+- Tabelas novas `notificacoes` e `avisos`, criadas sozinhas ao iniciar; a exclusão da conta apaga as notificações do aluno, e o script de migração leva as duas tabelas.

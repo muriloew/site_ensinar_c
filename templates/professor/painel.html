@@ -25,6 +25,48 @@
     <div class="card"><span>L</span><strong>{{ resumo.licoes_concluidas }}</strong><p>lições concluídas no total</p></div>
 </section>
 
+<section class="card teacher-section" id="avisos">
+    <h2>Avisos para a turma</h2>
+    <p class="small-muted">O aviso aparece nas notificações de todos os alunos, inclusive de quem se cadastrar nos próximos 30 dias.</p>
+    {% if aviso_publicado %}<div class="success-box" role="status">Aviso enviado para a turma.</div>{% endif %}
+    {% if erro_aviso %}<div class="alert" role="alert">{{ erro_aviso }}</div>{% endif %}
+    <form method="post" action="/professor/avisos" class="settings-form teacher-notice-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Título
+            <input type="text" name="titulo" maxlength="80" required value="{{ aviso_form.titulo if aviso_form else '' }}"
+                   placeholder="Ex.: Novo módulo de projetos">
+        </label>
+        <label>Mensagem
+            <textarea name="mensagem" maxlength="500" rows="3" required
+                      placeholder="Ex.: Os roteiros dos projetos foram atualizados. Confiram antes da aula.">{{ aviso_form.mensagem if aviso_form else '' }}</textarea>
+        </label>
+        <label>Link (opcional)
+            <input type="text" name="link" maxlength="200" value="{{ aviso_form.link if aviso_form else '' }}"
+                   placeholder="Página do site, como /modulos ou /estudar/21">
+        </label>
+        <button class="btn btn-primary" type="submit">Enviar aviso</button>
+    </form>
+    {% if avisos %}
+    <h3>Avisos enviados</h3>
+    <ul class="teacher-notices">
+        {% for aviso in avisos %}
+        <li>
+            <div>
+                <strong>{{ aviso.titulo }}</strong>
+                <span>{{ aviso.mensagem }}</span>
+                <small>{{ aviso.criado_em|data_hora }}{% if aviso.link %} · {{ aviso.link }}{% endif %}</small>
+            </div>
+            <form method="post" action="/professor/avisos/{{ aviso.id }}/excluir"
+                  data-confirmar="Excluir este aviso? Ele some das notificações dos alunos.">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-ghost btn-small" type="submit">Excluir</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</section>
+
 <section class="card teacher-section">
     <h2>Alunos</h2>
     {% if alunos %}

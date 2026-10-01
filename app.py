@@ -3,12 +3,14 @@
 import os
 import re
 import secrets
+import time
 from datetime import timedelta
 
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, session
 from markupsafe import Markup, escape
 from werkzeug.middleware.proxy_fix import ProxyFix
 
+from backend.aluno import notificacoes
 from backend.banco.tabelas import criar_tabelas
 from backend.compilador.terminal import socketio
 from backend.banco.conexao import transacao
@@ -57,6 +59,7 @@ def criar_app():
         # Se o banco falhar aqui, a página (inclusive a de erro) ainda aparece, como se ninguém estivesse logado.
         usuario = None
         preferencias = dict(PADROES)
+        nao_lidas = 0
         try:
             usuario = usuario_logado()
             if usuario:
@@ -65,13 +68,32 @@ def criar_app():
         except Exception:
             app.logger.exception("Falha ao ler o usuário para montar o menu")
             usuario = None
+        if usuario:
+            # As notificações automáticas são verificadas no máximo uma vez por minuto; se falharem, a página abre.
+            try:
+                with transacao() as conn:
+                    if time.time() - session.get("notificacoes_verificadas", 0) > notificacoes.INTERVALO_VERIFICACAO:
+                        notificacoes.gerar(conn, usuario["id"], preferencias["lembretes"] == "sim")
+                        session["notificacoes_verificadas"] = time.time()
+                    nao_lidas = notificacoes.contar_nao_lidas(conn, usuario["id"])
+            except Exception:
+                app.logger.exception("Falha ao verificar as notificações")
         return {
             "usuario": usuario,
             "preferencias": preferencias,
+            "notificacoes_nao_lidas": nao_lidas,
             "professor": eh_professor(usuario),
             "total_licoes": TOTAL_LICOES,
             "csrf_token": token_csrf,
         }
+
+    @app.template_filter("data_hora")
+    def data_hora(texto):
+        """'2026-10-01T12:16:05' vira '01/10/2026 às 12:16'."""
+        texto = str(texto or "")
+        if len(texto) < 16:
+            return texto
+        return f"{texto[8:10]}/{texto[5:7]}/{texto[:4]} às {texto[11:16]}"
 
     @app.template_filter("codigo_inline")
     def codigo_inline(texto):

@@ -31,6 +31,7 @@ backend/
     teoria.py                   Respostas dos desafios teóricos
     revisao.py                  Revisão espaçada
     metas.py                    Metas diárias e semanais
+    notificacoes.py             Notificações automáticas e avisos do professor
     relatorios.py               Relatórios do perfil, simulado e arquivo de backup
   compilador/
     executor.py                 Compila e executa com limites de tempo, memória e processos
@@ -45,7 +46,8 @@ backend/
     desafio_diario.py           Desafio diário                  -> templates/desafio_diario/
     revisao.py                  Revisão e favoritos             -> templates/revisao/
     compilador.py               Prática livre e histórico       -> templates/compilador/
-    professor.py                Painel do professor             -> templates/professor/
+    professor.py                Painel do professor e avisos    -> templates/professor/
+    notificacoes.py             Notificações do aluno           -> templates/notificacoes/
   sessao.py                     Usuário logado na requisição
   seguranca.py                  Token CSRF e limite de tentativas de login
   usuarios.py                   Regras da conta: validação, senha, exclusão, professor, links de senha
@@ -72,7 +74,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - "Esqueci minha senha" com link por e-mail válido por 1 hora (quando o e-mail estiver configurado)
 - Configurações salvas na conta, valendo em qualquer aparelho: tema claro, escuro ou igual ao sistema, tamanho do texto das lições, cor do avatar, reduzir animações, editor de código (letra, indentação, fechar parênteses, quebrar linhas e lista de atalhos), modo das dicas (automáticas, quando pedir ou desligadas) e confirmação antes de limpar o código
 - Segurança da conta: trocar senha (desconecta os outros aparelhos), "sair de todos os outros aparelhos", apagar o histórico de códigos, baixar os dados e excluir a conta
-- Painel do professor: progresso da turma, exercícios com mais dificuldade e senha temporária para quem esqueceu a senha
+- Painel do professor: progresso da turma, exercícios com mais dificuldade, senha temporária para quem esqueceu a senha e avisos para a turma
 - Acesso de professor: quem está em `ADMIN_EMAILS` vê a trilha inteira concluída e liberada, com as soluções comentadas visíveis, sem entrar nas estatísticas da turma
 - Trilha com 21 módulos e 91 lições, liberados conforme o avanço
 - Teoria, pontos-chave, erro comum e exemplo compilável em cada lição, com botões para copiar e executar o exemplo
@@ -89,6 +91,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
 - Acompanhamento com relatório por módulo, metas diárias e semanais e calendário de atividade
 - Simulado, revisão espaçada, favoritos e histórico das 100 últimas execuções
+- Notificações no menu (com contador de não lidas): desafio diário novo, módulo liberado, revisões do dia e avisos do professor; os lembretes de estudo podem ser desligados em Configurações
 - Download do progresso em JSON
 - Telas ajustadas para celular, tablet e computador, com tema claro e escuro
 - Proteção contra envios de outros sites (CSRF), limite de tentativas de login e senha de 8 caracteres

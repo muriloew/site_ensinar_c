@@ -34,6 +34,8 @@ TABELAS = (
     "favoritos_usuario",
     "revisoes_usuario",
     "anotacoes_usuario",
+    "avisos",
+    "notificacoes",
 )
 
 

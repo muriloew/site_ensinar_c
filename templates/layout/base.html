@@ -45,6 +45,7 @@
 
     <nav aria-label="Menu principal">
         <a href="/dashboard">🏠 Painel</a>
+        <a href="/notificacoes">🔔 Notificações{% if notificacoes_nao_lidas %} <span class="menu-badge" aria-label="{{ notificacoes_nao_lidas }} não lidas">{{ notificacoes_nao_lidas if notificacoes_nao_lidas < 100 else "99+" }}</span>{% endif %}</a>
         <a href="/modulos">📚 Módulos</a>
         <a href="/desafio-diario">🎯 Desafio diário</a>
         <a href="/revisao">↻ Revisão</a>

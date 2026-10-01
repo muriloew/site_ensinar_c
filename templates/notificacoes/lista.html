@@ -1,0 +1,37 @@
+{% extends "layout/base.html" %}
+{% block title %}Notificações - Ensinar C{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <div>
+        <span class="page-kicker">Novidades para você</span>
+        <h1>Notificações</h1>
+        <p>Desafios do dia, módulos liberados, revisões pendentes e avisos do professor.</p>
+    </div>
+    {% if nao_lidas %}
+    <form method="post" action="/notificacoes/lidas">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost" type="submit">Marcar todas como lidas</button>
+    </form>
+    {% endif %}
+</div>
+
+<section class="notification-list">
+    {% for item in itens %}
+    <a class="notification-item{% if not item.lida %} unread{% endif %}" href="/notificacoes/{{ item.id }}">
+        <span class="notification-icon" aria-hidden="true">{{ item.icone }}</span>
+        <span class="notification-text">
+            <strong>{{ item.titulo }}</strong>
+            {% if item.mensagem %}<span>{{ item.mensagem }}</span>{% endif %}
+            <small>{{ item.criada_em|data_hora }}{% if not item.lida %} · nova{% endif %}</small>
+        </span>
+    </a>
+    {% else %}
+    <div class="empty-study-state">
+        <strong>Nenhuma notificação por enquanto</strong>
+        <p>Quando houver um desafio novo, um módulo liberado, revisões ou um aviso do professor, ele aparece aqui.</p>
+        <a class="btn btn-primary" href="/modulos">Continuar estudando</a>
+    </div>
+    {% endfor %}
+</section>
+{% endblock %}
