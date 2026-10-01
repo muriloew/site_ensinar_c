@@ -4,6 +4,7 @@ from datetime import date
 
 from backend.conteudo.catalogo_desafios import CATALOGO
 from backend.conteudo.trilha import encontrar_licao
+from backend import relogio
 
 POR_MODULO = 5
 
@@ -38,5 +39,5 @@ def escolher_desafio_do_dia(desafios, data_texto=None, concluidos=()):
         return None
 
     pendentes = [desafio for desafio in desafios if desafio["id"] not in concluidos] or desafios
-    data_base = date.fromisoformat(data_texto) if data_texto else date.today()
+    data_base = date.fromisoformat(data_texto) if data_texto else relogio.hoje()
     return pendentes[data_base.toordinal() % len(pendentes)]

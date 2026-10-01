@@ -1,6 +1,5 @@
 """Onde o aluno está na trilha: lições concluídas, módulos liberados e próxima lição."""
 
-from datetime import date
 
 from backend.banco.conexao import transacao
 from backend.conteudo.desafios_diarios import (
@@ -11,6 +10,7 @@ from backend.conteudo.desafios_diarios import (
 )
 from backend.conteudo.trilha import MODULOS, encontrar_licao, modulo_por_id
 from backend.usuarios import eh_professor
+from backend import relogio
 
 TODAS_AS_LICOES = frozenset(licao["id"] for modulo in MODULOS for licao in modulo["licoes"])
 
@@ -101,7 +101,7 @@ class SituacaoAluno:
         if not desafios:
             return None
 
-        data_texto = data_texto or date.today().isoformat()
+        data_texto = data_texto or relogio.hoje().isoformat()
         with transacao() as conn:
             linhas = conn.execute(
                 "SELECT data, desafio_id, concluido FROM desafios_diarios WHERE usuario_id = ?",

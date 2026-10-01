@@ -1,8 +1,8 @@
 """Relatórios do perfil, questões do simulado e cópia do progresso para download."""
 
-from datetime import date, datetime
 
 from backend.conteudo.trilha import MODULOS, encontrar_licao
+from backend import relogio
 
 
 def resumo_desempenho(conn, usuario_id):
@@ -120,7 +120,7 @@ def questoes_simulado(usuario_id, situacao, quantidade=10):
         return []
 
     # Gira a lista a cada dia para o simulado não repetir sempre as mesmas perguntas.
-    deslocamento = (date.today().toordinal() + usuario_id) % len(licoes)
+    deslocamento = (relogio.hoje().toordinal() + usuario_id) % len(licoes)
     licoes = licoes[deslocamento:] + licoes[:deslocamento]
 
     return [
@@ -150,7 +150,7 @@ def dados_backup(conn, usuario_id):
     ).fetchone()
 
     return {
-        "gerado_em": datetime.now().isoformat(timespec="seconds"),
+        "gerado_em": relogio.agora().isoformat(timespec="seconds"),
         "usuario": dict(usuario) if usuario else None,
         "progresso": linhas("SELECT * FROM progresso WHERE usuario_id = ? ORDER BY modulo_id, licao_id"),
         "desafios_diarios": linhas("SELECT * FROM desafios_diarios WHERE usuario_id = ? ORDER BY data DESC"),

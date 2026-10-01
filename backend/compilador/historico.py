@@ -1,6 +1,6 @@
 """Histórico das últimas execuções de código de cada aluno."""
 
-from datetime import datetime
+from backend import relogio
 
 LIMITE_HISTORICO = 100
 
@@ -31,7 +31,7 @@ def registrar_historico_codigo(
             entrada,
             saida,
             build_log,
-            datetime.now().isoformat(timespec="seconds"),
+            relogio.agora().isoformat(timespec="seconds"),
             contexto,
             licao_id,
             modulo_id,

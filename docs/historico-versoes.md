@@ -384,3 +384,10 @@ python app.py
 - O sorteio de cada dia prioriza os desafios que o aluno ainda não concluiu; a página mostra quantos ele já fez e um link para revisar a lição do assunto.
 - Correção: se o aluno liberava um módulo novo no meio do dia, a página continuava mostrando o desafio começado, mas o rascunho e a compilação passavam a gravar outro desafio. Agora página, rascunho, compilação e conclusão usam o mesmo desafio do dia.
 - O teste `tests/test_desafios_diarios.py` compila as 100 soluções com `-Werror`, passa cada uma na própria correção, confere se o exemplo mostrado bate com a saída real e garante que o código inicial ainda não resolve o desafio.
+
+
+## Versão 33 — Conexões com o banco e horário de Brasília
+
+- **Erro 500 intermitente corrigido:** depois de alguns minutos sem acessos, o Neon suspende o banco e as conexões guardadas morriam sem aviso. O pool de conexões travava, todas as páginas com login davam erro e o site só voltava quando o Render reiniciava. Agora o pool não guarda conexões paradas (fecha as que ficam 60 segundos sem uso), as conexões têm limite de tempo para abrir e detectam quando o servidor caiu, e, se o pool parar de entregar conexões, ele é descartado e recriado na hora. Os motivos das falhas e o estado do pool vão para o log do Render.
+- **Horário de Brasília:** o servidor do Render trabalha em UTC, então o dia do desafio diário, da sequência de estudos, das metas e das revisões virava às 21h. Agora todo o backend pega a data e a hora de `backend/relogio.py` (`relogio.hoje()` e `relogio.agora()`), no fuso `America/Sao_Paulo`. O pacote `tzdata` entrou no `requirements.txt` para o fuso funcionar também no Windows.
+- O teste `tests/test_relogio.py` confere que às 22h30 de Brasília (01h30 em UTC) ainda é o mesmo dia e que nenhum arquivo do backend volta a usar `date.today()` ou `datetime.now()`.

@@ -1,6 +1,7 @@
 """Metas diárias e semanais de lições e desafios."""
 
-from datetime import date, datetime, timedelta
+from datetime import timedelta
+from backend import relogio
 
 METAS_PADRAO = {
     "diaria": {
@@ -39,7 +40,7 @@ def _porcentagem(valor, alvo):
 
 
 def salvar_metas(conn, usuario_id, formulario):
-    agora = datetime.now().isoformat(timespec="seconds")
+    agora = relogio.agora().isoformat(timespec="seconds")
     for tipo, meta in METAS_PADRAO.items():
         alvo_licoes = limitar_inteiro(
             formulario.get(f"{tipo}_licoes"), meta["alvo_licoes"], 0, meta["max_licoes"]
@@ -70,7 +71,7 @@ def progresso_metas(conn, usuario_id):
             metas[registro["tipo"]]["alvo_licoes"] = registro["alvo_licoes"]
             metas[registro["tipo"]]["alvo_desafios"] = registro["alvo_desafios"]
 
-    hoje = date.today()
+    hoje = relogio.hoje()
     inicios = {"diaria": hoje, "semanal": hoje - timedelta(days=hoje.weekday())}
 
     resultado = []

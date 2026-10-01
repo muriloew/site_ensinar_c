@@ -2,7 +2,6 @@
 
 import io
 import json
-from datetime import date, datetime
 
 from flask import Blueprint, redirect, render_template, request, send_file, url_for
 
@@ -22,6 +21,7 @@ from backend.aluno.situacao import SituacaoAluno
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import TOTAL_LICOES, encontrar_licao
 from backend.sessao import usuario_logado
+from backend import relogio
 
 bp = Blueprint("painel", __name__)
 
@@ -56,7 +56,7 @@ def dashboard():
             SELECT COUNT(*) AS total FROM revisoes_usuario
             WHERE usuario_id = ? AND proxima_revisao <= ?
             """,
-            (usuario_id, date.today().isoformat()),
+            (usuario_id, relogio.hoje().isoformat()),
         ).fetchone()["total"]
 
     proxima_licao = situacao.proxima_licao()
@@ -160,7 +160,7 @@ def baixar_backup_progresso():
         arquivo,
         mimetype="application/json",
         as_attachment=True,
-        download_name=f"backup_progresso_{usuario['id']}_{date.today()}.json",
+        download_name=f"backup_progresso_{usuario['id']}_{relogio.hoje()}.json",
     )
 
 
@@ -203,7 +203,7 @@ def simulado():
                 INSERT INTO simulados_usuario (usuario_id, acertos, total, percentual, criado_em)
                 VALUES (?, ?, ?, ?, ?)
                 """,
-                (usuario_id, acertos, total, percentual, datetime.now().isoformat(timespec="seconds")),
+                (usuario_id, acertos, total, percentual, relogio.agora().isoformat(timespec="seconds")),
             )
             registrar_atividade(conn, usuario_id)
             sincronizar_conquistas(conn, usuario_id)

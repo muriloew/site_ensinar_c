@@ -1,6 +1,5 @@
 """Revisão espaçada das lições concluídas e lista de lições favoritas."""
 
-from datetime import date, datetime
 
 from flask import Blueprint, redirect, render_template, request, url_for
 
@@ -10,6 +9,7 @@ from backend.aluno.situacao import SituacaoAluno
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import encontrar_licao
 from backend.sessao import usuario_logado
+from backend import relogio
 
 bp = Blueprint("revisao", __name__)
 
@@ -20,7 +20,7 @@ def revisao():
     if not usuario:
         return redirect(url_for("publico.login"))
 
-    hoje = date.today().isoformat()
+    hoje = relogio.hoje().isoformat()
     with transacao() as conn:
         sincronizar_revisoes(conn, usuario["id"])
         pendentes = conn.execute(
@@ -86,7 +86,7 @@ def responder_revisao(licao_id):
             (
                 novo_nivel,
                 proxima,
-                datetime.now().isoformat(timespec="seconds"),
+                relogio.agora().isoformat(timespec="seconds"),
                 1 if correta else 0,
                 0 if correta else 1,
                 usuario["id"],
@@ -150,7 +150,7 @@ def alternar_favorito(licao_id):
         if not apagado:
             conn.execute(
                 "INSERT INTO favoritos_usuario (usuario_id, licao_id, criado_em) VALUES (?, ?, ?)",
-                (usuario["id"], licao_id, datetime.now().isoformat(timespec="seconds")),
+                (usuario["id"], licao_id, relogio.agora().isoformat(timespec="seconds")),
             )
 
     destino = request.form.get("destino", "")

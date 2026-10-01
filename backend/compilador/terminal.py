@@ -5,7 +5,6 @@ import select
 import shutil
 import threading
 import time
-from datetime import date
 
 from flask import request, session
 from flask_socketio import SocketIO, emit
@@ -16,6 +15,7 @@ from backend.banco.conexao import transacao
 from backend.compilador import executor
 from backend.compilador.correcao import avaliar_codigo
 from backend.compilador.historico import registrar_historico_codigo
+from backend import relogio
 
 try:
     import pty
@@ -61,7 +61,7 @@ def salvar_execucao_licao(usuario_id, licao_id, codigo, entrada, saida, execucao
                           atualizado_em = excluded.atualizado_em
             """,
             (usuario_id, licao["id"], modulo["id"], codigo, saida, entrada,
-             1 if validacao["ok"] else 0, validacao["mensagem"], str(date.today())),
+             1 if validacao["ok"] else 0, validacao["mensagem"], str(relogio.hoje())),
         )
         registrar_historico_codigo(
             conn, usuario_id, codigo, entrada, saida, build_log,
@@ -74,7 +74,7 @@ def salvar_execucao_licao(usuario_id, licao_id, codigo, entrada, saida, execucao
 
 
 def salvar_execucao_desafio(usuario_id, codigo, entrada, saida, execucao_ok, build_log="", origem=""):
-    hoje = str(date.today())
+    hoje = str(relogio.hoje())
     desafio = SituacaoAluno(usuario_id).desafio_do_dia(hoje)
     if not desafio:
         return {"ok": False, "mensagem": MENSAGEM_DESAFIO_BLOQUEADO}
@@ -279,7 +279,7 @@ def compilar_real(dados):
             return
         licao_id = licao["id"]
     elif tipo == "diario":
-        if not SituacaoAluno(usuario_id).desafio_do_dia(str(date.today())):
+        if not SituacaoAluno(usuario_id).desafio_do_dia(str(relogio.hoje())):
             emit("build_log", {"ok": False, "texto": MENSAGEM_DESAFIO_BLOQUEADO})
             return
     elif tipo == "compilador":

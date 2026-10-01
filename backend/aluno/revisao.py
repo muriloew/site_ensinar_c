@@ -1,12 +1,13 @@
 """Revisão espaçada: cada acerto aumenta o intervalo até a próxima revisão da lição."""
 
 from datetime import date, timedelta
+from backend import relogio
 
 INTERVALOS_REVISAO = (1, 3, 7, 14, 30, 60)
 
 
 def agendar_primeira_revisao(conn, usuario_id, licao_id, data_base=None):
-    proxima = (data_base or date.today()) + timedelta(days=INTERVALOS_REVISAO[0])
+    proxima = (data_base or relogio.hoje()) + timedelta(days=INTERVALOS_REVISAO[0])
     conn.execute(
         """
         INSERT INTO revisoes_usuario
@@ -41,11 +42,11 @@ def sincronizar_revisoes(conn, usuario_id):
         try:
             base = date.fromisoformat(str(registro["concluida_em"] or "")[:10])
         except ValueError:
-            base = date.today()
+            base = relogio.hoje()
         agendar_primeira_revisao(conn, usuario_id, registro["licao_id"], base)
 
 
 def proximo_agendamento(nivel_atual, correta):
     novo_nivel = min(len(INTERVALOS_REVISAO) - 1, nivel_atual + 1) if correta else 0
     intervalo = INTERVALOS_REVISAO[novo_nivel]
-    return novo_nivel, intervalo, (date.today() + timedelta(days=intervalo)).isoformat()
+    return novo_nivel, intervalo, (relogio.hoje() + timedelta(days=intervalo)).isoformat()

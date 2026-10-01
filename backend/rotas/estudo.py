@@ -1,6 +1,5 @@
 """Jornada de módulos, página da lição, exercício de código, desafios teóricos e conclusão."""
 
-from datetime import date, datetime
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
@@ -13,6 +12,7 @@ from backend.compilador.correcao import normalizar_texto
 from backend.conteudo import referencia
 from backend.conteudo.trilha import licoes_vizinhas, modulo_por_id, url_da_licao
 from backend.sessao import usuario_logado
+from backend import relogio
 
 bp = Blueprint("estudo", __name__)
 
@@ -175,7 +175,7 @@ def salvar_rascunho_exercicio():
                           codigo_usuario = excluded.codigo_usuario,
                           atualizado_em = excluded.atualizado_em
             """,
-            (usuario["id"], licao["id"], modulo["id"], str(dados.get("codigo", "")), str(date.today())),
+            (usuario["id"], licao["id"], modulo["id"], str(dados.get("codigo", "")), str(relogio.hoje())),
         )
     return jsonify({"ok": True, "mensagem": "Rascunho salvo."})
 
@@ -201,7 +201,7 @@ def salvar_anotacao(licao_id):
                 ON CONFLICT(usuario_id, licao_id)
                 DO UPDATE SET texto = excluded.texto, atualizado_em = excluded.atualizado_em
                 """,
-                (usuario["id"], licao["id"], texto, datetime.now().isoformat(timespec="seconds")),
+                (usuario["id"], licao["id"], texto, relogio.agora().isoformat(timespec="seconds")),
             )
         else:
             conn.execute(
@@ -252,7 +252,7 @@ def verificar():
                           atualizado_em = excluded.atualizado_em
             """,
             (usuario["id"], licao["id"], modulo["id"], 1 if resultado["todos_corretos"] else 0,
-             resultado["resposta_json"], str(date.today())),
+             resultado["resposta_json"], str(relogio.hoje())),
         )
         if resultado["novo_acerto"]:
             registrar_atividade(conn, usuario["id"], quizzes=1)
@@ -291,7 +291,7 @@ def concluir(licao_id):
         return jsonify({"ok": False, "mensagem": mensagem}), status
 
     exige_codigo = licao["pratica_codigo"]
-    hoje = str(date.today())
+    hoje = str(relogio.hoje())
     with transacao() as conn:
         registro = conn.execute(
             """

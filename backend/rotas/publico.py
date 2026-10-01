@@ -1,6 +1,5 @@
 """Página inicial, cadastro, login e saída."""
 
-from datetime import date
 
 from flask import Blueprint, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -19,6 +18,7 @@ from backend.usuarios import (
     validar_nome,
     validar_nova_senha,
 )
+from backend import relogio
 
 bp = Blueprint("publico", __name__)
 
@@ -67,7 +67,7 @@ def cadastro():
             VALUES (?, ?, ?, 0, 0, 1, ?)
             RETURNING id
             """,
-            (nome, email, generate_password_hash(senha), str(date.today())),
+            (nome, email, generate_password_hash(senha), str(relogio.hoje())),
         ).fetchone()["id"]
 
     _iniciar_sessao(novo_id, lembrar=True)
@@ -113,7 +113,7 @@ def login():
             )
         conn.execute(
             "UPDATE usuarios SET ultimo_acesso = ? WHERE id = ?",
-            (str(date.today()), usuario["id"]),
+            (str(relogio.hoje()), usuario["id"]),
         )
 
     FALHAS_POR_EMAIL.esquecer(chave_email)

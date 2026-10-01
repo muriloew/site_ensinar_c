@@ -30,12 +30,14 @@ class LearningFlowTest(unittest.TestCase):
         cls.site.app.config.update(TESTING=True, SECRET_KEY="test-secret", VERIFICAR_CSRF=False)
         cls.client = cls.site.app.test_client()
 
+        from backend import relogio
         from backend.aluno import gamificacao, situacao, teoria
         from backend.banco import conexao
         from backend.compilador import correcao, historico, terminal
         from backend.conteudo import desafios_diarios, trilha
 
         cls.MODULOS = trilha.MODULOS
+        cls.hoje = staticmethod(relogio.hoje)
         cls.DESAFIOS_DIARIOS = desafios_diarios.DESAFIOS_DIARIOS
         cls.conectar = staticmethod(conexao.conectar)
         cls.usando_postgres = staticmethod(conexao.usando_postgres)
@@ -352,7 +354,7 @@ class LearningFlowTest(unittest.TestCase):
 
     def test_desafio_diario_fica_o_mesmo_no_dia_e_varia_depois(self):
         self.concluir_modulos(1)
-        hoje = date.today()
+        hoje = self.hoje()
         desafio = self.SituacaoAluno(1).desafio_do_dia(hoje.isoformat())
         self.assertEqual(desafio["modulo_id"], 2)
 
@@ -614,7 +616,7 @@ class LearningFlowTest(unittest.TestCase):
                 (usuario_id, licao_id, nivel, proxima_revisao, acertos, erros)
             VALUES (?, ?, 0, ?, 0, 0)
             """,
-            (1, licao["id"], str(date.today())),
+            (1, licao["id"], str(self.hoje())),
         )
         self.historico.registrar_historico_codigo(
             conn, 1, "int main(void){return 0;}", "", "Process returned 0.",

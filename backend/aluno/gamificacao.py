@@ -1,8 +1,9 @@
 """Regras de progresso, sequencia, missoes e conquistas do curso."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from backend.conteudo.trilha import MODULOS, TOTAL_LICOES
+from backend import relogio
 
 XP_POR_NIVEL = 250
 
@@ -127,7 +128,7 @@ def registrar_atividade(
     xp_ganho=0,
     data_atividade=None,
 ):
-    data_atual = date.fromisoformat(data_atividade) if data_atividade else date.today()
+    data_atual = date.fromisoformat(data_atividade) if data_atividade else relogio.hoje()
     data_texto = data_atual.isoformat()
     usuario = conn.execute(
         """
@@ -200,7 +201,7 @@ def definicoes_missoes(desafio_liberado):
 
 
 def obter_missoes_diarias(conn, usuario_id, desafio_liberado, data_texto=None):
-    hoje = data_texto or date.today().isoformat()
+    hoje = data_texto or relogio.hoje().isoformat()
     atividade = conn.execute(
         "SELECT * FROM atividades_estudo WHERE usuario_id = ? AND data = ?",
         (usuario_id, hoje),
@@ -230,7 +231,7 @@ def obter_missoes_diarias(conn, usuario_id, desafio_liberado, data_texto=None):
 
 
 def resgatar_missao(conn, usuario_id, missao_id, desafio_liberado, data_texto=None):
-    hoje = data_texto or date.today().isoformat()
+    hoje = data_texto or relogio.hoje().isoformat()
     missoes = obter_missoes_diarias(conn, usuario_id, desafio_liberado, hoje)
     missao = next((item for item in missoes if item["id"] == missao_id), None)
 
@@ -253,7 +254,7 @@ def resgatar_missao(conn, usuario_id, missao_id, desafio_liberado, data_texto=No
             hoje,
             missao_id,
             missao["recompensa"],
-            datetime.now().isoformat(timespec="seconds"),
+            relogio.agora().isoformat(timespec="seconds"),
         ),
     )
     if cursor.rowcount != 1:
@@ -270,7 +271,7 @@ def resgatar_missao(conn, usuario_id, missao_id, desafio_liberado, data_texto=No
 
 
 def calendario_atividade(conn, usuario_id, quantidade=7, data_referencia=None):
-    hoje = date.fromisoformat(data_referencia) if data_referencia else date.today()
+    hoje = date.fromisoformat(data_referencia) if data_referencia else relogio.hoje()
     inicio = hoje - timedelta(days=quantidade - 1)
     datas_ativas = {
         linha["data"]
@@ -391,7 +392,7 @@ def sincronizar_conquistas(conn, usuario_id):
                 VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (usuario_id, nome) DO NOTHING
                 """,
-                (usuario_id, conquista["nome"], *dados, date.today().isoformat()),
+                (usuario_id, conquista["nome"], *dados, relogio.hoje().isoformat()),
             )
             if cursor.rowcount == 1:
                 novas.append(conquista["nome"])

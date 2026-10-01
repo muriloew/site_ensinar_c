@@ -1,6 +1,5 @@
 """Desafio diário de código: página, rascunho e conclusão."""
 
-from datetime import date
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
@@ -8,6 +7,7 @@ from backend.aluno.gamificacao import adicionar_xp, registrar_atividade, sincron
 from backend.aluno.situacao import SituacaoAluno
 from backend.banco.conexao import transacao
 from backend.sessao import usuario_logado
+from backend import relogio
 
 bp = Blueprint("desafio_diario", __name__)
 
@@ -21,7 +21,7 @@ def desafio_diario():
     if not usuario:
         return redirect(url_for("publico.login"))
 
-    hoje = str(date.today())
+    hoje = str(relogio.hoje())
     situacao = SituacaoAluno(usuario["id"])
     disponiveis, modulo_maximo = situacao.desafios_disponiveis()
     if not disponiveis:
@@ -63,7 +63,7 @@ def salvar_rascunho_desafio():
         return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
 
     dados = request.get_json(silent=True) or {}
-    hoje = str(date.today())
+    hoje = str(relogio.hoje())
     desafio = SituacaoAluno(usuario["id"]).desafio_do_dia(hoje)
     if not desafio:
         return jsonify({"ok": False, "mensagem": MENSAGEM_BLOQUEADO}), 403
@@ -101,7 +101,7 @@ def concluir_desafio_diario():
     if not usuario:
         return jsonify({"ok": False, "mensagem": "Usuário não logado."}), 401
 
-    hoje = str(date.today())
+    hoje = str(relogio.hoje())
     desafio = SituacaoAluno(usuario["id"]).desafio_do_dia(hoje)
     if not desafio:
         return jsonify({"ok": False, "mensagem": MENSAGEM_BLOQUEADO}), 403
