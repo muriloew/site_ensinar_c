@@ -140,23 +140,49 @@ def _obter_pool():
             _registrar_erros_do_pool()
             _pool = ConnectionPool(
                 url,
-                min_size=1,
+                # Nenhuma conexão fica guardada à toa: quando o Neon desliga o banco, não sobra conexão morta.
+                min_size=0,
                 max_size=int(os.environ.get("DB_POOL_MAX", "5")),
                 kwargs={"row_factory": _linha_postgres, "prepare_threshold": None, **PARAMETROS_CONEXAO},
                 # Serviços gratuitos encerram conexões ociosas; o teste evita usar uma já fechada.
                 check=ConnectionPool.check_connection,
-                # Fecha conexões paradas antes dos 5 minutos em que o Neon desliga o banco.
-                max_idle=120,
-                timeout=15,
+                # Fecha conexões paradas bem antes dos 5 minutos em que o Neon desliga o banco.
+                max_idle=60,
+                timeout=10,
                 open=True,
             )
             _pool_url = url
         return _pool
 
 
+def _recriar_pool(travado):
+    """Descarta um pool que parou de entregar conexões; o próximo pedido cria outro."""
+    global _pool
+    with _pool_lock:
+        if _pool is not travado:
+            return  # outra requisição já trocou o pool
+        _pool = None
+    logging.getLogger("psycopg.pool").error(
+        "Pool sem conexões disponíveis; criando outro. Estado do pool antigo: %s", travado.get_stats()
+    )
+    try:
+        travado.close(timeout=1)
+    except Exception:
+        pass
+
+
 def conectar():
     if usando_postgres():
-        return ConexaoPostgres(_obter_pool())
+        from psycopg_pool import PoolTimeout
+
+        pool = _obter_pool()
+        try:
+            return ConexaoPostgres(pool)
+        except PoolTimeout:
+            # Já aconteceu de o pool travar depois que o Neon desligou o banco por falta de uso, e ele só
+            # voltava quando o Render reiniciava o site. Um pool novo resolve na hora.
+            _recriar_pool(pool)
+            return ConexaoPostgres(_obter_pool())
 
     caminho = os.environ.get("DB_PATH") or CAMINHO_SQLITE_PADRAO
     pasta = os.path.dirname(caminho)
