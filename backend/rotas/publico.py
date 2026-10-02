@@ -1,7 +1,7 @@
 """Página inicial, cadastro, login e saída."""
 
 
-from flask import Blueprint, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from backend.banco.conexao import transacao
@@ -30,6 +30,24 @@ def _iniciar_sessao(usuario_id, lembrar):
     session["usuario_id"] = usuario_id
     session["sessao_versao"] = (versao and versao["sessao_versao"]) or 0
     session.permanent = lembrar
+
+
+@bp.route("/saude")
+def saude():
+    """Resposta rápida para monitores de disponibilidade. Não usa o banco, para não acordar o Neon a cada consulta."""
+    return {"site": "ok"}, 200, {"Cache-Control": "no-store"}
+
+
+@bp.route("/saude/banco")
+def saude_banco():
+    """Confere também o banco. Cada consulta acorda o Neon se ele estiver suspenso, então use um intervalo longo."""
+    try:
+        with transacao() as conn:
+            conn.execute("SELECT 1").fetchone()
+    except Exception:
+        current_app.logger.exception("Verificação de saúde: o banco não respondeu")
+        return {"site": "ok", "banco": "erro"}, 503, {"Cache-Control": "no-store"}
+    return {"site": "ok", "banco": "ok"}, 200, {"Cache-Control": "no-store"}
 
 
 @bp.route("/")

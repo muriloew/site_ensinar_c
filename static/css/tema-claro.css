@@ -29,7 +29,7 @@
 :root[data-theme="claro"] .sidebar .sair { color: #be123c; }
 
 :root[data-theme="claro"] :is(.btn-ghost, .quiz button, .history-list button, .answer-list label,
-    .correction-feedback, .toolbar-codeblocks, .exercise-criteria, .dots) {
+    .correction-feedback, .exercise-criteria, .dots) {
     background: rgba(15, 23, 42, .04);
 }
 

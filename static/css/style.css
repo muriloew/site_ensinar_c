@@ -39,6 +39,7 @@ button, input, textarea, select, .btn { max-width: 100%; }
 a { color: inherit; text-decoration: none; }
 
 .public-main { min-height: 100vh; }
+.public-main .error-page { max-width: 760px; margin: 0 auto; padding: 48px 22px; }
 
 .public-nav {
     max-width: 1200px;
@@ -98,6 +99,19 @@ a { color: inherit; text-decoration: none; }
 .btn-disabled {
     opacity: .55;
     cursor: not-allowed;
+}
+
+/* Ícones de traço (templates/layout/icones.html), na cor do texto em volta */
+.icone {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: -3px;
 }
 
 .hero {
@@ -222,10 +236,13 @@ a { color: inherit; text-decoration: none; }
     color: var(--muted);
 }
 
+/* Menu lateral: links em grupos e a conta no rodapé. Até 1100px vira uma barra no topo, aberta pelo botão "Menu". */
 .sidebar {
     position: fixed;
     inset: 0 auto 0 0;
     width: 230px;
+    display: flex;
+    flex-direction: column;
     background: rgba(10,19,34,.95);
     border-right: 1px solid var(--border);
     padding: 22px;
@@ -233,14 +250,16 @@ a { color: inherit; text-decoration: none; }
     overscroll-behavior: contain;
 }
 
-.sidebar nav {
-    margin-top: 36px;
-    display: grid;
-    gap: 10px;
-}
+.sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.menu-toggle { display: none; }
+
+.sidebar nav { margin-top: 22px; display: grid; gap: 2px; align-content: start; flex: 1 0 auto; }
 
 .sidebar nav a {
-    padding: 13px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 9px 12px;
     border-radius: 12px;
     color: var(--muted);
 }
@@ -256,7 +275,115 @@ a { color: inherit; text-decoration: none; }
     box-shadow: inset 3px 0 var(--blue);
 }
 
-.sidebar .sair { color: #fb7185; margin-top: 40px; }
+.sidebar nav a .menu-badge { margin-left: auto; }
+
+.nav-group {
+    margin: 14px 12px 4px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    opacity: .75;
+}
+
+.sidebar-account {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.account-avatar {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--cor-avatar);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.account-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+
+/* No computador o botão Sair mostra só o ícone, para o nome inteiro caber ao lado. */
+.sidebar .sair {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 10px;
+    color: #fb7185;
+    font-size: 14px;
+}
+
+.sidebar .sair:hover { background: rgba(251,113,133,.12); }
+.sidebar .sair span { display: none; }
+
+@media (max-width: 1100px) {
+    .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        width: 100%;
+        padding: 10px 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        overflow: visible;
+    }
+
+    .menu-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        color: var(--text);
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+    }
+
+    .menu-toggle .icone-fechar,
+    .menu-toggle[aria-expanded="true"] .icone-abrir { display: none; }
+    .menu-toggle[aria-expanded="true"] .icone-fechar { display: inline; }
+    .menu-toggle .menu-badge { margin-left: 2px; }
+
+    .sidebar nav,
+    .sidebar-account { display: none; }
+
+    .sidebar.menu-aberto nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 6px;
+        margin-top: 12px;
+        padding-bottom: 4px;
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .sidebar.menu-aberto nav a { gap: 8px; padding: 9px 10px; font-size: 15px; }
+    .sidebar.menu-aberto .nav-group { grid-column: 1 / -1; margin: 8px 4px 0; }
+    .sidebar.menu-aberto .sidebar-account { display: flex; margin-top: 12px; }
+    .sidebar .sair span { display: inline; }
+}
+
+@media (max-width: 700px) {
+    .sidebar nav a { border: 1px solid rgba(255,255,255,.06); }
+}
+
+/* Em celular deitado, a barra do menu não fica presa no topo. */
+@media (max-height: 540px) and (max-width: 1100px) {
+    .sidebar { position: static; }
+}
 
 .app-main {
     margin-left: 230px;
@@ -317,11 +444,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 .mini-stats {
-    grid-template-columns: repeat(4, 1fr);
     margin-bottom: 24px;
 }
 
 .mini-stats .card span { font-size: 28px; }
+.mini-stats .card > span .icone, .mission-token .icone { width: 20px; height: 20px; vertical-align: middle; }
+.feature-grid .card > span .icone { width: 22px; height: 22px; vertical-align: middle; }
 .mini-stats strong { display: block; font-size: 24px; margin-top: 8px; }
 
 .content-grid {
@@ -419,12 +547,6 @@ a { color: inherit; text-decoration: none; }
 }
 
 .back { margin-bottom: 12px; }
-
-.lesson-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 
 .theory-lead {
     color: var(--text);
@@ -740,11 +862,6 @@ a { color: inherit; text-decoration: none; }
     .content-grid,
     .study-layout {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .sidebar {
-        position: static;
-        width: auto;
     }
 
     .app-main {
@@ -1130,9 +1247,14 @@ a { color: inherit; text-decoration: none; }
     margin-top: 14px;
 }
 
+/* As barras de botões do editor ficam presas embaixo da tela enquanto o código é rolado. */
 .toolbar-codeblocks {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
     border: 1px solid var(--border);
-    background: rgba(255,255,255,.035);
+    background: var(--panel-2);
+    box-shadow: 0 -10px 24px rgba(0,0,0,.28);
     border-radius: 14px;
     padding: 12px;
 }
@@ -1543,10 +1665,11 @@ li.CodeMirror-hint-active {
     margin-bottom: 18px;
 }
 
+/* clip (e não hidden) para a barra de botões continuar presa embaixo ao rolar a página. */
 .codeblocks-editor-shell {
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow: hidden;
+    overflow: clip;
     background: #0a1322;
 }
 
@@ -1568,46 +1691,16 @@ li.CodeMirror-hint-active {
 }
 
 .codeblocks-bottom-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
     display: flex;
     gap: 10px;
     padding: 12px;
-    background: #101827;
+    background: var(--panel-2);
+    box-shadow: 0 -10px 24px rgba(0,0,0,.28);
     border-top: 1px solid var(--border);
     flex-wrap: wrap;
-}
-
-.terminal-real-body {
-    display: flex;
-    flex-direction: column;
-}
-
-.terminal-real-input {
-    display: inline-block;
-    min-width: 260px;
-    max-width: 90%;
-    height: 26px;
-    background: transparent;
-    color: #ffffff;
-    border: none;
-    outline: none;
-    resize: none;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 16px;
-    vertical-align: top;
-    overflow: hidden;
-}
-
-.terminal-final-output {
-    margin: 0;
-    color: #f5f5f5;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 16px;
-    line-height: 1.35;
-    white-space: pre-wrap;
-}
-
-.hidden-hint {
-    display: none;
 }
 
 .correction-feedback {
@@ -1652,19 +1745,6 @@ li.CodeMirror-hint-active {
     overflow: hidden;
 }
 
-.terminal-final-output {
-    margin: 0;
-    color: #f5f5f5;
-    font-family: Consolas, "Courier New", monospace;
-    font-size: 16px;
-    line-height: 1.35;
-    white-space: pre-wrap;
-}
-
-.hidden-hint {
-    display: none;
-}
-
 .terminal-real-line {
     width: 100%;
     border: none;
@@ -1684,6 +1764,10 @@ li.CodeMirror-hint-active {
     flex: 1;
     min-height: 0;
     margin: 0;
+    color: #f5f5f5;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 16px;
+    line-height: 1.35;
     white-space: pre-wrap;
     overflow: auto;
 }
@@ -1933,40 +2017,6 @@ li.CodeMirror-hint-active {
 }
 
 @media (max-width: 700px) {
-    .sidebar {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        width: auto;
-        padding: 10px 12px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-    }
-
-    .sidebar nav {
-        margin-top: 10px;
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        scrollbar-width: none;
-    }
-
-    .sidebar nav::-webkit-scrollbar {
-        display: none;
-    }
-
-    .sidebar nav a {
-        flex: 0 0 auto;
-        padding: 10px 12px;
-        border: 1px solid rgba(255,255,255,.06);
-        white-space: nowrap;
-    }
-
-    .sidebar .sair {
-        margin-top: 0;
-    }
-
     .app-main {
         padding: 16px;
     }
@@ -2047,10 +2097,6 @@ li.CodeMirror-hint-active {
     .exam-form .btn {
         width: 100%;
         text-align: center;
-    }
-
-    .topbar h1 {
-        font-size: 30px;
     }
 
     .hero h1 {
@@ -2687,31 +2733,6 @@ li.CodeMirror-hint-active {
     .mission-grid, .achievement-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 1100px) {
-    .sidebar {
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        width: 100%;
-        padding: 10px 16px;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        overflow: visible;
-    }
-    .sidebar nav {
-        display: flex;
-        gap: 8px;
-        margin-top: 10px;
-        padding-bottom: 4px;
-        overflow-x: auto;
-        scrollbar-width: thin;
-    }
-    .sidebar nav::-webkit-scrollbar { display: block; height: 4px; }
-    .sidebar nav a { flex: 0 0 auto; padding: 10px 12px; white-space: nowrap; }
-    .sidebar .sair { margin-top: 0; }
-    .app-main { margin-left: 0; }
-}
-
 body.console-aberto { overflow: hidden; }
 
 @media (max-width: 540px) {
@@ -2738,10 +2759,6 @@ body.console-aberto { overflow: hidden; }
     .build-log { max-height: 72px; }
     .console-footer { padding: 6px 10px; }
     .console-footer .btn { padding: 8px 14px; }
-}
-
-@media (max-height: 540px) and (max-width: 1100px) {
-    .sidebar { position: static; }
 }
 
 /* Configurações */
@@ -3131,6 +3148,7 @@ kbd {
 .notification-item:hover { border-color: var(--blue); }
 .notification-item.unread { border-left: 4px solid var(--blue); background: var(--panel-2); }
 .notification-icon { font-size: 22px; line-height: 1.2; }
+.notification-icon .icone { width: 22px; height: 22px; color: var(--blue); }
 .notification-text { display: grid; gap: 4px; min-width: 0; }
 .notification-text span { color: var(--muted); overflow-wrap: anywhere; }
 .notification-text small { color: var(--muted); font-size: 13px; }
@@ -3163,129 +3181,3 @@ kbd {
 .teacher-notices li div { display: grid; gap: 3px; min-width: 0; }
 .teacher-notices span { color: var(--muted); overflow-wrap: anywhere; }
 .teacher-notices small { color: var(--muted); font-size: 13px; }
-
-/* Ícones de traço (templates/layout/icones.html) */
-.icone {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    vertical-align: -3px;
-}
-
-/* Menu lateral agrupado, com a conta no rodapé */
-.sidebar { display: flex; flex-direction: column; }
-.sidebar-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.menu-toggle { display: none; }
-.sidebar nav { margin-top: 22px; display: grid; gap: 2px; align-content: start; flex: 1 0 auto; }
-.sidebar nav a { display: flex; align-items: center; gap: 11px; padding: 9px 12px; }
-.sidebar nav a .menu-badge { margin-left: auto; }
-
-.nav-group {
-    margin: 14px 12px 4px;
-    color: var(--muted);
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    opacity: .75;
-}
-
-.sidebar-account {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-}
-
-.account-avatar {
-    width: 32px;
-    height: 32px;
-    flex-shrink: 0;
-    display: grid;
-    place-items: center;
-    border-radius: 50%;
-    background: var(--cor-avatar);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 800;
-}
-
-.account-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
-.sidebar .sair { margin-top: 0; display: flex; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 10px; font-size: 14px; }
-.sidebar .sair:hover { background: rgba(251,113,133,.12); }
-
-/* Ícones nos cartões de números e nas missões */
-.mini-stats .card > span .icone, .mission-token .icone { width: 20px; height: 20px; vertical-align: middle; }
-.notification-icon .icone { width: 22px; height: 22px; color: var(--blue); }
-
-@media (max-width: 1100px) {
-    .sidebar-account { display: none; }
-    .sidebar nav { display: none; }
-
-    .menu-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 9px 14px;
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        background: var(--panel);
-        color: var(--text);
-        font: inherit;
-        font-weight: 700;
-        cursor: pointer;
-    }
-
-    .menu-toggle .icone-fechar,
-    .menu-toggle[aria-expanded="true"] .icone-abrir { display: none; }
-    .menu-toggle[aria-expanded="true"] .icone-fechar { display: inline; }
-    .menu-toggle .menu-badge { margin-left: 2px; }
-
-    .sidebar.menu-aberto nav {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-        gap: 6px;
-        margin-top: 12px;
-        max-height: calc(100vh - 150px);
-        overflow-y: auto;
-        overflow-x: visible;
-    }
-
-    .sidebar.menu-aberto nav a { white-space: normal; }
-    .sidebar.menu-aberto .nav-group { grid-column: 1 / -1; margin: 8px 4px 0; }
-    .sidebar.menu-aberto .sidebar-account { display: flex; margin-top: 12px; }
-}
-
-/* Botões de compilar sempre à vista enquanto o código é editado */
-.codeblocks-editor-shell { overflow: clip; }
-
-.codeblocks-bottom-bar,
-.toolbar-codeblocks {
-    position: sticky;
-    bottom: 0;
-    z-index: 5;
-    background: var(--panel-2);
-    box-shadow: 0 -10px 24px rgba(0,0,0,.28);
-}
-
-/* Página de erro também com margens quando não há menu */
-.public-main .error-page { max-width: 760px; margin: 0 auto; padding: 48px 22px; }
-
-/* Retoques do menu: nome inteiro no computador e textos sem quebra no celular */
-@media (min-width: 1101px) {
-    .sidebar .sair span { display: none; }
-}
-
-@media (max-width: 1100px) {
-    .sidebar.menu-aberto nav a { gap: 8px; padding: 9px 10px; font-size: 15px; }
-}
-
-.btn .icone { vertical-align: -3px; }
-.feature-grid .card > span .icone { width: 22px; height: 22px; vertical-align: middle; }

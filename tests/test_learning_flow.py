@@ -195,6 +195,28 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn("Sua jornada em C", jornada)
         self.assertEqual(jornada.count('class="journey-step'), 21)
 
+    def test_verificacao_de_saude_para_monitores(self):
+        from backend.rotas import publico
+
+        visitante = self.site.app.test_client()
+        resposta = visitante.get("/saude")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta.get_json(), {"site": "ok"})
+        self.assertEqual(resposta.headers["Cache-Control"], "no-store")
+
+        with patch.object(publico, "transacao", side_effect=AssertionError("/saude não deve usar o banco")):
+            self.assertEqual(visitante.get("/saude").status_code, 200)
+
+        resposta = visitante.get("/saude/banco")
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta.get_json(), {"site": "ok", "banco": "ok"})
+
+        with patch.object(publico, "transacao", side_effect=RuntimeError("banco fora do ar")):
+            with self.assertLogs(self.site.app.logger, level="ERROR"):
+                resposta = visitante.get("/saude/banco")
+        self.assertEqual(resposta.status_code, 503)
+        self.assertEqual(resposta.get_json(), {"site": "ok", "banco": "erro"})
+
     def test_compilador_livre_aceita_terminal_interativo(self):
         cliente_socket = self.site.socketio.test_client(
             self.site.app,

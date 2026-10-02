@@ -146,6 +146,13 @@ Sem essas variáveis, a página "Esqueci minha senha" orienta o aluno a pedir ao
 
 O serviço deve ser do tipo **Docker**, pois o compilador precisa de GCC, TCC e WebSocket. O `render.yaml` já aponta para o `Dockerfile`. Com o Auto-Deploy ativo, cada `git push` publica uma nova versão.
 
+## Monitoramento
+
+O site tem duas páginas de verificação para serviços de monitoramento (como o UptimeRobot):
+
+- `/saude` responde `{"site": "ok"}` sem consultar o banco. Pode ser verificada a cada 5 minutos, pois não acorda o Neon. É também o *Health Check Path* do Render.
+- `/saude/banco` faz um `SELECT 1` e responde 503 se o banco não responder. Cada consulta acorda o Neon e gasta horas de computação do plano gratuito, então use um intervalo longo, como 1 hora.
+
 ## Testes
 
 ```bash

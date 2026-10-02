@@ -410,3 +410,10 @@ python app.py
 - **Botões do editor sempre à vista:** no exercício e no desafio diário, a barra com Compilar, Limpar e Concluir fica presa na parte de baixo da tela enquanto o código é editado.
 - **Títulos das lições** começam com maiúscula ("Soma", "Constantes"), menos os que são nomes da linguagem, que continuam como se escrevem no código (`printf`, `malloc`, `else if`). O filtro `titulo_licao` faz isso na exibição, sem mudar os dados.
 - **Página de erro** com margens e centralizada também para quem não está logado.
+
+
+## Versão 36 — Monitoramento e CSS reorganizado
+
+- **Páginas de verificação para monitores:** `/saude` responde `{"site": "ok"}` sem consultar o banco, então pode ser verificada a cada 5 minutos sem acordar o Neon; `/saude/banco` faz um `SELECT 1` e responde 503 se o banco não responder. O `render.yaml` usa `/saude` como *Health Check Path*. O README explica como usar as duas.
+- **CSS reorganizado:** as regras do menu, que estavam espalhadas em oito lugares do `style.css` e se sobrescreviam, ficaram numa seção só; os ícones e a barra de botões presa do editor saíram do fim do arquivo e foram para junto dos componentes; o terminal, que tinha as mesmas regras escritas três vezes, ficou com uma; e foram removidas regras repetidas que já não tinham efeito. O arquivo passou de 3291 para 3183 linhas. Antes e depois, a posição e o estilo de cada elemento de todas as páginas foram comparados em nove tamanhos de tela e nos dois temas, e nada mudou na tela.
+- **Correção no tema claro:** a barra de botões presa do desafio diário ficava quase transparente e deixava o código aparecer por trás dos botões; agora tem fundo sólido, como no exercício.
