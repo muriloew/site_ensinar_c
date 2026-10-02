@@ -16,7 +16,7 @@
     <article class="saved-lesson-card">
         <div>
             <span>Módulo {{ item.modulo.id }}</span>
-            <h2>{{ item.licao.titulo }}</h2>
+            <h2>{{ item.licao.titulo|titulo_licao }}</h2>
             <p>{{ item.modulo.titulo }}</p>
         </div>
         <div class="saved-lesson-actions">

@@ -95,6 +95,23 @@ window.cabecalhosEnvio = function (extras = {}) {
         });
     });
 
+    // Em telas menores, o menu fica recolhido atrás do botão "Menu".
+    const botaoMenu = document.querySelector('.menu-toggle');
+    if (botaoMenu) {
+        const barra = botaoMenu.closest('.sidebar');
+        const definirMenu = (aberto) => {
+            barra.classList.toggle('menu-aberto', aberto);
+            botaoMenu.setAttribute('aria-expanded', aberto ? 'true' : 'false');
+        };
+        botaoMenu.addEventListener('click', () => definirMenu(!barra.classList.contains('menu-aberto')));
+        document.addEventListener('keydown', (evento) => {
+            if (evento.key === 'Escape' && barra.classList.contains('menu-aberto')) {
+                definirMenu(false);
+                botaoMenu.focus();
+            }
+        });
+    }
+
     const menu = document.querySelector('.sidebar nav');
     if (menu) {
         const caminho = /^\/(estudar|exercicio)\//.test(location.pathname)

@@ -158,7 +158,7 @@
             <div class="activity-list">
                 {% for item in desempenho.atividades %}
                 <div>
-                    <strong>{{ item.licao }}</strong>
+                    <strong>{{ item.licao|titulo_licao }}</strong>
                     <span>{{ item.modulo }} · {{ item.data }}</span>
                 </div>
                 {% else %}

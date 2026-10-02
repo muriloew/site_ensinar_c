@@ -34,7 +34,7 @@
                 <p>Você completou todos os módulos disponíveis.</p>
                 <a class="btn btn-primary" href="/modulos">Revisar jornada</a>
             {% else %}
-                <h2>{{ proxima_licao.licao }}</h2>
+                <h2>{{ proxima_licao.licao|titulo_licao }}</h2>
                 <p>Módulo {{ proxima_licao.modulo_id }} · {{ proxima_licao.modulo }}</p>
                 <div class="mission-progress-line">
                     <span>{{ proxima_licao.progresso }}% do módulo</span>
@@ -91,7 +91,7 @@
     <div class="mission-grid">
         {% for missao in missoes %}
         <article class="mission-card {% if missao.resgatada %}claimed{% elif missao.concluida %}ready{% endif %}">
-            <div class="mission-token">{{ missao.icone }}</div>
+            <div class="mission-token">{{ icone({"aquecimento": "pergunta", "passo_da_trilha": "livro", "desafio_do_dia": "alvo", "base_solida": "escudo"}.get(missao.id, "estrela")) }}</div>
             <div class="mission-body">
                 <div class="mission-title-row">
                     <h3>{{ missao.titulo }}</h3>
@@ -118,10 +118,10 @@
 </section>
 
 <section class="mini-stats game-stats">
-    <div class="card"><span>XP</span><strong>{{ usuario.xp }}</strong><p>experiência total</p></div>
-    <div class="card"><span>C</span><strong>{{ concluidas }}</strong><p>lições concluídas</p></div>
-    <div class="card"><span>A</span><strong>{{ conquistas|length }}</strong><p>conquistas</p></div>
-    <a class="card stat-link" href="/acompanhamento"><span>{{ usuario.nivel }}</span><strong>{{ liga.nome }}</strong><p>ver acompanhamento</p></a>
+    <div class="card"><span>{{ icone("raio") }}</span><strong>{{ usuario.xp }}</strong><p>experiência total</p></div>
+    <div class="card"><span>{{ icone("check") }}</span><strong>{{ concluidas }}</strong><p>lições concluídas</p></div>
+    <div class="card"><span>{{ icone("trofeu") }}</span><strong>{{ conquistas|length }}</strong><p>conquistas</p></div>
+    <a class="card stat-link" href="/acompanhamento"><span>{{ icone("escudo") }}</span><strong>{{ liga.nome }}</strong><p>ver acompanhamento</p></a>
 </section>
 
 <section class="content-grid game-content-grid">

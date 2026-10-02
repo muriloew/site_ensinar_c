@@ -1,6 +1,6 @@
 {% extends "layout/base.html" %}
 {% block head %}{% include "layout/editor_head.html" %}{% endblock %}
-{% block title %}Exercício - {{ licao.titulo }}{% endblock %}
+{% block title %}Exercício - {{ licao.titulo|titulo_licao }}{% endblock %}
 
 {% block content %}
 <div class="exercise-compiler-page">
@@ -9,7 +9,7 @@
             <div>
                 <a href="/estudar/{{ modulo.id }}?licao={{ licao.id }}" class="back">← Voltar para teoria</a>
                 <h1>Exercício de código</h1>
-                <p>{{ modulo.titulo }} — {{ licao.titulo }}</p>
+                <p>{{ modulo.titulo }} — {{ licao.titulo|titulo_licao }}</p>
             </div>
 
             <a class="btn btn-ghost" href="/modulos">Módulos</a>
@@ -48,7 +48,7 @@
             <div id="statusSalvamento" class="save-status">Rascunho salvo automaticamente.</div>
 
             <div class="codeblocks-bottom-bar">
-                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">⚙️ Compilar</button>
+                <button class="btn btn-primary" onclick="compilarReal({{ licao.id }}, 'licao')">{{ icone("executar") }} Compilar</button>
                 <button class="btn btn-ghost" onclick="limparTerminalReal()">Limpar</button>
                 <button class="btn btn-ghost" type="button" onclick="restaurarCodigoInicial()">Restaurar código inicial</button>
                 <button class="btn btn-primary" onclick="concluirLicao({{ licao.id }})">Concluir lição</button>

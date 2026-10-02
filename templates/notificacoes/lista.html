@@ -19,7 +19,7 @@
 <section class="notification-list">
     {% for item in itens %}
     <a class="notification-item{% if not item.lida %} unread{% endif %}" href="/notificacoes/{{ item.id }}">
-        <span class="notification-icon" aria-hidden="true">{{ item.icone }}</span>
+        <span class="notification-icon" aria-hidden="true">{{ icone(item.icone) }}</span>
         <span class="notification-text">
             <strong>{{ item.titulo }}</strong>
             {% if item.mensagem %}<span>{{ item.mensagem }}</span>{% endif %}

@@ -22,6 +22,14 @@ from backend.sessao import usuario_logado
 from backend.usuarios import eh_professor
 
 
+# Títulos de lição que são nomes da linguagem C ou de ferramentas e ficam como se escrevem no código.
+TERMOS_DA_LINGUAGEM = {
+    "printf", "scanf", "int", "float", "char", "if", "else", "switch", "while", "do", "for", "break", "continue",
+    "strlen", "strcpy", "strcmp", "strcat", "fgets", "malloc", "calloc", "realloc", "free", "typedef", "enum",
+    "fopen", "fclose", "fprintf", "fscanf", "stdio", "stdlib", "string", "math", "gcc", "makefile",
+}
+
+
 def criar_app():
     app = Flask(__name__)
     app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
@@ -86,6 +94,21 @@ def criar_app():
             "total_licoes": TOTAL_LICOES,
             "csrf_token": token_csrf,
         }
+
+    @app.template_global("icone")
+    def icone(nome, classe=""):
+        """Ícone do conjunto em templates/layout/icones.html, com a cor do texto em volta."""
+        return Markup(
+            f'<svg class="icone {escape(classe)}" aria-hidden="true" focusable="false"><use href="#i-{escape(nome)}"/></svg>'
+        )
+
+    @app.template_filter("titulo_licao")
+    def titulo_licao(titulo):
+        """Primeira letra maiúscula ("soma" vira "Soma"), menos em nomes da linguagem, como printf e malloc."""
+        titulo = str(titulo or "")
+        if not titulo or not titulo[0].isalpha() or titulo.split()[0] in TERMOS_DA_LINGUAGEM:
+            return titulo
+        return titulo[0].upper() + titulo[1:]
 
     @app.template_filter("data_hora")
     def data_hora(texto):

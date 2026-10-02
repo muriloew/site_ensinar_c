@@ -16,7 +16,7 @@ LIMITE_LISTA = 50
 TAMANHO_TITULO = 80
 TAMANHO_MENSAGEM = 500
 
-ICONES = {"desafio": "🎯", "modulo": "🔓", "revisao": "↻", "aviso": "📣"}
+ICONES = {"desafio": "alvo", "modulo": "cadeado", "revisao": "revisao", "aviso": "megafone"}
 
 
 def criar(conn, usuario_id, chave, tipo, titulo, mensagem="", link=""):
@@ -78,7 +78,7 @@ def listar(conn, usuario_id):
     linhas = conn.execute(
         f"SELECT * FROM notificacoes WHERE usuario_id = ? ORDER BY id DESC LIMIT {LIMITE_LISTA}", (usuario_id,)
     ).fetchall()
-    return [{**dict(zip(linha.keys(), linha)), "icone": ICONES.get(linha["tipo"], "🔔")} for linha in linhas]
+    return [{**dict(zip(linha.keys(), linha)), "icone": ICONES.get(linha["tipo"], "sino")} for linha in linhas]
 
 
 def marcar_lida(conn, usuario_id, notificacao_id):

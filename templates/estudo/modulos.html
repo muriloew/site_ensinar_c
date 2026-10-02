@@ -27,7 +27,7 @@
             <h2>Jornada concluída</h2>
             <p>Todos os módulos estão disponíveis para revisão.</p>
         {% else %}
-            <h2>{{ proxima_licao.licao }}</h2>
+            <h2>{{ proxima_licao.licao|titulo_licao }}</h2>
             <p>Módulo {{ proxima_licao.modulo_id }} · {{ proxima_licao.modulo }}</p>
         {% endif %}
     </div>

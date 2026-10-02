@@ -36,29 +36,48 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tema-claro.css') }}">
 </head>
 <body>
+{% include "layout/icones.html" %}
 {% if usuario %}
+{% set nao_lidas_texto = notificacoes_nao_lidas if notificacoes_nao_lidas < 100 else "99+" %}
 <aside class="sidebar">
-    <a href="/dashboard" class="brand">
-        <span class="brand-icon">C</span>
-        <strong>Ensinar C</strong>
-    </a>
+    <div class="sidebar-top">
+        <a href="/dashboard" class="brand">
+            <span class="brand-icon">C</span>
+            <strong>Ensinar C</strong>
+        </a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="menuPrincipal">
+            {{ icone("menu", "icone-abrir") }}{{ icone("fechar", "icone-fechar") }}<span>Menu</span>
+            {% if notificacoes_nao_lidas %}<span class="menu-badge" aria-label="{{ notificacoes_nao_lidas }} notificações não lidas">{{ nao_lidas_texto }}</span>{% endif %}
+        </button>
+    </div>
 
-    <nav aria-label="Menu principal">
-        <a href="/dashboard">🏠 Painel</a>
-        <a href="/notificacoes">🔔 Notificações{% if notificacoes_nao_lidas %} <span class="menu-badge" aria-label="{{ notificacoes_nao_lidas }} não lidas">{{ notificacoes_nao_lidas if notificacoes_nao_lidas < 100 else "99+" }}</span>{% endif %}</a>
-        <a href="/modulos">📚 Módulos</a>
-        <a href="/desafio-diario">🎯 Desafio diário</a>
-        <a href="/revisao">↻ Revisão</a>
-        <a href="/favoritos">★ Favoritos</a>
-        <a href="/simulado">📝 Simulado</a>
-        <a href="/referencia">📖 Consulta rápida</a>
-        <a href="/compilador">💻 Prática livre</a>
-        <a href="/historico-codigos">⌛ Histórico</a>
-        <a href="/acompanhamento">📈 Acompanhamento</a>
-        <a href="/configuracoes">⚙️ Configurações</a>
-        {% if professor %}<a href="/professor">🧑‍🏫 Professor</a>{% endif %}
-        <a href="/sair" class="sair">↩ Sair</a>
+    <nav id="menuPrincipal" aria-label="Menu principal">
+        <a href="/dashboard">{{ icone("painel") }}<span>Painel</span></a>
+        <a href="/notificacoes">{{ icone("sino") }}<span>Notificações</span>{% if notificacoes_nao_lidas %}<span class="menu-badge" aria-label="{{ notificacoes_nao_lidas }} não lidas">{{ nao_lidas_texto }}</span>{% endif %}</a>
+
+        <p class="nav-group">Estudar</p>
+        <a href="/modulos">{{ icone("livro") }}<span>Módulos</span></a>
+        <a href="/revisao">{{ icone("revisao") }}<span>Revisão</span></a>
+        <a href="/favoritos">{{ icone("estrela") }}<span>Favoritos</span></a>
+        <a href="/referencia">{{ icone("busca") }}<span>Consulta rápida</span></a>
+
+        <p class="nav-group">Praticar</p>
+        <a href="/desafio-diario">{{ icone("alvo") }}<span>Desafio diário</span></a>
+        <a href="/compilador">{{ icone("codigo") }}<span>Prática livre</span></a>
+        <a href="/simulado">{{ icone("prova") }}<span>Simulado</span></a>
+        <a href="/historico-codigos">{{ icone("relogio") }}<span>Histórico</span></a>
+
+        <p class="nav-group">Você</p>
+        <a href="/acompanhamento">{{ icone("grafico") }}<span>Acompanhamento</span></a>
+        <a href="/configuracoes">{{ icone("ajustes") }}<span>Configurações</span></a>
+        {% if professor %}<a href="/professor">{{ icone("turma") }}<span>Professor</span></a>{% endif %}
     </nav>
+
+    <div class="sidebar-account">
+        <span class="account-avatar" aria-hidden="true">{{ usuario.nome[:1]|upper }}</span>
+        <span class="account-name" title="{{ usuario.nome }}">{{ usuario.nome }}</span>
+        <a href="/sair" class="sair" title="Sair da conta">{{ icone("sair") }}<span>Sair</span></a>
+    </div>
 </aside>
 {% endif %}
 

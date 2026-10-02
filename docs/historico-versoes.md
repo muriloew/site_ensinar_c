@@ -400,3 +400,13 @@ python app.py
 - **Avisos para a turma:** no painel do professor, um formulário envia um aviso (título, mensagem e link opcional para uma página do site) que aparece nas notificações de todos os alunos, inclusive de quem se cadastrar nos 30 dias seguintes. O professor pode excluir um aviso, e ele some das notificações.
 - Em Configurações → Estudo, "Lembretes de estudo" desliga os avisos de desafio do dia e de revisões; módulos liberados e avisos do professor continuam aparecendo.
 - Tabelas novas `notificacoes` e `avisos`, criadas sozinhas ao iniciar; a exclusão da conta apaga as notificações do aluno, e o script de migração leva as duas tabelas.
+
+
+## Versão 35 — Revisão do design
+
+- **Menu agrupado:** os itens foram organizados em Estudar (Módulos, Revisão, Favoritos, Consulta rápida), Praticar (Desafio diário, Prática livre, Simulado, Histórico) e Você (Acompanhamento, Configurações, Professor). O nome do aluno e o botão Sair ficam no rodapé do menu.
+- **Celular e tablet:** o menu fica recolhido atrás de um botão "Menu" (com o contador de notificações) e abre a lista completa em grade, em vez de uma faixa horizontal em que a maioria dos itens ficava escondida. A tecla Esc fecha o menu.
+- **Ícones:** emojis, símbolos de texto e letras soltas (como "XP", "C", "7D") foram trocados por um único conjunto de ícones de traço em `templates/layout/icones.html`, usados com `{{ icone("nome") }}`. Eles aparecem iguais em qualquer aparelho e seguem a cor do tema.
+- **Botões do editor sempre à vista:** no exercício e no desafio diário, a barra com Compilar, Limpar e Concluir fica presa na parte de baixo da tela enquanto o código é editado.
+- **Títulos das lições** começam com maiúscula ("Soma", "Constantes"), menos os que são nomes da linguagem, que continuam como se escrevem no código (`printf`, `malloc`, `else if`). O filtro `titulo_licao` faz isso na exibição, sem mudar os dados.
+- **Página de erro** com margens e centralizada também para quem não está logado.

@@ -21,7 +21,7 @@
         <form class="review-challenge-card" method="post" action="/revisao/{{ item.licao.id }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <span>Módulo {{ item.modulo.id }} · {{ item.modulo.titulo }}</span>
-            <h2>{{ item.licao.titulo }}</h2>
+            <h2>{{ item.licao.titulo|titulo_licao }}</h2>
             <p class="review-question">{{ item.licao.pergunta }}</p>
             <div class="review-options">
                 {% for alternativa in item.licao.alternativas %}
@@ -50,7 +50,7 @@
         {% for item in proximas %}
         <div class="upcoming-review-row">
             <div>
-                <strong>{{ item.licao.titulo }}</strong>
+                <strong>{{ item.licao.titulo|titulo_licao }}</strong>
                 <span>Módulo {{ item.modulo.id }}</span>
             </div>
             <time>{{ item.registro.proxima_revisao }}</time>

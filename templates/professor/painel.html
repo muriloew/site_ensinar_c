@@ -19,10 +19,10 @@
 {% endif %}
 
 <section class="mini-stats game-stats teacher-stats">
-    <div class="card"><span>A</span><strong>{{ resumo.alunos }}</strong><p>alunos cadastrados</p></div>
-    <div class="card"><span>7D</span><strong>{{ resumo.ativos }}</strong><p>estudaram nos últimos 7 dias</p></div>
-    <div class="card"><span>%</span><strong>{{ resumo.progresso_medio }}%</strong><p>progresso médio da turma</p></div>
-    <div class="card"><span>L</span><strong>{{ resumo.licoes_concluidas }}</strong><p>lições concluídas no total</p></div>
+    <div class="card"><span>{{ icone("turma") }}</span><strong>{{ resumo.alunos }}</strong><p>alunos cadastrados</p></div>
+    <div class="card"><span>{{ icone("calendario") }}</span><strong>{{ resumo.ativos }}</strong><p>estudaram nos últimos 7 dias</p></div>
+    <div class="card"><span>{{ icone("grafico") }}</span><strong>{{ resumo.progresso_medio }}%</strong><p>progresso médio da turma</p></div>
+    <div class="card"><span>{{ icone("check") }}</span><strong>{{ resumo.licoes_concluidas }}</strong><p>lições concluídas no total</p></div>
 </section>
 
 <section class="card teacher-section" id="avisos">
@@ -113,7 +113,7 @@
             <tbody>
                 {% for item in dificuldades %}
                 <tr>
-                    <td>{{ item.licao }}</td>
+                    <td>{{ item.licao|titulo_licao }}</td>
                     <td>{{ item.modulo }}</td>
                     <td>{{ item.falhas }} de {{ item.tentativas }}</td>
                     <td>{{ item.taxa_sucesso }}%</td>

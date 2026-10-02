@@ -810,7 +810,26 @@ class LearningFlowTest(unittest.TestCase):
         self.assertTrue(antigo.location.endswith("/acompanhamento"))
         pagina = self.client.get("/acompanhamento").get_data(as_text=True)
         self.assertIn("<h1>Acompanhamento</h1>", pagina)
-        self.assertIn('href="/acompanhamento">📈 Acompanhamento</a>', pagina)
+        self.assertRegex(pagina, r'href="/acompanhamento"><svg class="icone[^"]*"[^>]*><use href="#i-grafico"/></svg>'
+                                 r'<span>Acompanhamento</span></a>')
+
+    def test_menu_agrupado_e_titulos_das_licoes(self):
+        pagina = self.client.get("/dashboard").get_data(as_text=True)
+        for grupo in ("Estudar", "Praticar", "Você"):
+            self.assertIn(f'<p class="nav-group">{grupo}</p>', pagina)
+        self.assertIn('class="menu-toggle"', pagina)
+        self.assertIn('<span class="account-name" title="Aluno Teste">Aluno Teste</span>', pagina)
+        self.assertIn('<symbol id="i-painel"', pagina)
+
+        titulo = self.site.app.jinja_env.filters["titulo_licao"]
+        self.assertEqual(titulo("soma"), "Soma")
+        self.assertEqual(titulo("operador &"), "Operador &")
+        for nome_da_linguagem in ("printf", "else if", "malloc", "#define", ".h", "float e double"):
+            self.assertEqual(titulo(nome_da_linguagem), nome_da_linguagem)
+        self.concluir_modulos(1, 2, 3)
+        licao = self.client.get("/estudar/4?licao=13")
+        self.assertEqual(licao.status_code, 200)
+        self.assertIn("<h1>Soma</h1>", licao.get_data(as_text=True))
 
     def test_erro_interno_mostra_pagina_amigavel_com_codigo(self):
         from backend.rotas import publico
