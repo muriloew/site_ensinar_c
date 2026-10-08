@@ -1,0 +1,19 @@
+name: Manter o site acordado
+
+# O Render gratuito desliga o site depois de 15 minutos sem acessos, e a próxima visita espera ele ligar de novo.
+# Acessar /saude a cada 10 minutos evita isso; essa página não consulta o banco, então o Neon continua livre para
+# suspender quando ninguém usa o site. Se o site estiver fora do ar, a execução falha e o GitHub avisa por e-mail.
+# O GitHub pode atrasar execuções agendadas em horários de muito uso.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  acessar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Acessa a página de verificação
+        run: curl -fsS --max-time 90 --retry 2 --retry-delay 10 https://site-ensinar-c-3.onrender.com/saude

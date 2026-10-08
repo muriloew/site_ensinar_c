@@ -156,6 +156,8 @@ O site tem duas páginas de verificação para serviços de monitoramento (como 
 - `/saude` responde `{"site": "ok"}` sem consultar o banco. Pode ser verificada a cada 5 minutos, pois não acorda o Neon. É também o *Health Check Path* do Render.
 - `/saude/banco` faz um `SELECT 1` e responde 503 se o banco não responder. Cada consulta acorda o Neon e gasta horas de computação do plano gratuito, então use um intervalo longo, como 1 hora.
 
+O workflow `.github/workflows/manter-acordado.yml` acessa `/saude` a cada 10 minutos, para o Render gratuito não desligar o site por falta de acessos (o que deixa a primeira visita lenta). Se o site estiver fora do ar, a execução falha e o GitHub avisa por e-mail. O GitHub desativa workflows agendados de repositórios sem commits por 60 dias; nesse caso, reative em *Actions*.
+
 ## Testes
 
 ```bash

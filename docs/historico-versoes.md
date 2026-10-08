@@ -427,3 +427,9 @@ python app.py
 - **A explicação só aparece depois do acerto**, para uma tentativa errada não entregar a resposta.
 - **Revisão e simulado variados:** antes eles mostravam sempre a primeira pergunta de cada lição; agora cada dia sorteia uma das quatro, com o código quando houver.
 - Quem já tinha concluído os desafios de uma lição continua com ela concluída; quem estava no meio responde as perguntas novas.
+
+
+## Versão 38 — Site sempre acordado e cores do tema claro
+
+- **Primeira visita sem espera:** o Render gratuito desliga o site depois de 15 minutos sem acessos, e quem chegava depois esperava cerca de 30 segundos. O workflow `.github/workflows/manter-acordado.yml` acessa `/saude` a cada 10 minutos para evitar isso. Como `/saude` não consulta o banco, o Neon continua suspendendo quando ninguém usa o site. Se o site cair, a execução falha e o GitHub avisa por e-mail.
+- **Tema claro:** as respostas certas e erradas dos desafios teóricos, os resultados do simulado e a caixa de correção do exercício (aprovado ou com aviso) perdiam o fundo colorido e ficavam só com a borda. Agora mantêm o verde, o vermelho e o amarelo, como no tema escuro.

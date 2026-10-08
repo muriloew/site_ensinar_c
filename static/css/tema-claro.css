@@ -33,6 +33,13 @@
     background: rgba(15, 23, 42, .04);
 }
 
+/* Respostas certas e erradas mantêm o fundo colorido, que a regra acima apagava. */
+:root[data-theme="claro"] :is(.quiz button.correct, .review-item.correct, .correction-feedback.success) {
+    background: rgba(22, 163, 74, .12);
+}
+:root[data-theme="claro"] :is(.quiz button.wrong, .review-item.wrong) { background: rgba(220, 38, 38, .10); }
+:root[data-theme="claro"] .correction-feedback.warning { background: rgba(217, 119, 6, .12); }
+
 :root[data-theme="claro"] :is(.auth-card input, .search-panel input, .goals-form input) {
     background: #ffffff;
     color: var(--text);
