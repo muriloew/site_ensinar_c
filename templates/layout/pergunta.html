@@ -1,0 +1,16 @@
+{# Partes das perguntas teóricas usadas na lição, na revisão e no simulado (backend/conteudo/perguntas). #}
+
+{% macro enunciado(pergunta) -%}
+{{ pergunta.pergunta|codigo_inline }}
+{%- endmacro %}
+
+{% macro codigo(pergunta) -%}
+{% if pergunta.codigo %}
+<div class="code-window question-code"><pre><code>{{ pergunta.codigo }}</code></pre></div>
+{% endif %}
+{%- endmacro %}
+
+{# Saídas de programa e trechos de código aparecem em fonte de código, preservando espaços e quebras de linha. #}
+{% macro alternativa(pergunta, texto) -%}
+{% if pergunta.tipo in ("saida", "lacuna") %}<code class="answer-code">{{ texto }}</code>{% else %}{{ texto|codigo_inline }}{% endif %}
+{%- endmacro %}

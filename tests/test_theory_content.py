@@ -54,7 +54,6 @@ class TheoryContentTest(unittest.TestCase):
                 for key in ("objetivo", "aplicacao", "pergunta", "resposta"):
                     self.assertTrue(reading[key].strip())
                 self.assertIn(lesson["exercicio_codigo"], lesson["pontos_chave"][1])
-                self.assertEqual(lesson["desafios_teoricos"][2]["resposta"], lesson["exercicio_codigo"])
 
     def test_project_guides_have_valid_prerequisites(self):
         guides = [lesson for lesson in self.lessons if "guia_projeto" in lesson]
@@ -80,15 +79,15 @@ class TheoryContentTest(unittest.TestCase):
                         "estudo/estudar.html", modulo=module, licao=lesson,
                         concluidas_ids=[], favorita=False,
                         desafios_teoricos=lesson["desafios_teoricos"],
-                        desafios_teoricos_corretos=0, total_desafios_teoricos=3,
+                        desafios_teoricos_corretos=0, total_desafios_teoricos=4,
                         anotacao="", posicao=module["licoes"].index(lesson) + 1,
                         anterior=None, proxima=None,
                     )
                     self.assertIn("Como funciona", html)
                     self.assertIn("Pense antes de continuar", html)
                     self.assertIn("Indo além", html)
-                    self.assertEqual(html.count('class="quiz"'), 3)
-                    self.assertEqual(html.count('data-desafio-id="'), 3)
+                    self.assertEqual(html.count('class="quiz"'), 4)
+                    self.assertEqual(html.count('data-desafio-id="'), 4)
                     self.assertNotIn("<stdio.h>", html)
                     self.assertIn("&lt;stdio.h&gt;", html)
 

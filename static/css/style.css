@@ -735,6 +735,11 @@ a { color: inherit; text-decoration: none; }
 .quiz button.wrong { border-color: var(--red); background: rgba(239,68,68,.18); }
 .quiz button:disabled { cursor: wait; opacity: .72; }
 
+/* Perguntas com programa: o código da pergunta e as alternativas que são saídas ou trechos de código */
+.question-code { margin: 4px 0 14px; }
+.question-code pre { padding: 16px 18px; line-height: 1.55; }
+.answer-code { display: block; white-space: pre-wrap; font-family: Consolas, "Courier New", monospace; }
+
 .lesson-theory-challenges {
     margin: 26px 0;
     padding-top: 24px;

@@ -1,4 +1,5 @@
 {% extends "layout/base.html" %}
+{% import "layout/pergunta.html" as pergunta %}
 {% block title %}Simulado - Ensinar C{% endblock %}
 
 {% block content %}
@@ -29,10 +30,11 @@
     {% for item in resultados %}
     <article class="review-item {% if item.correta %}correct{% else %}wrong{% endif %}">
         <span>{{ item.modulo }}</span>
-        <h3>{{ item.pergunta }}</h3>
-        <p>Sua resposta: <strong>{{ item.resposta_usuario }}</strong></p>
+        <h3>{{ pergunta.enunciado(item.pergunta) }}</h3>
+        {{ pergunta.codigo(item.pergunta) }}
+        <p>Sua resposta: <strong>{% if item.resposta_usuario %}{{ pergunta.alternativa(item.pergunta, item.resposta_usuario) }}{% else %}Sem resposta{% endif %}</strong></p>
         {% if not item.correta %}
-            <p>Resposta correta: <strong>{{ item.resposta_correta }}</strong></p>
+            <p>Resposta correta: <strong>{{ pergunta.alternativa(item.pergunta, item.resposta_correta) }}</strong></p>
         {% endif %}
     </article>
     {% endfor %}
@@ -48,15 +50,17 @@
 
     {% for questao in questoes %}
     <article class="question-card">
-        <input type="hidden" name="questoes" value="{{ questao.id }}">
+        <input type="hidden" name="questoes" value="{{ questao.licao_id }}">
+        <input type="hidden" name="p_{{ questao.licao_id }}" value="{{ questao.id }}">
         <span>{{ questao.modulo }}</span>
-        <h3>{{ loop.index }}. {{ questao.pergunta }}</h3>
+        <h3>{{ loop.index }}. {{ pergunta.enunciado(questao) }}</h3>
+        {{ pergunta.codigo(questao) }}
 
         <div class="answer-list">
             {% for alternativa in questao.alternativas %}
             <label>
-                <input type="radio" name="q_{{ questao.id }}" value="{{ alternativa }}">
-                <span>{{ alternativa }}</span>
+                <input type="radio" name="q_{{ questao.licao_id }}" value="{{ alternativa }}">
+                <span>{{ pergunta.alternativa(questao, alternativa) }}</span>
             </label>
             {% endfor %}
         </div>

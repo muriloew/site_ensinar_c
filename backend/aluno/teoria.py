@@ -1,5 +1,6 @@
 """Helpers para respostas dos desafios teoricos de cada licao."""
 
+import hashlib
 import json
 
 
@@ -15,6 +16,22 @@ def _desafios_da_licao(licao):
         "resposta": licao.get("resposta", ""),
         "explicacao": "Revise o conteudo teorico desta licao.",
     }]
+
+
+def pergunta_da_vez(licao, chave):
+    """Uma das perguntas da lição, escolhida pela chave (por exemplo, aluno e dia), para a revisão variar."""
+    desafios = _desafios_da_licao(licao)
+    return desafios[int(hashlib.sha256(str(chave).encode("utf-8")).hexdigest(), 16) % len(desafios)]
+
+
+def pergunta_por_id(licao, pergunta_id):
+    desafios = _desafios_da_licao(licao)
+    return next((desafio for desafio in desafios if desafio["id"] == pergunta_id), desafios[0])
+
+
+def mesma_resposta(enviada, certa):
+    """Formulários enviam quebras de linha como CRLF; as saídas com várias linhas são guardadas só com \\n."""
+    return str(enviada or "").replace("\r\n", "\n") == certa
 
 
 def carregar_respostas_teoricas(valor, licao=None, quiz_correto=0):
@@ -107,6 +124,7 @@ def atualizar_resposta_teorica(licao, valor_atual, desafio_id, resposta, quiz_co
     if not desafio:
         return None
 
+    resposta = resposta.replace("\r\n", "\n")
     if resposta not in desafio.get("alternativas", []):
         return {"erro": "Resposta inválida para este desafio."}
 
@@ -139,5 +157,6 @@ def atualizar_resposta_teorica(licao, valor_atual, desafio_id, resposta, quiz_co
         "corretos": corretos,
         "total": total,
         "todos_corretos": total > 0 and corretos == total,
-        "explicacao": desafio.get("explicacao", ""),
+        # A explicação entrega a resposta, então só aparece depois do acerto.
+        "explicacao": desafio.get("explicacao", "") if correta else "",
     }

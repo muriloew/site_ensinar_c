@@ -32,10 +32,12 @@ async function verificarResposta(licaoId, resposta, botao) {
             return;
         }
 
-        const explicacao = dados.explicacao ? ` ${dados.explicacao}` : "";
         botao.classList.add(dados.correta ? "correct" : "wrong");
         item.classList.toggle("completed", Boolean(dados.correta));
-        resultado.textContent = `Resposta salva: ${dados.correta ? "correta" : "incorreta"}.${explicacao}`;
+        // A explicação só vem depois do acerto, para não entregar a resposta.
+        resultado.textContent = dados.correta
+            ? `Resposta salva: correta. ${dados.explicacao || ""}`.trim()
+            : "Resposta salva: incorreta. Releia a teoria e tente outra alternativa.";
         quiz.dataset.respostaSalva = resposta;
         quiz.dataset.correta = dados.correta ? "1" : "0";
 

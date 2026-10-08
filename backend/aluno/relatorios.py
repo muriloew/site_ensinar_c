@@ -1,6 +1,7 @@
 """Relatórios do perfil, questões do simulado e cópia do progresso para download."""
 
 
+from backend.aluno.teoria import pergunta_da_vez
 from backend.conteudo.trilha import MODULOS, encontrar_licao
 from backend import relogio
 
@@ -123,13 +124,12 @@ def questoes_simulado(usuario_id, situacao, quantidade=10):
     deslocamento = (relogio.hoje().toordinal() + usuario_id) % len(licoes)
     licoes = licoes[deslocamento:] + licoes[:deslocamento]
 
+    hoje = relogio.hoje().isoformat()
     return [
         {
-            "id": licao["id"],
+            **pergunta_da_vez(licao, f"simulado:{usuario_id}:{hoje}:{licao['id']}"),
+            "licao_id": licao["id"],
             "modulo": modulo["titulo"],
-            "pergunta": licao["pergunta"],
-            "alternativas": licao["alternativas"],
-            "resposta": licao["resposta"],
         }
         for modulo, licao in licoes[:quantidade]
     ]

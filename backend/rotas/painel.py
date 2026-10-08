@@ -18,6 +18,7 @@ from backend.aluno.metas import progresso_metas, salvar_metas
 from backend.aluno.relatorios import dados_backup, questoes_simulado, relatorio_modulos, resumo_desempenho
 from backend.aluno.revisao import sincronizar_revisoes
 from backend.aluno.situacao import SituacaoAluno
+from backend.aluno.teoria import mesma_resposta, pergunta_por_id
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import TOTAL_LICOES, encontrar_licao
 from backend.sessao import usuario_logado
@@ -182,14 +183,15 @@ def simulado():
             modulo, licao = encontrar_licao(licao_id)
             if not licao:
                 continue
-            resposta = request.form.get(f"q_{licao_id}", "")
+            pergunta = pergunta_por_id(licao, request.form.get(f"p_{licao_id}", ""))
+            resposta = request.form.get(f"q_{licao_id}", "").replace("\r\n", "\n")
             resultados.append({
                 "modulo": modulo["titulo"],
                 "licao": licao["titulo"],
-                "pergunta": licao["pergunta"],
-                "resposta_usuario": resposta or "Sem resposta",
-                "resposta_correta": licao["resposta"],
-                "correta": resposta == licao["resposta"],
+                "pergunta": pergunta,
+                "resposta_usuario": resposta,
+                "resposta_correta": pergunta["resposta"],
+                "correta": mesma_resposta(resposta, pergunta["resposta"]),
             })
 
         total = len(resultados)

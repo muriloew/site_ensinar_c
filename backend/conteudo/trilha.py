@@ -12,7 +12,8 @@ from backend.conteudo.exercicios import (
     regra_correcao,
 )
 from backend.conteudo.guias_projetos import GUIAS_PROJETOS
-from backend.conteudo.licoes import PLANOS_LICOES, montar_desafios_teoricos
+from backend.conteudo.licoes import PLANOS_LICOES
+from backend.conteudo.perguntas import montar_desafios_teoricos
 from backend.conteudo.solucoes import SOLUCOES
 from backend.conteudo.teoria_ampliada import LEITURAS
 
@@ -201,9 +202,7 @@ def _montar_licao(licao_id, conteudo, modulo_id):
     pontos_chave = [plano["fundamento"], f"Nesta lição: {exercicio}"]
 
     correcao = regra_correcao(conteudo, plano)
-    desafios = montar_desafios_teoricos(
-        conteudo, plano, aplicacao=exercicio, semente=f"{modulo_id}-{licao_id}"
-    )
+    desafios = montar_desafios_teoricos(conteudo, semente=f"{modulo_id}-{licao_id}")
     solucao = None
     if pratica:
         codigo_solucao, explicacao_solucao = SOLUCOES[conteudo]

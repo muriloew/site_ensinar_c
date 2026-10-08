@@ -25,10 +25,11 @@ backend/
     catalogo_desafios.py        Os 100 desafios diários (enunciado, testes, dicas e solução)
     desafios_diarios.py         Sorteio do desafio do dia
     referencia.py               Textos da consulta rápida (formatos, tipos, erros do GCC, glossário)
+    perguntas/                  As 4 perguntas dos desafios teóricos de cada lição (conceito, saída, erro, lacuna)
   aluno/                        Regras sobre o progresso do aluno
     situacao.py                 Lições concluídas, módulos liberados, próxima lição
     gamificacao.py              XP, nível, sequência, missões e conquistas
-    teoria.py                   Respostas dos desafios teóricos
+    teoria.py                   Respostas dos desafios teóricos e escolha da pergunta da revisão e do simulado
     revisao.py                  Revisão espaçada
     metas.py                    Metas diárias e semanais
     notificacoes.py             Notificações automáticas e avisos do professor
@@ -68,6 +69,8 @@ tests/                          Testes automáticos (Python) e de navegador (Pla
 
 Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend/conteudo/teoria_ampliada.py`. O programa de exemplo fica em `backend/conteudo/exemplos.py` (com a saída em `aprofundamento.py`) ou em `exemplos_teoricos.py`; o teste `tests/test_theory_content.py` compila todos os exemplos e confere se a saída mostrada na página é a real.
 
+As perguntas dos desafios teóricos ficam em `backend/conteudo/perguntas/`, quatro por lição. Os formatos estão em `base.py`: conceito, "o que este programa mostra", "qual é o problema deste código" e "o que completa a lacuna". O teste `tests/test_perguntas_teoricas.py` compila e executa os programas com o GCC: confere se a alternativa certa é a saída real, se só ela completa cada lacuna e se os códigos com erro compilam ou não, como a pergunta diz. Ele também impede que as alternativas erradas se repitam entre lições ou que o tamanho da resposta denuncie a certa.
+
 ## Recursos
 
 - Cadastro com confirmação de senha, login com "continuar conectado" e progresso salvo no banco de dados
@@ -83,7 +86,7 @@ Para mudar o texto de uma lição, edite `backend/conteudo/licoes.py` e `backend
 - Roteiro dos projetos do módulo 21, com conceitos para revisar, etapas e casos de teste, e exemplo de projeto em vários arquivos com Makefile
 - Navegação entre lições, anotações pessoais por lição e passagem direta para a próxima lição ao concluir
 - Consulta rápida aberta a todos: formatos do printf/scanf, tipos, operadores, funções, erros do GCC traduzidos e glossário
-- Três desafios teóricos por lição e exercício de código com correção automática, incluindo testes ocultos
+- Quatro desafios teóricos por lição (com programas para ler, erros para achar e lacunas para completar) e exercício de código com correção automática, incluindo testes ocultos
 - Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
 - Solução comentada de todos os 87 exercícios, liberada só depois que a correção aprova o código do aluno
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre; vários alunos podem ficar com o programa aberto ao mesmo tempo

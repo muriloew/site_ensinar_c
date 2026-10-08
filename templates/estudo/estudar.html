@@ -1,4 +1,5 @@
 {% extends "layout/base.html" %}
+{% import "layout/pergunta.html" as pergunta %}
 {% block title %}{{ modulo.titulo }} - Ensinar C{% endblock %}
 
 {% block content %}
@@ -200,7 +201,8 @@
                 <div class="lesson-theory-list">
                     {% for desafio in desafios_teoricos %}
                     <article class="theory-challenge-item {% if desafio.correta %}completed{% endif %}">
-                        <h3>{{ loop.index }}. {{ desafio.pergunta }}</h3>
+                        <h3>{{ loop.index }}. {{ pergunta.enunciado(desafio) }}</h3>
+                        {{ pergunta.codigo(desafio) }}
 
                         <div
                             class="quiz"
@@ -213,14 +215,14 @@
                                 type="button"
                                 data-resposta="{{ alt }}"
                                 aria-pressed="{% if desafio.resposta_salva == alt %}true{% else %}false{% endif %}"
-                                class="{% if desafio.resposta_salva == alt and desafio.correta %}correct{% elif desafio.resposta_salva == alt and not desafio.correta %}wrong{% endif %}">{{ alt }}</button>
+                                class="{% if desafio.resposta_salva == alt and desafio.correta %}correct{% elif desafio.resposta_salva == alt and not desafio.correta %}wrong{% endif %}">{{ pergunta.alternativa(desafio, alt) }}</button>
                             {% endfor %}
                         </div>
 
                         <p class="resultadoQuiz" role="status" aria-live="polite">
                             {% if desafio.resposta_salva %}
-                                {% if desafio.correta %}Resposta salva: correta.{% else %}Resposta salva: incorreta.{% endif %}
-                                {{ desafio.explicacao }}
+                                {% if desafio.correta %}Resposta salva: correta. {{ desafio.explicacao }}
+                                {% else %}Resposta salva: incorreta. Releia a teoria e tente outra alternativa.{% endif %}
                             {% endif %}
                         </p>
                     </article>

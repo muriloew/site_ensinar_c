@@ -1,4 +1,5 @@
 {% extends "layout/base.html" %}
+{% import "layout/pergunta.html" as pergunta %}
 {% block title %}Revisão - Ensinar C{% endblock %}
 
 {% block content %}
@@ -22,12 +23,14 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <span>Módulo {{ item.modulo.id }} · {{ item.modulo.titulo }}</span>
             <h2>{{ item.licao.titulo|titulo_licao }}</h2>
-            <p class="review-question">{{ item.licao.pergunta }}</p>
+            <input type="hidden" name="pergunta_id" value="{{ item.pergunta.id }}">
+            <p class="review-question">{{ pergunta.enunciado(item.pergunta) }}</p>
+            {{ pergunta.codigo(item.pergunta) }}
             <div class="review-options">
-                {% for alternativa in item.licao.alternativas %}
+                {% for alternativa in item.pergunta.alternativas %}
                 <label>
                     <input type="radio" name="resposta" value="{{ alternativa }}" required>
-                    <span>{{ alternativa }}</span>
+                    <span>{{ pergunta.alternativa(item.pergunta, alternativa) }}</span>
                 </label>
                 {% endfor %}
             </div>

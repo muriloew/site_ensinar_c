@@ -6,6 +6,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from backend.aluno.gamificacao import registrar_atividade
 from backend.aluno.revisao import proximo_agendamento, sincronizar_revisoes
 from backend.aluno.situacao import SituacaoAluno
+from backend.aluno.teoria import mesma_resposta, pergunta_da_vez, pergunta_por_id
 from backend.banco.conexao import transacao
 from backend.conteudo.trilha import encontrar_licao
 from backend.sessao import usuario_logado
@@ -42,7 +43,9 @@ def revisao():
 
     def montar_item(registro):
         modulo, licao = encontrar_licao(registro["licao_id"])
-        return {"registro": registro, "modulo": modulo, "licao": licao}
+        # A cada dia a revisão usa uma das perguntas da lição, e não sempre a mesma.
+        pergunta = pergunta_da_vez(licao, f"{usuario['id']}:{hoje}:{licao['id']}")
+        return {"registro": registro, "modulo": modulo, "licao": licao, "pergunta": pergunta}
 
     return render_template(
         "revisao/revisao.html",
@@ -74,7 +77,8 @@ def responder_revisao(licao_id):
         if not registro:
             return redirect(url_for("revisao.revisao"))
 
-        correta = request.form.get("resposta", "") == licao["resposta"]
+        pergunta = pergunta_por_id(licao, request.form.get("pergunta_id", ""))
+        correta = mesma_resposta(request.form.get("resposta", ""), pergunta["resposta"])
         novo_nivel, intervalo, proxima = proximo_agendamento(int(registro["nivel"] or 0), correta)
         conn.execute(
             """

@@ -1,7 +1,5 @@
 """Teoria, cuidados, desafio prático e correção de cada lição da trilha de C."""
 
-import hashlib
-
 
 def plano(teoria, fundamento, cuidado, desafio, termos, saida=None, entrada=None):
     correcao = {"codigo_contem": termos, "saida_obrigatoria": True}
@@ -763,85 +761,3 @@ PLANOS_LICOES = {
         "7 8 9\n",
     ),
 }
-
-
-def _ordenar_alternativas(alternativas, chave):
-    """Mantem uma ordem estavel sem deixar a resposta certa sempre no inicio."""
-    return sorted(
-        alternativas,
-        key=lambda item: hashlib.sha256(f"{chave}|{item}".encode("utf-8")).hexdigest(),
-    )
-
-
-def _alternativas_teoricas(correta, distratores):
-    alternativas = [correta]
-
-    for item in distratores:
-        if item and item != correta and item not in alternativas:
-            alternativas.append(item)
-        if len(alternativas) == 4:
-            break
-
-    opcoes_padrao = [
-        "Ignorar mensagens do compilador e testar somente no final.",
-        "Usar o recurso sem validar entradas, limites ou resultados.",
-        "Copiar a estrutura sem entender o papel de cada parte.",
-        "Trocar todos os comandos por printf para evitar erros.",
-    ]
-
-    for item in opcoes_padrao:
-        if len(alternativas) == 4:
-            break
-        if item != correta and item not in alternativas:
-            alternativas.append(item)
-
-    return alternativas[:4]
-
-
-def montar_desafios_teoricos(conteudo, plano, aplicacao, semente):
-    fundamento = plano["fundamento"]
-    cuidado = plano["cuidado"]
-
-    desafios = [
-        {
-            "id": "conceito",
-            "pergunta": f"Qual afirmação sobre {conteudo} está correta?",
-            "alternativas": _alternativas_teoricas(fundamento, [
-                f"{conteudo} elimina a necessidade de validar dados e resultados.",
-                f"{conteudo} só pode ser usado dentro da função main.",
-                f"O compilador corrige automaticamente qualquer uso incorreto de {conteudo}.",
-            ]),
-            "resposta": fundamento,
-            "explicacao": fundamento,
-        },
-        {
-            "id": "cuidado",
-            "pergunta": f"Qual cuidado ajuda ao estudar {conteudo}?",
-            "alternativas": _alternativas_teoricas(cuidado, [
-                f"{conteudo} dispensa testes quando o código compila.",
-                f"{conteudo} sempre funciona igual em qualquer situação.",
-                "O compilador corrige automaticamente qualquer erro de lógica.",
-            ]),
-            "resposta": cuidado,
-            "explicacao": cuidado,
-        },
-        {
-            "id": "pratica",
-            "pergunta": f"Qual prática combina com esta lição sobre {conteudo}?",
-            "alternativas": _alternativas_teoricas(aplicacao, [
-                "Usar recursos de módulos futuros antes de entender a base.",
-                "Responder sem executar nem conferir o resultado.",
-                "Remover a função main para deixar o código menor.",
-            ]),
-            "resposta": aplicacao,
-            "explicacao": "A prática correta reforça o conceito estudado antes de seguir para o próximo passo.",
-        },
-    ]
-
-    for desafio in desafios:
-        desafio["alternativas"] = _ordenar_alternativas(
-            desafio["alternativas"],
-            f"{semente}:{conteudo}:{desafio['id']}",
-        )
-
-    return desafios

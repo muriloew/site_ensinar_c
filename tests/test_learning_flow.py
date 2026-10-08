@@ -126,11 +126,7 @@ class LearningFlowTest(unittest.TestCase):
         posicoes_corretas = []
         for modulo in self.MODULOS:
             for licao in modulo["licoes"]:
-                self.assertEqual(len(licao["desafios_teoricos"]), 3)
-                self.assertEqual(
-                    licao["desafios_teoricos"][2]["resposta"],
-                    licao["exercicio_codigo"],
-                )
+                self.assertEqual(len(licao["desafios_teoricos"]), 4)
                 for desafio in licao["desafios_teoricos"]:
                     posicoes_corretas.append(
                         desafio["alternativas"].index(desafio["resposta"])
@@ -311,7 +307,7 @@ class LearningFlowTest(unittest.TestCase):
         self.assertEqual(pagina_licao.status_code, 200)
         html_licao = pagina_licao.get_data(as_text=True)
         self.assertIn("Desafios teóricos da lição", html_licao)
-        self.assertEqual(html_licao.count('class="theory-challenge-item'), 3)
+        self.assertEqual(html_licao.count('class="theory-challenge-item'), 4)
 
         pagina_bloqueada = self.client.get("/desafio-diario")
         self.assertIn(
@@ -336,7 +332,7 @@ class LearningFlowTest(unittest.TestCase):
         for licao in modulo_inicial["licoes"]:
             resultado = self.responder_licao(licao)
             self.assertTrue(resultado["todos_corretos"])
-            self.assertEqual(resultado["corretos"], 3)
+            self.assertEqual(resultado["corretos"], 4)
 
             conclusao = self.client.post(f"/concluir/{licao['id']}")
             self.assertEqual(conclusao.status_code, 200)
@@ -424,7 +420,7 @@ class LearningFlowTest(unittest.TestCase):
             "/verificar",
             json={
                 "licao_id": licao["id"],
-                "desafio_id": "conceito",
+                "desafio_id": licao["desafios_teoricos"][0]["id"],
                 "resposta": "alternativa inventada",
             },
         )
@@ -436,7 +432,7 @@ class LearningFlowTest(unittest.TestCase):
             quiz_correto=1,
         )
         self.assertTrue(estado_antigo["todos_corretos"])
-        self.assertEqual(estado_antigo["corretos"], 3)
+        self.assertEqual(estado_antigo["corretos"], 4)
 
     def test_missao_diaria_paga_recompensa_uma_vez(self):
         licao = self.MODULOS[0]["licoes"][0]
@@ -471,7 +467,7 @@ class LearningFlowTest(unittest.TestCase):
         usuario = conn.execute("SELECT * FROM usuarios WHERE id = 1").fetchone()
         conn.close()
 
-        self.assertEqual(atividade["quizzes"], 3)
+        self.assertEqual(atividade["quizzes"], len(licao["desafios_teoricos"]))
         self.assertEqual(usuario["sequencia"], 1)
 
         primeira = self.client.post("/missoes/aquecimento/resgatar")
@@ -650,17 +646,53 @@ class LearningFlowTest(unittest.TestCase):
         conn.commit()
         conn.close()
 
+        # A revisão de cada dia usa uma das perguntas da lição.
         revisao = self.client.get("/revisao").get_data(as_text=True)
-        self.assertIn(licao["pergunta"], revisao)
+        pergunta = self.teoria.pergunta_da_vez(licao, f"1:{self.hoje().isoformat()}:{licao['id']}")
+        self.assertIn(f'name="pergunta_id" value="{pergunta["id"]}"', revisao)
         resposta = self.client.post(
             f"/revisao/{licao['id']}",
-            data={"resposta": licao["resposta"]},
+            data={"pergunta_id": pergunta["id"], "resposta": pergunta["resposta"]},
         )
         self.assertEqual(resposta.status_code, 302)
+        self.assertIn("resultado=correto", resposta.headers["Location"])
 
         historico = self.client.get("/historico-codigos").get_data(as_text=True)
         self.assertIn("int main(void){return 0;}", historico)
         self.assertIn("Aprovado", historico)
+
+    def test_perguntas_com_codigo_na_licao_e_no_simulado(self):
+        from backend.aluno.relatorios import questoes_simulado
+
+        licao = next(item for item in self.MODULOS[0]["licoes"] if item["titulo"] == "Comentários")
+        desafio = next(item for item in licao["desafios_teoricos"] if "\n" in item["resposta"])
+        pagina = self.client.get(f"/estudar/1?licao={licao['id']}").get_data(as_text=True)
+        self.assertIn('class="code-window question-code"', pagina)
+        self.assertIn('class="answer-code"', pagina)
+
+        # A explicação entrega a resposta, então só vem depois do acerto.
+        errada = next(item for item in desafio["alternativas"] if item != desafio["resposta"])
+        resposta = self.client.post(
+            "/verificar", json={"licao_id": licao["id"], "desafio_id": desafio["id"], "resposta": errada}
+        ).get_json()
+        self.assertFalse(resposta["correta"])
+        self.assertEqual(resposta["explicacao"], "")
+        resposta = self.client.post(
+            "/verificar",
+            json={"licao_id": licao["id"], "desafio_id": desafio["id"],
+                  "resposta": desafio["resposta"].replace("\n", "\r\n")},
+        ).get_json()
+        self.assertTrue(resposta["correta"])
+        self.assertEqual(resposta["explicacao"], desafio["explicacao"])
+
+        # Formulários enviam as quebras de linha como \r\n; a correção do simulado aceita.
+        questoes = questoes_simulado(1, self.SituacaoAluno(1))
+        dados = {"questoes": [str(questao["licao_id"]) for questao in questoes]}
+        for questao in questoes:
+            dados[f"p_{questao['licao_id']}"] = questao["id"]
+            dados[f"q_{questao['licao_id']}"] = questao["resposta"].replace("\n", "\r\n")
+        resultado = self.client.post("/simulado", data=dados).get_data(as_text=True)
+        self.assertIn(f"{len(questoes)} de {len(questoes)} resposta(s) correta(s)", resultado)
 
     def test_protecoes_de_csrf_senha_e_login(self):
         self.site.app.config["VERIFICAR_CSRF"] = True
@@ -672,7 +704,7 @@ class LearningFlowTest(unittest.TestCase):
                 sessao["csrf_token"] = "token-de-teste"
             com_token = self.client.post(
                 "/verificar",
-                json={"licao_id": 1, "desafio_id": "conceito", "resposta": "x"},
+                json={"licao_id": 1, "desafio_id": "p1", "resposta": "x"},
                 headers={"X-CSRFToken": "token-de-teste"},
             )
             self.assertEqual(com_token.status_code, 400)
