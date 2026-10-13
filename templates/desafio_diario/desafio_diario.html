@@ -15,10 +15,10 @@
     <section class="card daily-card daily-locked-card">
         <span class="daily-icon">🎯</span>
         <h2>Desafios diários bloqueados</h2>
-        <p>Conclua o módulo 1 para liberar desafios diários. Assim o site evita mostrar exercícios com assuntos que você ainda não estudou.</p>
+        <p>Cada desafio diário é ligado a uma lição e só aparece depois que você a estuda. Assim o site evita mostrar exercícios com assuntos que você ainda não viu.</p>
 
         <div class="hint">
-            <strong>Próximo passo:</strong> termine as lições iniciais e volte aqui quando o módulo 2 estiver liberado.
+            <strong>Próximo passo:</strong> conclua o módulo 1 e a lição printf, do módulo 2, para liberar os primeiros desafios.
         </div>
 
         <a class="btn btn-primary" href="/modulos">Voltar para os módulos</a>
@@ -55,10 +55,10 @@
         </p>
 
         <p class="small-muted daily-progress">
-            {% if modulo_maximo_diario == 2 %}
-                Seu progresso liberou os {{ total_desafios_disponiveis }} desafios do módulo 2.
+            {% if total_desafios_disponiveis == 1 %}
+                Seu progresso liberou 1 desafio, ligado às lições que você já estudou.
             {% else %}
-                Seu progresso liberou {{ total_desafios_disponiveis }} desafios, dos módulos 2 a {{ modulo_maximo_diario }}.
+                Seu progresso liberou {{ total_desafios_disponiveis }} desafios, ligados às lições que você já estudou.
             {% endif %}
             Você já concluiu {{ total_desafios_concluidos }}. O sorteio de cada dia prioriza os que você ainda não fez.
         </p>

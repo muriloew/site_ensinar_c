@@ -12,7 +12,7 @@ from backend import relogio
 bp = Blueprint("desafio_diario", __name__)
 
 XP_POR_DESAFIO = 30
-MENSAGEM_BLOQUEADO = "Conclua o módulo 1 para desbloquear os desafios diários."
+MENSAGEM_BLOQUEADO = "Conclua a lição printf, do módulo 2, para desbloquear os desafios diários."
 
 
 @bp.route("/desafio-diario")

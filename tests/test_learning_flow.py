@@ -37,6 +37,7 @@ class LearningFlowTest(unittest.TestCase):
         from backend.conteudo import desafios_diarios, trilha
 
         cls.MODULOS = trilha.MODULOS
+        cls.encontrar_licao = staticmethod(trilha.encontrar_licao)
         cls.hoje = staticmethod(relogio.hoje)
         cls.DESAFIOS_DIARIOS = desafios_diarios.DESAFIOS_DIARIOS
         cls.conectar = staticmethod(conexao.conectar)
@@ -308,6 +309,8 @@ class LearningFlowTest(unittest.TestCase):
         html_licao = pagina_licao.get_data(as_text=True)
         self.assertIn("Desafios teóricos da lição", html_licao)
         self.assertEqual(html_licao.count('class="theory-challenge-item'), 4)
+        self.assertIn("O que falta para concluir esta lição", html_licao)
+        self.assertIn("0 de 4 corretos", html_licao)
 
         pagina_bloqueada = self.client.get("/desafio-diario")
         self.assertIn(
@@ -326,7 +329,7 @@ class LearningFlowTest(unittest.TestCase):
         build = [evento["args"][0] for evento in cliente_socket.get_received() if evento["name"] == "build_log"]
         cliente_socket.disconnect()
         self.assertFalse(build[0]["ok"])
-        self.assertIn("Conclua o módulo 1", build[0]["texto"])
+        self.assertIn("Conclua a lição printf", build[0]["texto"])
 
         modulo_inicial = self.MODULOS[0]
         for licao in modulo_inicial["licoes"]:
@@ -337,17 +340,42 @@ class LearningFlowTest(unittest.TestCase):
             conclusao = self.client.post(f"/concluir/{licao['id']}")
             self.assertEqual(conclusao.status_code, 200)
             self.assertTrue(conclusao.get_json()["ok"])
+            self.assertEqual(conclusao.get_json()["xp_recebido"], 50)
+            self.assertIn("+50 XP", conclusao.get_json()["mensagem"])
 
+        html_concluida = self.client.get("/estudar/1").get_data(as_text=True)
+        self.assertIn("Lição concluída", html_concluida)
+        self.assertIn("4 de 4 corretos", html_concluida)
+
+        # Concluir de novo não dá XP, e a mensagem precisa dizer isso.
+        xp_antes = self.xp_do_aluno()
+        repetida = self.client.post(f"/concluir/{modulo_inicial['licoes'][0]['id']}").get_json()
+        self.assertTrue(repetida["ok"])
+        self.assertTrue(repetida["ja_concluida"])
+        self.assertEqual(repetida["xp_recebido"], 0)
+        self.assertNotIn("XP!", repetida["mensagem"])
+        self.assertIn("nenhum XP adicional", repetida["mensagem"])
+        self.assertEqual(self.xp_do_aluno(), xp_antes)
+
+        # O módulo 2 foi liberado, mas nenhuma lição dele foi estudada: ainda não há desafio diário.
         desafios, modulo_maximo = self.SituacaoAluno(1).desafios_disponiveis()
         self.assertEqual(modulo_maximo, 2)
-        self.assertEqual(len(desafios), 5)
-        self.assertTrue(all(item["modulo_id"] == 2 for item in desafios))
+        self.assertEqual(desafios, [])
+        self.assertIn("Desafios diários bloqueados", self.client.get("/desafio-diario").get_data(as_text=True))
+
+        # Depois da lição printf, só entram os desafios dela; "Data com dois dígitos" depende do scanf.
+        printf, scanf = self.MODULOS[1]["licoes"][:2]
+        self.concluir_licoes(printf["id"])
+        desafios, _ = self.SituacaoAluno(1).desafios_disponiveis()
+        self.assertTrue(desafios)
+        self.assertTrue(all(item["licao_id"] == printf["id"] for item in desafios))
+        self.assertNotIn("Data com dois dígitos", [item["titulo"] for item in desafios])
 
         pagina_liberada = self.client.get("/desafio-diario")
         html_liberado = pagina_liberada.get_data(as_text=True)
         self.assertNotIn("Desafios diários bloqueados", html_liberado)
         self.assertIn("Módulo 2", html_liberado)
-        self.assertIn("5 desafios do módulo 2", html_liberado)
+        self.assertIn(f"liberou {len(desafios)} desafios", html_liberado)
 
         modulo_tres = self.MODULOS[2]["licoes"][0]
         acesso_modulo_tres = self.client.post(
@@ -359,6 +387,28 @@ class LearningFlowTest(unittest.TestCase):
             },
         )
         self.assertEqual(acesso_modulo_tres.status_code, 403)
+
+        self.concluir_licoes(scanf["id"])
+        desafios, _ = self.SituacaoAluno(1).desafios_disponiveis()
+        self.assertEqual(len(desafios), 5)
+        self.assertIn("Data com dois dígitos", [item["titulo"] for item in desafios])
+
+    def xp_do_aluno(self):
+        conn = self.conectar()
+        xp = conn.execute("SELECT xp FROM usuarios WHERE id = 1").fetchone()["xp"]
+        conn.close()
+        return xp
+
+    def concluir_licoes(self, *licao_ids):
+        conn = self.conectar()
+        for licao_id in licao_ids:
+            modulo, _ = self.encontrar_licao(licao_id)
+            conn.execute(
+                "INSERT INTO progresso (usuario_id, licao_id, modulo_id, concluida) VALUES (?, ?, ?, 1)",
+                (1, licao_id, modulo["id"]),
+            )
+        conn.commit()
+        conn.close()
 
     def concluir_modulos(self, *modulo_ids):
         conn = self.conectar()
@@ -373,7 +423,7 @@ class LearningFlowTest(unittest.TestCase):
         conn.close()
 
     def test_desafio_diario_fica_o_mesmo_no_dia_e_varia_depois(self):
-        self.concluir_modulos(1)
+        self.concluir_modulos(1, 2)
         hoje = self.hoje()
         desafio = self.SituacaoAluno(1).desafio_do_dia(hoje.isoformat())
         self.assertEqual(desafio["modulo_id"], 2)
@@ -389,9 +439,9 @@ class LearningFlowTest(unittest.TestCase):
         self.assertTrue(rascunho.get_json()["ok"])
 
         # Liberar um módulo novo no meio do dia não troca o desafio já começado.
-        self.concluir_modulos(2)
+        self.concluir_modulos(3)
         situacao = self.SituacaoAluno(1)
-        self.assertEqual(situacao.desafios_disponiveis()[1], 3)
+        self.assertEqual(situacao.desafios_disponiveis()[1], 4)
         self.assertEqual(situacao.desafio_do_dia(hoje.isoformat())["id"], desafio["id"])
 
         antes = self.client.post("/concluir-desafio-diario").get_json()
@@ -947,7 +997,9 @@ class LearningFlowTest(unittest.TestCase):
         self.assertIn("Nenhuma notificação por enquanto", pagina)
         self.assertEqual(self.notificacoes_do_aluno(), [])
 
+        # O desafio diário só aparece depois da primeira lição do módulo 2 (printf).
         self.concluir_modulos(1)
+        self.concluir_licoes(self.MODULOS[1]["licoes"][0]["id"])
         conn = self.conectar()
         conn.execute(
             "INSERT INTO revisoes_usuario (usuario_id, licao_id, nivel, proxima_revisao) VALUES (1, 1, 0, ?)",
@@ -982,7 +1034,10 @@ class LearningFlowTest(unittest.TestCase):
 
     def test_lembretes_desligados_mantem_modulos_e_avisos(self):
         self.client.post("/configuracoes", data={"acao": "preferencias", "lembretes__presente": "1"})
+        # Com a lição printf concluída já existe desafio diário; mesmo assim o lembrete não pode aparecer.
         self.concluir_modulos(1)
+        self.concluir_licoes(self.MODULOS[1]["licoes"][0]["id"])
+        self.assertTrue(self.SituacaoAluno(1).desafios_disponiveis()[0])
         self.client.get("/notificacoes")
         self.assertEqual([linha["tipo"] for linha in self.notificacoes_do_aluno()], ["modulo"])
 

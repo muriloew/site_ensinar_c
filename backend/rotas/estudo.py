@@ -76,7 +76,10 @@ def estudar(modulo_id):
         licao_id = request.args.get("licao", type=int)
         licao = next((item for item in modulo["licoes"] if item["id"] == licao_id), modulo["licoes"][0])
         registro = conn.execute(
-            "SELECT quiz_correto, resposta_teorica FROM progresso WHERE usuario_id = ? AND licao_id = ?",
+            """
+            SELECT quiz_correto, resposta_teorica, codigo_validado, concluida
+            FROM progresso WHERE usuario_id = ? AND licao_id = ?
+            """,
             (usuario["id"], licao["id"]),
         ).fetchone()
         favorita = conn.execute(
@@ -103,6 +106,8 @@ def estudar(modulo_id):
         desafios_teoricos=estado_teorico["desafios"],
         desafios_teoricos_corretos=estado_teorico["corretos"],
         total_desafios_teoricos=estado_teorico["total"],
+        codigo_aprovado=bool(registro and registro["codigo_validado"] == 1),
+        licao_concluida=licao["id"] in situacao.concluidas,
         favorita=favorita,
         anotacao=anotacao["texto"] if anotacao else "",
         posicao=modulo["licoes"].index(licao) + 1,
@@ -330,8 +335,12 @@ def concluir(licao_id):
     # Depois de concluir, o aluno segue direto para a próxima lição que já estiver liberada.
     _, proxima = licoes_vizinhas(licao_id)
     link = _link_da_licao(SituacaoAluno(usuario["id"]), proxima)
+    xp_recebido = 0 if ja_concluida else XP_POR_LICAO
     return jsonify({
         "ok": True,
-        "mensagem": f"Lição concluída! +{XP_POR_LICAO} XP",
+        "mensagem": "Lição já concluída antes; nenhum XP adicional." if ja_concluida
+        else f"Lição concluída! +{XP_POR_LICAO} XP",
+        "xp_recebido": xp_recebido,
+        "ja_concluida": ja_concluida,
         "proxima": link["url"] if link and link["liberada"] else "/modulos",
     })

@@ -231,6 +231,26 @@
             </section>
 
             <div class="next-box">
+                {% set teoria_ok = desafios_teoricos_corretos == total_desafios_teoricos %}
+                <h2 class="lesson-checklist-title">
+                    {% if licao_concluida %}Lição concluída{% else %}O que falta para concluir esta lição{% endif %}
+                </h2>
+                <ul class="lesson-checklist">
+                    <li class="{% if teoria_ok %}done{% endif %}" data-checklist-teoria>
+                        {{ icone("check") }}
+                        <span>Desafios teóricos:
+                            <strong data-checklist-teoria-texto>{{ desafios_teoricos_corretos }} de {{ total_desafios_teoricos }} corretos</strong></span>
+                    </li>
+                    {% if licao.pratica_codigo %}
+                    <li class="{% if codigo_aprovado %}done{% endif %}">
+                        {{ icone("check") }}
+                        <span>Exercício de código:
+                            {% if codigo_aprovado %}<strong>aprovado na correção</strong>
+                            {% else %}<a href="/exercicio/{{ licao.id }}"><strong>ainda não aprovado</strong></a>{% endif %}</span>
+                    </li>
+                    {% endif %}
+                </ul>
+
                 {% if licao.pratica_codigo %}
                 <h2>Hora de praticar</h2>
                 <p>{{ licao.exercicio_codigo }}</p>

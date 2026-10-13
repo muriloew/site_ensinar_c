@@ -86,11 +86,11 @@ As perguntas dos desafios teóricos ficam em `backend/conteudo/perguntas/`, quat
 - Roteiro dos projetos do módulo 21, com conceitos para revisar, etapas e casos de teste, e exemplo de projeto em vários arquivos com Makefile
 - Navegação entre lições, anotações pessoais por lição e passagem direta para a próxima lição ao concluir
 - Consulta rápida aberta a todos: formatos do printf/scanf, tipos, operadores, funções, erros do GCC traduzidos e glossário
-- Quatro desafios teóricos por lição (com programas para ler, erros para achar e lacunas para completar) e exercício de código com correção automática, incluindo testes ocultos
+- Quatro desafios teóricos por lição (com programas para ler, erros para achar e lacunas para completar) e exercício de código com correção automática, incluindo testes ocultos; no fim da lição, uma lista mostra o que ainda falta para concluí-la
 - Dicas progressivas: a cada tentativa sem sucesso aparece uma nova dica específica da lição
 - Solução comentada de todos os 87 exercícios, liberada só depois que a correção aprova o código do aluno
 - Compilador GCC com terminal interativo (`scanf` funciona de verdade) nos exercícios, desafios e prática livre; vários alunos podem ficar com o programa aberto ao mesmo tempo
-- 100 desafios diários próprios (5 por módulo, com nível, exemplo e solução comentada), sorteados só entre os módulos já liberados e priorizando os que o aluno ainda não fez
+- 100 desafios diários próprios (5 por módulo, com nível, exemplo e solução comentada), sorteados só entre os ligados a lições que o aluno já estudou e priorizando os que ele ainda não fez
 - XP, níveis, ligas, sequência de estudos, missões diárias e conquistas
 - Acompanhamento com relatório por módulo, metas diárias e semanais e calendário de atividade
 - Simulado, revisão espaçada, favoritos e histórico das 100 últimas execuções
@@ -157,6 +157,8 @@ O site tem duas páginas de verificação para serviços de monitoramento (como 
 - `/saude/banco` faz um `SELECT 1` e responde 503 se o banco não responder. Cada consulta acorda o Neon e gasta horas de computação do plano gratuito, então use um intervalo longo, como 1 hora.
 
 O workflow `.github/workflows/manter-acordado.yml` acessa `/saude` a cada 10 minutos, para o Render gratuito não desligar o site por falta de acessos (o que deixa a primeira visita lenta). Se o site estiver fora do ar, a execução falha e o GitHub avisa por e-mail. O GitHub desativa workflows agendados de repositórios sem commits por 60 dias; nesse caso, reative em *Actions*.
+
+Na prática, o GitHub atrasa as tarefas agendadas: entre 9 e 13 de outubro de 2026 essa só rodou a cada 2 a 10 horas, e o site foi encontrado desligado (primeira visita em 32,6 s). Para manter o site acordado de verdade, use um serviço externo, como o [cron-job.org](https://cron-job.org), acessando `https://site-ensinar-c-3.onrender.com/saude` a cada 10 minutos. O workflow pode continuar como reserva.
 
 ## Testes
 

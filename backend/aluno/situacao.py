@@ -5,7 +5,7 @@ from backend.banco.conexao import transacao
 from backend.conteudo.desafios_diarios import (
     DESAFIOS_DIARIOS,
     desafio_por_id,
-    desafios_disponiveis_por_progresso,
+    desafios_disponiveis_por_licoes,
     escolher_desafio_do_dia,
 )
 from backend.conteudo.trilha import MODULOS, encontrar_licao, modulo_por_id
@@ -88,9 +88,9 @@ class SituacaoAluno:
         return maximo
 
     def desafios_disponiveis(self):
-        """Desafios diários dos módulos já liberados e o maior módulo liberado."""
+        """Desafios diários das lições já estudadas e o maior módulo liberado."""
         maximo = self.modulo_maximo_liberado()
-        return desafios_disponiveis_por_progresso(DESAFIOS_DIARIOS, maximo), maximo
+        return desafios_disponiveis_por_licoes(DESAFIOS_DIARIOS, self.concluidas), maximo
 
     def desafio_do_dia(self, data_texto=None):
         """Desafio do dia: o que o aluno já começou nesta data ou um sorteado entre os que ainda não concluiu.

@@ -207,13 +207,17 @@ def _preparar_workspace(codigo):
 
 
 def _ambiente_minimo(temp_dir):
-    return {
+    ambiente = {
         "PATH": "/usr/local/bin:/usr/bin:/bin" if os.name == "posix" else os.environ.get("PATH", ""),
         "HOME": temp_dir,
         "TMPDIR": temp_dir,
         "LANG": "C.UTF-8",
         "LC_ALL": "C.UTF-8",
     }
+    if os.name == "nt":
+        # No Windows o GCC procura a pasta temporária em TEMP/TMP; sem elas tenta gravar em C:\Windows e falha.
+        ambiente.update(TEMP=temp_dir, TMP=temp_dir, SYSTEMROOT=os.environ.get("SYSTEMROOT", r"C:\Windows"))
+    return ambiente
 
 
 def _com_limites(comando, modo):

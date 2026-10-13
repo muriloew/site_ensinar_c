@@ -48,6 +48,12 @@ async function verificarResposta(licaoId, resposta, botao) {
             progresso.textContent = `${dados.corretos}/${dados.total}`;
             progresso.setAttribute("aria-label", `${dados.corretos} de ${dados.total} desafios corretos`);
         }
+        const itemTeoria = document.querySelector("[data-checklist-teoria]");
+        if (itemTeoria && typeof dados.corretos !== "undefined") {
+            itemTeoria.classList.toggle("done", dados.corretos === dados.total);
+            itemTeoria.querySelector("[data-checklist-teoria-texto]").textContent =
+                `${dados.corretos} de ${dados.total} corretos`;
+        }
     } catch (erro) {
         resultado.textContent = "Erro ao verificar resposta. Recarregue a página e tente novamente.";
     } finally {

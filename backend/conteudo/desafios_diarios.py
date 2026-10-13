@@ -22,11 +22,26 @@ def _montar(item):
 DESAFIOS_DIARIOS = [_montar(item) for item in CATALOGO]
 
 
-def desafios_disponiveis_por_progresso(desafios, modulo_maximo):
-    """Desafios do módulo 2 até o maior módulo liberado; o módulo 1 é só teoria."""
-    if modulo_maximo < 2:
-        return []
-    return [desafio for desafio in desafios if 2 <= desafio["modulo_id"] <= modulo_maximo]
+def _licoes_necessarias(licao_id):
+    """A lição do desafio e as que vêm antes dela no mesmo módulo."""
+    modulo, licao = encontrar_licao(licao_id)
+    ids = [item["id"] for item in modulo["licoes"]]
+    return ids[: ids.index(licao["id"]) + 1]
+
+
+NECESSARIAS = {desafio["id"]: _licoes_necessarias(desafio["licao_id"]) for desafio in DESAFIOS_DIARIOS}
+
+
+def desafios_disponiveis_por_licoes(desafios, concluidas):
+    """Desafios cujos assuntos o aluno já estudou; o módulo 1 é só teoria.
+
+    Um desafio aparece quando a lição dele e as anteriores do mesmo módulo estão concluídas, para não cobrar,
+    logo depois de liberar um módulo, um assunto que só é explicado mais adiante nele.
+    """
+    return [
+        desafio for desafio in desafios
+        if desafio["modulo_id"] >= 2 and all(licao_id in concluidas for licao_id in NECESSARIAS[desafio["id"]])
+    ]
 
 
 def desafio_por_id(desafios, desafio_id):

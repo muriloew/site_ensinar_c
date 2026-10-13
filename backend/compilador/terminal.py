@@ -28,7 +28,7 @@ PROCESSOS_TERMINAL = {}
 TERMINAL_POR_USUARIO = {}
 PROCESSOS_TERMINAL_LOCK = threading.RLock()
 
-MENSAGEM_DESAFIO_BLOQUEADO = "Conclua o módulo 1 para desbloquear os desafios diários."
+MENSAGEM_DESAFIO_BLOQUEADO = "Conclua a lição printf, do módulo 2, para desbloquear os desafios diários."
 
 
 def _com_solucao(validacao, atividade):

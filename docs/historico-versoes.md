@@ -433,3 +433,12 @@ python app.py
 
 - **Primeira visita sem espera:** o Render gratuito desliga o site depois de 15 minutos sem acessos, e quem chegava depois esperava cerca de 30 segundos. O workflow `.github/workflows/manter-acordado.yml` acessa `/saude` a cada 10 minutos para evitar isso. Como `/saude` não consulta o banco, o Neon continua suspendendo quando ninguém usa o site. Se o site cair, a execução falha e o GitHub avisa por e-mail.
 - **Tema claro:** as respostas certas e erradas dos desafios teóricos, os resultados do simulado e a caixa de correção do exercício (aprovado ou com aviso) perdiam o fundo colorido e ficavam só com a borda. Agora mantêm o verde, o vermelho e o amarelo, como no tema escuro.
+
+
+## Versão 39 — Correções do relatório de testes
+
+- **Mensagem de XP correta:** concluir de novo uma lição já concluída mostrava "Lição concluída! +50 XP", embora nenhum ponto fosse dado. Agora a mensagem diz "Lição já concluída antes; nenhum XP adicional.", e a resposta de `/concluir/<id>` traz `xp_recebido` e `ja_concluida`.
+- **Desafio diário só com assunto estudado:** antes, bastava o módulo estar liberado; logo depois do módulo 1, podia aparecer "Data com dois dígitos", que usa `scanf` e `%02d`. Agora cada desafio entra no sorteio só quando a lição dele e as anteriores do mesmo módulo estão concluídas (`desafios_disponiveis_por_licoes`). Os textos da página bloqueada explicam a nova regra.
+- **O que falta para concluir:** o fim de cada lição mostra quantos desafios teóricos já foram acertados e se o exercício de código foi aprovado. A lista se atualiza a cada resposta e marca em verde o que está feito.
+- **Testes no Windows:** o executor passa `TEMP`, `TMP` e `SYSTEMROOT` ao GCC no Windows, que sem eles tentava gravar em `C:\Windows` e falhava. No Linux nada muda.
+- **Manter acordado:** o README explica que o GitHub atrasa os workflows agendados e recomenda um serviço externo para acessar `/saude`.
