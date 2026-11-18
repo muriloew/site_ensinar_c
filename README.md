@@ -1,6 +1,10 @@
 # Ensinar C
 
+🇺🇸 [English](README.en.md) | 🇧🇷 Português
+
 Plataforma web para aprender a linguagem C: 21 módulos e 91 lições com teoria, desafios teóricos, exercícios corrigidos automaticamente e um compilador GCC com terminal interativo no navegador.
+
+**Site:** https://site-ensinar-c-3.onrender.com
 
 O histórico de mudanças de cada versão está em [`docs/historico-versoes.md`](docs/historico-versoes.md).
 
